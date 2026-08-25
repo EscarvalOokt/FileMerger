@@ -1,0 +1,91 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="Brush.WindowBackground" Color="#1E1E1E" />
+    <SolidColorBrush x:Key="Brush.Surface" Color="#252526" />
+    <SolidColorBrush x:Key="Brush.SurfaceAlt" Color="#2D2D30" />
+    <SolidColorBrush x:Key="Brush.SurfaceHover" Color="#35363A" />
+    <SolidColorBrush x:Key="Brush.Border" Color="#3F3F46" />
+    <SolidColorBrush x:Key="Brush.Separator" Color="#34373D" />
+
+    <SolidColorBrush x:Key="Brush.TextPrimary" Color="#F3F3F3" />
+    <SolidColorBrush x:Key="Brush.TextSecondary" Color="#B8B8B8" />
+    <SolidColorBrush x:Key="Brush.TextMuted" Color="#8A8A8A" />
+    <SolidColorBrush x:Key="Brush.TextOnAccent" Color="#FFFFFF" />
+
+    <SolidColorBrush x:Key="Brush.InputBackground" Color="#1F1F22" />
+    <SolidColorBrush x:Key="Brush.InputBorder" Color="#45454F" />
+
+    <SolidColorBrush x:Key="Brush.ButtonBackground" Color="#2D2D30" />
+    <SolidColorBrush x:Key="Brush.ButtonBorder" Color="#4A4A52" />
+    <SolidColorBrush x:Key="Brush.ButtonHover" Color="#3A3A40" />
+    <SolidColorBrush x:Key="Brush.ButtonPressed" Color="#2A2A2E" />
+    <SolidColorBrush x:Key="Brush.ButtonDisabledBackground" Color="#252528" />
+    <SolidColorBrush x:Key="Brush.ButtonDisabledBorder" Color="#333338" />
+
+    <SolidColorBrush x:Key="Brush.PrimaryActionBackground" Color="#2563EB" />
+    <SolidColorBrush x:Key="Brush.PrimaryActionHover" Color="#3B82F6" />
+    <SolidColorBrush x:Key="Brush.PrimaryActionPressed" Color="#1D4ED8" />
+
+    <SolidColorBrush x:Key="Brush.Warning" Color="#F59E0B" />
+    <SolidColorBrush x:Key="Brush.WarningForeground" Color="#FFF7ED" />
+    <SolidColorBrush x:Key="Brush.WarningSurface" Color="#3A2A0A" />
+    <SolidColorBrush x:Key="Brush.WarningBorder" Color="#8A5A00" />
+
+    <SolidColorBrush x:Key="Brush.Success" Color="#22C55E" />
+    <SolidColorBrush x:Key="Brush.SuccessForeground" Color="#F0FDF4" />
+    <SolidColorBrush x:Key="Brush.SuccessSurface" Color="#0F2E1B" />
+    <SolidColorBrush x:Key="Brush.SuccessBorder" Color="#1F7A43" />
+
+    <SolidColorBrush x:Key="Brush.Error" Color="#EF4444" />
+    <SolidColorBrush x:Key="Brush.ErrorForeground" Color="#FEF2F2" />
+    <SolidColorBrush x:Key="Brush.ErrorSurface" Color="#3A1616" />
+    <SolidColorBrush x:Key="Brush.ErrorBorder" Color="#8F2D2D" />
+
+    <SolidColorBrush x:Key="Brush.Info" Color="#38BDF8" />
+    <SolidColorBrush x:Key="Brush.InfoForeground" Color="#F0F9FF" />
+    <SolidColorBrush x:Key="Brush.InfoSurface" Color="#102A3A" />
+    <SolidColorBrush x:Key="Brush.InfoBorder" Color="#2F6F8F" />
+
+    <SolidColorBrush x:Key="Brush.StatusBackground" Color="#252526" />
+    <SolidColorBrush x:Key="Brush.StatusBorder" Color="#3F3F46" />
+
+    <SolidColorBrush x:Key="Brush.DataGridBackground" Color="#252526" />
+    <SolidColorBrush x:Key="Brush.DataGridAltRow" Color="#2A2A2E" />
+    <SolidColorBrush x:Key="Brush.DataGridHeader" Color="#2D2D30" />
+    <SolidColorBrush x:Key="Brush.Selection" Color="#264F78" />
+
+    <SolidColorBrush x:Key="Brush.ToolTipBackground" Color="#2B2B2B" />
+    <SolidColorBrush x:Key="Brush.ToolTipBorder" Color="#4B4B4B" />
+
+    <SolidColorBrush x:Key="Brush.SecondaryButtonDisabledBackground" Color="#1F2023" />
+    <SolidColorBrush x:Key="Brush.SecondaryButtonDisabledBorder" Color="#2B2D31" />
+    <SolidColorBrush x:Key="Brush.SecondaryButtonDisabledForeground" Color="#6F737A" />
+
+    <SolidColorBrush x:Key="Brush.ScrollBarTrack" Color="#1D1F23" />
+    <SolidColorBrush x:Key="Brush.ScrollBarThumb" Color="#4A4F59" />
+    <SolidColorBrush x:Key="Brush.ScrollBarThumbHover" Color="#5D6370" />
+    <SolidColorBrush x:Key="Brush.ScrollBarThumbPressed" Color="#72798A" />
+
+    <SolidColorBrush x:Key="Brush.ProgressTrack" Color="#1F2023" />
+    <SolidColorBrush x:Key="Brush.ProgressBorder" Color="#34373D" />
+
+    <SolidColorBrush x:Key="Brush.InputBackgroundHover" Color="#24262B" />
+    <SolidColorBrush x:Key="Brush.InputBackgroundFocus" Color="#202733" />
+    <SolidColorBrush x:Key="Brush.InputBorderHover" Color="#5C6270" />
+    <SolidColorBrush x:Key="Brush.InputBorderFocus" Color="#60A5FA" />
+    <SolidColorBrush x:Key="Brush.InputReadOnlyBackground" Color="#2A2C31" />
+
+    <SolidColorBrush x:Key="Brush.DataGridRowHover" Color="#31343A" />
+    <SolidColorBrush x:Key="Brush.DataGridRowSelected" Color="#264F78" />
+    <SolidColorBrush x:Key="Brush.DataGridRowSelectedInactive" Color="#3B4554" />
+    <SolidColorBrush x:Key="Brush.DataGridRowHeaderBackground" Color="#232427" />
+    <SolidColorBrush x:Key="Brush.DataGridRowHeaderHover" Color="#2E3239" />
+    <SolidColorBrush x:Key="Brush.DataGridRowHeaderSelected" Color="#1F3B59" />
+    <SolidColorBrush x:Key="Brush.DataGridCurrentCellBorder" Color="#7CB7FF" />
+
+    <SolidColorBrush x:Key="Brush.SurfaceElevated" Color="#35363A" />
+    <SolidColorBrush x:Key="Brush.BorderStrong" Color="#4A4A52" />
+    <SolidColorBrush x:Key="Brush.Danger" Color="#EF4444" />
+    <SolidColorBrush x:Key="Brush.DangerMuted" Color="#3A1616" />
+</ResourceDictionary>

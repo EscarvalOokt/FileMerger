@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\FileMerger.Domain\FileMerger.Domain.csproj"/>
+  </ItemGroup>
+
+</Project>

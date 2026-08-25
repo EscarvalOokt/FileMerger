@@ -1,0 +1,791 @@
+<UserControl x:Class="FileMerger.Wpf.Features.Profile.Views.ProfileEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:enums="clr-namespace:FileMerger.Domain.Enums;assembly=FileMerger.Domain"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+             xmlns:viewModels="clr-namespace:FileMerger.Wpf.Features.Profile.ViewModels"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <ObjectDataProvider x:Key="LineEndingModesProvider"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="enums:LineEndingMode" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <ObjectDataProvider x:Key="SortModesProvider"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="enums:SortMode" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <ObjectDataProvider x:Key="InputEncodingModesProvider"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="enums:InputEncodingMode" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
+        <Style x:Key="ProfileEditorSectionTitleStyle"
+               BasedOn="{StaticResource SectionTitleTextStyle}"
+               TargetType="TextBlock" />
+
+        <Style x:Key="ProfileEditorSectionDescriptionStyle"
+               BasedOn="{StaticResource SectionDescriptionTextStyle}"
+               TargetType="TextBlock" />
+
+        <Style x:Key="ProfileFileTypeGroupHeaderToggleStyle"
+               TargetType="{x:Type ToggleButton}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                        <Border x:Name="RootBorder"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{StaticResource Brush.TextMuted}" />
+                                <Setter TargetName="RootBorder" Property="Opacity" Value="0.65" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ProfileFileTypeGroupChevronStyle"
+               TargetType="{x:Type Path}">
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Data" Value="{StaticResource IconGeometry.ChevronRight}" />
+            <Setter Property="Fill" Value="{StaticResource Brush.TextSecondary}" />
+            <Setter Property="Stretch" Value="Uniform" />
+            <Setter Property="Stroke" Value="{x:Null}" />
+
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ToggleButton}}"
+                             Value="True">
+                    <Setter Property="Fill" Value="{StaticResource Brush.TextPrimary}" />
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding IsPressed, RelativeSource={RelativeSource AncestorType=ToggleButton}}"
+                             Value="True">
+                    <Setter Property="Fill" Value="{StaticResource Brush.TextPrimary}" />
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=ToggleButton}}"
+                             Value="False">
+                    <Setter Property="Fill" Value="{StaticResource Brush.TextMuted}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ProfileFileTypeGroupExpanderStyle"
+               TargetType="{x:Type Expander}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Expander}">
+                        <DockPanel LastChildFill="True">
+                            <ToggleButton x:Name="HeaderSite"
+                                          DockPanel.Dock="Top"
+                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          Style="{StaticResource ProfileFileTypeGroupHeaderToggleStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="24" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid Grid.Column="0"
+                                          Width="18"
+                                          Height="18"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Center">
+                                        <Path x:Name="CollapsedChevron"
+                                              Style="{StaticResource ProfileFileTypeGroupChevronStyle}" />
+
+                                        <Path x:Name="ExpandedChevron"
+                                              RenderTransformOrigin="0.5,0.5"
+                                              Style="{StaticResource ProfileFileTypeGroupChevronStyle}"
+                                              Visibility="Collapsed">
+                                            <Path.RenderTransform>
+                                                <RotateTransform Angle="90" />
+                                            </Path.RenderTransform>
+                                        </Path>
+                                    </Grid>
+
+                                    <ContentPresenter Grid.Column="1"
+                                                      HorizontalAlignment="Stretch"
+                                                      VerticalAlignment="Center"
+                                                      ContentSource="Header"
+                                                      RecognizesAccessKey="True" />
+                                </Grid>
+                            </ToggleButton>
+
+                            <ContentPresenter x:Name="ExpandSite"
+                                              ContentSource="Content"
+                                              DockPanel.Dock="Bottom"
+                                              Visibility="Collapsed" />
+                        </DockPanel>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="CollapsedChevron" Property="Visibility" Value="Collapsed" />
+                                <Setter TargetName="ExpandedChevron" Property="Visibility" Value="Visible" />
+                            </Trigger>
+
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.65" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="{DynamicResource Spacing.XSmall}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0"
+                Margin="{DynamicResource Gap.RightLarge}"
+                Style="{StaticResource SurfacePanelBorderStyle}">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Top">
+                    <TextBlock FontWeight="SemiBold"
+                               Text="Editor sections" />
+                    <TextBlock Margin="0,4,0,12"
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Text="Choose a settings group to edit."
+                               TextWrapping="Wrap" />
+                </StackPanel>
+
+                <StackPanel>
+                    <Button Command="{Binding SelectSectionCommand}"
+                            CommandParameter="{x:Static viewModels:ProfileEditorSection.General}"
+                            Content="General"
+                            Style="{StaticResource CompactSectionNavigationButtonStyle}"
+                            Tag="{Binding IsGeneralSectionSelected}" />
+
+                    <Button Command="{Binding SelectSectionCommand}"
+                            CommandParameter="{x:Static viewModels:ProfileEditorSection.Formatting}"
+                            Content="Formatting"
+                            Style="{StaticResource CompactSectionNavigationButtonStyle}"
+                            Tag="{Binding IsFormattingSectionSelected}" />
+
+                    <Button Command="{Binding SelectSectionCommand}"
+                            CommandParameter="{x:Static viewModels:ProfileEditorSection.OutputMetadata}"
+                            Content="Output metadata"
+                            Style="{StaticResource CompactSectionNavigationButtonStyle}"
+                            Tag="{Binding IsOutputMetadataSectionSelected}" />
+
+                    <Button Command="{Binding SelectSectionCommand}"
+                            CommandParameter="{x:Static viewModels:ProfileEditorSection.InputEncoding}"
+                            Content="Input encoding"
+                            Style="{StaticResource CompactSectionNavigationButtonStyle}"
+                            Tag="{Binding IsInputEncodingSectionSelected}" />
+
+                    <Button Command="{Binding SelectSectionCommand}"
+                            CommandParameter="{x:Static viewModels:ProfileEditorSection.UnsupportedTextFallback}"
+                            Content="Unsupported text fallback"
+                            Style="{StaticResource CompactSectionNavigationButtonStyle}"
+                            Tag="{Binding IsUnsupportedTextFallbackSectionSelected}" />
+
+                    <Button Command="{Binding SelectSectionCommand}"
+                            CommandParameter="{x:Static viewModels:ProfileEditorSection.FileTypes}"
+                            Content="File types"
+                            Style="{StaticResource CompactSectionNavigationButtonStyle}"
+                            Tag="{Binding IsFileTypesSectionSelected}" />
+
+                    <Button Command="{Binding SelectSectionCommand}"
+                            CommandParameter="{x:Static viewModels:ProfileEditorSection.CSharpTransformations}"
+                            Content="C# transformations"
+                            Style="{StaticResource CompactSectionNavigationButtonStyle}"
+                            Tag="{Binding IsCSharpTransformationsSectionSelected}"
+                            Visibility="{Binding ShowCSharpOptions, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                    <Button Command="{Binding SelectSectionCommand}"
+                            CommandParameter="{x:Static viewModels:ProfileEditorSection.FilterRules}"
+                            Content="Filter rules"
+                            Style="{StaticResource CompactSectionNavigationButtonStyle}"
+                            Tag="{Binding IsFilterRulesSectionSelected}" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Column="1"
+                Padding="14"
+                Style="{StaticResource SurfaceAltPanelBorderStyle}">
+            <Grid>
+                <StackPanel
+                    Visibility="{Binding IsGeneralSectionSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource ProfileEditorSectionTitleStyle}"
+                               Text="General" />
+                    <TextBlock Style="{StaticResource ProfileEditorSectionDescriptionStyle}"
+                               Text="Configure comments, separators, and whitespace cleanup." />
+
+                    <CheckBox Margin="0,0,0,8"
+                              Content="Include header comment"
+                              IsChecked="{Binding IncludeHeaderComment}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                    <CheckBox Margin="0,0,0,8"
+                              Content="Include file separators"
+                              IsChecked="{Binding IncludeFileSeparators}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                    <CheckBox Margin="0,0,0,8"
+                              Content="Include relative path in separator"
+                              IsChecked="{Binding IncludeRelativePathInSeparator}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                    <CheckBox Content="Trim trailing empty lines"
+                              IsChecked="{Binding TrimTrailingEmptyLines}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                </StackPanel>
+
+                <StackPanel
+                    Visibility="{Binding IsFormattingSectionSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource ProfileEditorSectionTitleStyle}"
+                               Text="Formatting" />
+                    <TextBlock Style="{StaticResource ProfileEditorSectionDescriptionStyle}"
+                               Text="Choose line endings and output ordering." />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Margin="0,0,8,8"
+                                   VerticalAlignment="Center"
+                                   Text="Line endings:" />
+                        <ComboBox Grid.Column="1"
+                                  Margin="0,0,0,8"
+                                  ItemsSource="{Binding Source={StaticResource LineEndingModesProvider}}"
+                                  SelectedItem="{Binding LineEndingMode}"
+                                  Style="{StaticResource CompactComboBoxStyle}" />
+
+                        <TextBlock Grid.Row="1"
+                                   Margin="0,0,8,0"
+                                   VerticalAlignment="Center"
+                                   Text="Sort mode:" />
+                        <ComboBox Grid.Row="1"
+                                  Grid.Column="1"
+                                  ItemsSource="{Binding Source={StaticResource SortModesProvider}}"
+                                  SelectedItem="{Binding SortMode}"
+                                  Style="{StaticResource CompactComboBoxStyle}" />
+                    </Grid>
+                </StackPanel>
+
+                <StackPanel
+                    Visibility="{Binding IsOutputMetadataSectionSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource ProfileEditorSectionTitleStyle}"
+                               Text="Output metadata" />
+                    <TextBlock Style="{StaticResource ProfileEditorSectionDescriptionStyle}"
+                               Text="Choose which contextual details are written into generated output headers." />
+
+                    <CheckBox Content="Build timestamp"
+                              IsChecked="{Binding IncludeBuildTimestampMetadata}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                    <CheckBox Content="Session name"
+                              IsChecked="{Binding IncludeSessionNameMetadata}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                    <CheckBox Content="Output path"
+                              IsChecked="{Binding IncludeOutputPathMetadata}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                    <CheckBox Content="File summary"
+                              IsChecked="{Binding IncludeFileSummaryMetadata}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Margin="0,0,8,0"
+                                   VerticalAlignment="Center"
+                                   Text="Skipped files:" />
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding SkippedFilesMetadataModes}"
+                                  SelectedItem="{Binding SkippedFilesMetadataMode}" />
+                    </Grid>
+
+                    <CheckBox Margin="0,8,0,0"
+                              Content="Include source-excluded files"
+                              IsChecked="{Binding IncludeSourceExcludedFiles}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Text="Simple mode lists skipped files. Detailed mode also includes skip reason and filter rule details when available."
+                               TextWrapping="Wrap" />
+                    <TextBlock Margin="0,4,0,0"
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Text="When enabled, source-specific exclusions are added to skipped-file metadata in Simple or Detailed mode. They remain excluded and do not appear in the discovered-files list."
+                               TextWrapping="Wrap" />
+                </StackPanel>
+
+                <StackPanel
+                    Visibility="{Binding IsInputEncodingSectionSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource ProfileEditorSectionTitleStyle}"
+                               Text="Input encoding" />
+                    <TextBlock Style="{StaticResource ProfileEditorSectionDescriptionStyle}"
+                               Text="Configure automatic, preferred, and fallback encodings used when reading source files." />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Margin="0,0,8,8"
+                                   VerticalAlignment="Center"
+                                   Text="Mode:" />
+                        <ComboBox Grid.Column="1"
+                                  Margin="0,0,0,8"
+                                  ItemsSource="{Binding Source={StaticResource InputEncodingModesProvider}}"
+                                  SelectedItem="{Binding InputEncodingMode}"
+                                  Style="{StaticResource CompactComboBoxStyle}" />
+
+                        <TextBlock Grid.Row="1"
+                                   Margin="0,0,8,8"
+                                   VerticalAlignment="Center"
+                                   Text="Preferred encoding:" />
+                        <TextBox Grid.Row="1"
+                                 Grid.Column="1"
+                                 Margin="0,0,0,8"
+                                 Style="{StaticResource CompactTextBoxStyle}"
+                                 Text="{Binding PreferredInputEncodingName, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Grid.Row="2"
+                                   Margin="0,0,8,0"
+                                   VerticalAlignment="Center"
+                                   Text="Fallback encoding:" />
+                        <TextBox Grid.Row="2"
+                                 Grid.Column="1"
+                                 Style="{StaticResource CompactTextBoxStyle}"
+                                 Text="{Binding FallbackInputEncodingName, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                </StackPanel>
+
+                <StackPanel
+                    Visibility="{Binding IsUnsupportedTextFallbackSectionSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource ProfileEditorSectionTitleStyle}"
+                               Text="Unsupported text fallback" />
+                    <TextBlock Style="{StaticResource ProfileEditorSectionDescriptionStyle}"
+                               Text="Allow unknown extensions to be included when they look like small text files." />
+
+                    <CheckBox Content="Include unsupported text files"
+                              IsChecked="{Binding IncludeUnsupportedTextFiles}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+
+                    <TextBlock Margin="0,6,0,10"
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Text="When enabled, files with unknown extensions can be included if they look like small text files. Known but disabled file types are still excluded."
+                               TextWrapping="Wrap" />
+
+                    <Grid IsEnabled="{Binding IncludeUnsupportedTextFiles}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   Margin="0,0,8,8"
+                                   VerticalAlignment="Center"
+                                   Text="Max file size bytes:" />
+                        <TextBox Grid.Row="0"
+                                 Grid.Column="1"
+                                 Margin="0,0,0,8"
+                                 Style="{StaticResource CompactTextBoxStyle}"
+                                 Text="{Binding UnsupportedTextMaxFileSizeBytes, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="0"
+                                   Margin="0,0,8,8"
+                                   VerticalAlignment="Center"
+                                   Text="Probe size bytes:" />
+                        <TextBox Grid.Row="1"
+                                 Grid.Column="1"
+                                 Margin="0,0,0,8"
+                                 Style="{StaticResource CompactTextBoxStyle}"
+                                 Text="{Binding UnsupportedTextProbeSizeBytes, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Grid.Row="2"
+                                   Grid.Column="0"
+                                   Margin="0,0,8,0"
+                                   VerticalAlignment="Center"
+                                   Text="Max control ratio:" />
+                        <TextBox Grid.Row="2"
+                                 Grid.Column="1"
+                                 Style="{StaticResource CompactTextBoxStyle}"
+                                 Text="{Binding UnsupportedTextMaxControlCharacterRatio, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                </StackPanel>
+
+                <DockPanel
+                    Visibility="{Binding IsFileTypesSectionSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel DockPanel.Dock="Top">
+                        <TextBlock Style="{StaticResource ProfileEditorSectionTitleStyle}"
+                                   Text="File types" />
+                        <TextBlock Style="{StaticResource ProfileEditorSectionDescriptionStyle}"
+                                   Text="Choose which file types are included in the profile." />
+                    </StackPanel>
+
+                    <Border Margin="{DynamicResource Gap.BottomLarge}"
+                            DockPanel.Dock="Top"
+                            Style="{StaticResource SurfaceCompactCardBorderStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="260" />
+                                <ColumnDefinition Width="140" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox Grid.Column="0"
+                                     Margin="0,0,8,0"
+                                     VerticalAlignment="Center"
+                                     Style="{StaticResource CompactTextBoxStyle}"
+                                     Text="{Binding FileTypeFilters.SearchText, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <ComboBox Grid.Column="1"
+                                      Margin="0,0,8,0"
+                                      DisplayMemberPath="DisplayName"
+                                      ItemsSource="{Binding FileTypeFilterModeOptions}"
+                                      SelectedValue="{Binding FileTypeFilters.Mode, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedValuePath="Value"
+                                      Style="{StaticResource CompactComboBoxStyle}" />
+
+                            <Button Grid.Column="2"
+                                    Margin="0,0,12,0"
+                                    Command="{Binding ClearFileTypeFiltersCommand}"
+                                    Content="Clear filters"
+                                    Style="{StaticResource CompactSecondaryButtonStyle}" />
+
+                            <TextBlock Grid.Column="3"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource Brush.TextSecondary}"
+                                       Text="{Binding FileTypeFilterSummary}" />
+                        </Grid>
+                    </Border>
+
+                    <Grid>
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                      Style="{StaticResource FlatScrollViewerStyle}"
+                                      VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding FileTypeGroups}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:ProfileFileTypeGroupViewModel}">
+                                        <Border Margin="{DynamicResource Gap.BottomLarge}"
+                                                Padding="{DynamicResource Inset.Panel}"
+                                                Style="{StaticResource SurfaceAltCompactCardBorderStyle}"
+                                                Visibility="{Binding HasVisibleFileTypes, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+                                                      Style="{StaticResource ProfileFileTypeGroupExpanderStyle}">
+                                                <Expander.Header>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <TextBlock Grid.Column="0"
+                                                                   FontWeight="SemiBold"
+                                                                   Text="{Binding Title}" />
+
+                                                        <TextBlock Grid.Column="1"
+                                                                   Margin="16,0,0,0"
+                                                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                                                   Text="{Binding FilteredSummaryLabel}" />
+                                                    </Grid>
+                                                </Expander.Header>
+
+                                                <StackPanel Margin="0,10,0,0">
+                                                    <TextBlock Margin="0,0,0,10"
+                                                               Foreground="{StaticResource Brush.TextSecondary}"
+                                                               Text="{Binding Description}"
+                                                               TextWrapping="Wrap" />
+
+                                                    <StackPanel Margin="0,0,0,10"
+                                                                Orientation="Horizontal">
+                                                        <Button MinWidth="94"
+                                                                Margin="0,0,8,0"
+                                                                Command="{Binding EnableAllCommand}"
+                                                                Content="Enable shown"
+                                                                Style="{StaticResource CompactSecondaryButtonStyle}" />
+
+                                                        <Button MinWidth="94"
+                                                                Command="{Binding DisableAllCommand}"
+                                                                Content="Disable shown"
+                                                                Style="{StaticResource CompactSecondaryButtonStyle}" />
+                                                    </StackPanel>
+
+                                                    <ItemsControl ItemsSource="{Binding VisibleFileTypes}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <WrapPanel />
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate
+                                                                DataType="{x:Type viewModels:FileTypeOptionViewModel}">
+                                                                <CheckBox Width="230"
+                                                                          Margin="0,0,10,8"
+                                                                          Content="{Binding DisplayLabel}"
+                                                                          IsChecked="{Binding IsEnabled}"
+                                                                          Style="{StaticResource CompactCheckBoxStyle}" />
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </Expander>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <TextBlock HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   Text="No file types match the current search and filters."
+                                   Visibility="{Binding HasFileTypeFilterEmptyState, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    </Grid>
+                </DockPanel>
+
+                <StackPanel
+                    Visibility="{Binding IsCSharpTransformationsSectionSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource ProfileEditorSectionTitleStyle}"
+                               Text="C# transformations" />
+                    <TextBlock Style="{StaticResource ProfileEditorSectionDescriptionStyle}"
+                               Text="Configure transformations that apply only to enabled C# files." />
+
+                    <CheckBox Content="Remove using directives"
+                              IsChecked="{Binding RemoveUsingDirectives}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                </StackPanel>
+
+                <DockPanel
+                    Visibility="{Binding IsFilterRulesSectionSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel DockPanel.Dock="Top">
+                        <TextBlock Style="{StaticResource ProfileEditorSectionTitleStyle}"
+                                   Text="Filter rules" />
+                        <TextBlock Style="{StaticResource ProfileEditorSectionDescriptionStyle}"
+                                   Text="Manage advanced include/exclude rules applied after discovery and file type selection." />
+                    </StackPanel>
+
+                    <Border Margin="0,0,0,8"
+                            Padding="8"
+                            Background="{StaticResource Brush.Surface}"
+                            BorderBrush="{StaticResource Brush.Border}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            DockPanel.Dock="Top">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="260" />
+                                <ColumnDefinition Width="140" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox Grid.Column="0"
+                                     Margin="0,0,8,0"
+                                     VerticalAlignment="Center"
+                                     Style="{StaticResource CompactTextBoxStyle}"
+                                     Text="{Binding FilterRuleFilters.SearchText, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <ComboBox Grid.Column="1"
+                                      Margin="0,0,8,0"
+                                      DisplayMemberPath="DisplayName"
+                                      ItemsSource="{Binding FilterRuleStatusFilterOptions}"
+                                      SelectedValue="{Binding FilterRuleFilters.Status, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedValuePath="Value"
+                                      Style="{StaticResource CompactComboBoxStyle}" />
+
+                            <Button Grid.Column="2"
+                                    Margin="0,0,12,0"
+                                    Command="{Binding ClearFilterRuleFiltersCommand}"
+                                    Content="Clear filters"
+                                    Style="{StaticResource CompactSecondaryButtonStyle}" />
+
+                            <TextBlock Grid.Column="3"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource Brush.TextSecondary}"
+                                       Text="{Binding FilterRuleFilterSummary}" />
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Margin="0,0,0,8"
+                                DockPanel.Dock="Top"
+                                Orientation="Horizontal">
+                        <Button Margin="0,0,6,0"
+                                Padding="10,4"
+                                Command="{Binding AddFilterRuleCommand}"
+                                Content="Add" />
+                        <Button Margin="0,0,6,0"
+                                Padding="10,4"
+                                Command="{Binding DuplicateFilterRuleCommand}"
+                                Content="Duplicate" />
+                        <Button Margin="0,0,6,0"
+                                Padding="10,4"
+                                Command="{Binding RemoveFilterRuleCommand}"
+                                Content="Remove" />
+                        <Button Margin="0,0,6,0"
+                                Padding="10,4"
+                                Command="{Binding MoveFilterRuleUpCommand}"
+                                Content="Up" />
+                        <Button Margin="0,0,6,0"
+                                Padding="10,4"
+                                Command="{Binding MoveFilterRuleDownCommand}"
+                                Content="Down" />
+                        <Button Padding="10,4"
+                                Command="{Binding ClearFilterRulesCommand}"
+                                Content="Clear rules" />
+                    </StackPanel>
+
+                    <Border Padding="8"
+                            Background="{StaticResource Brush.SurfaceAlt}"
+                            BorderBrush="{StaticResource Brush.Border}"
+                            BorderThickness="1"
+                            CornerRadius="4">
+                        <Grid>
+                            <DataGrid MinHeight="160"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      HeadersVisibility="Column"
+                                      ItemsSource="{Binding VisibleFilterRules}"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                      SelectedItem="{Binding SelectedFilterRule, Mode=TwoWay}"
+                                      SelectionMode="Single"
+                                      SelectionUnit="FullRow">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Width="70"
+                                                            Header="Enabled">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid HorizontalAlignment="Stretch"
+                                                      VerticalAlignment="Stretch">
+                                                    <CheckBox HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center"
+                                                              IsChecked="{Binding IsEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              Style="{StaticResource DataGridEditableCheckBoxStyle}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Width="110"
+                                                            Header="Mode">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox DisplayMemberPath="DisplayName"
+                                                          ItemsSource="{Binding DataContext.FilterModeOptions, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                          SelectedValue="{Binding Mode, UpdateSourceTrigger=PropertyChanged}"
+                                                          SelectedValuePath="Value"
+                                                          Style="{StaticResource CompactComboBoxStyle}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Width="150"
+                                                            Header="Target">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox DisplayMemberPath="DisplayName"
+                                                          ItemsSource="{Binding DataContext.FilterTargetOptions, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                          SelectedValue="{Binding Target, UpdateSourceTrigger=PropertyChanged}"
+                                                          SelectedValuePath="Value"
+                                                          Style="{StaticResource CompactComboBoxStyle}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Width="120"
+                                                            Header="Match">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox DisplayMemberPath="DisplayName"
+                                                          ItemsSource="{Binding DataContext.RulePatternTypeOptions, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                          SelectedValue="{Binding PatternType, UpdateSourceTrigger=PropertyChanged}"
+                                                          SelectedValuePath="Value"
+                                                          Style="{StaticResource CompactComboBoxStyle}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTextColumn Width="180"
+                                                        Binding="{Binding Pattern, UpdateSourceTrigger=PropertyChanged}"
+                                                        Header="Pattern" />
+                                    <DataGridTextColumn Width="220"
+                                                        Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                                                        Header="Description" />
+                                    <DataGridTextColumn Width="240"
+                                                        Binding="{Binding ValidationMessage}"
+                                                        Header="Validation"
+                                                        IsReadOnly="True" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <TextBlock HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource Brush.TextSecondary}"
+                                       Text="No filter rules match the current search and filters."
+                                       Visibility="{Binding HasFilterRuleFilterEmptyState, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        </Grid>
+                    </Border>
+                </DockPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

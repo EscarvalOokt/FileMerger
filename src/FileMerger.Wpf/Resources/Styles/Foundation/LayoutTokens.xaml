@@ -1,0 +1,53 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--  Radius tokens  -->
+    <CornerRadius x:Key="Radius.None">0</CornerRadius>
+    <CornerRadius x:Key="Radius.XSmall">3</CornerRadius>
+    <CornerRadius x:Key="Radius.Small">4</CornerRadius>
+    <CornerRadius x:Key="Radius.Medium">6</CornerRadius>
+    <CornerRadius x:Key="Radius.Large">8</CornerRadius>
+    <CornerRadius x:Key="Radius.Pill">10</CornerRadius>
+    <CornerRadius x:Key="Radius.TabTop">6,6,0,0</CornerRadius>
+    <CornerRadius x:Key="Radius.MenuBottom">0,0,6,6</CornerRadius>
+    <CornerRadius x:Key="Radius.SplitLeft">5,0,0,5</CornerRadius>
+    <CornerRadius x:Key="Radius.SplitRight">0,5,5,0</CornerRadius>
+    <!--  Generic spacing tokens  -->
+    <Thickness x:Key="Spacing.None">0</Thickness>
+    <Thickness x:Key="Spacing.XSmall">2</Thickness>
+    <Thickness x:Key="Spacing.Small">4</Thickness>
+    <Thickness x:Key="Spacing.Medium">6</Thickness>
+    <Thickness x:Key="Spacing.Large">8</Thickness>
+    <Thickness x:Key="Spacing.XLarge">10</Thickness>
+    <!-- ReSharper disable once InconsistentNaming -->
+    <Thickness x:Key="Spacing.XXLarge">12</Thickness>
+    <!--  Common insets  -->
+    <Thickness x:Key="Inset.Control">10,6</Thickness>
+    <Thickness x:Key="Inset.ControlCompact">8,4</Thickness>
+    <Thickness x:Key="Inset.ControlWide">12,6</Thickness>
+    <Thickness x:Key="Inset.Card">12</Thickness>
+    <Thickness x:Key="Inset.CardCompact">8</Thickness>
+    <Thickness x:Key="Inset.Panel">10</Thickness>
+    <Thickness x:Key="Inset.DialogFooter">12,8</Thickness>
+    <Thickness x:Key="Inset.Badge">7,2</Thickness>
+    <Thickness x:Key="Inset.BadgeCompact">6,2</Thickness>
+    <Thickness x:Key="Inset.Menu">6</Thickness>
+    <Thickness x:Key="Inset.MenuItem">12,8</Thickness>
+    <Thickness x:Key="Inset.TopMenuItem">9,4</Thickness>
+    <!--  Common gaps  -->
+    <Thickness x:Key="Gap.RightSmall">0,0,6,0</Thickness>
+    <Thickness x:Key="Gap.Right">0,0,8,0</Thickness>
+    <Thickness x:Key="Gap.RightLarge">0,0,10,0</Thickness>
+    <Thickness x:Key="Gap.RightXLarge">0,0,12,0</Thickness>
+    <Thickness x:Key="Gap.BottomSmall">0,0,0,6</Thickness>
+    <Thickness x:Key="Gap.Bottom">0,0,0,8</Thickness>
+    <Thickness x:Key="Gap.BottomLarge">0,0,0,10</Thickness>
+    <Thickness x:Key="Gap.BottomXLarge">0,0,0,12</Thickness>
+    <Thickness x:Key="Gap.BottomSection">0,4,0,14</Thickness>
+    <Thickness x:Key="Gap.TopSmall">0,4,0,0</Thickness>
+    <Thickness x:Key="Gap.Top">0,8,0,0</Thickness>
+    <Thickness x:Key="Gap.TopLarge">0,10,0,0</Thickness>
+    <Thickness x:Key="Gap.HorizontalSmall">6,0</Thickness>
+    <Thickness x:Key="Gap.Horizontal">8,0</Thickness>
+    <Thickness x:Key="Gap.VerticalSmall">0,6</Thickness>
+    <Thickness x:Key="Gap.Vertical">0,8</Thickness>
+</ResourceDictionary>

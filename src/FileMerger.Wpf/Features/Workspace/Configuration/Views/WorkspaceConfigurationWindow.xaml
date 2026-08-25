@@ -1,0 +1,116 @@
+<windows:GuardedWindow x:Class="FileMerger.Wpf.Features.Workspace.Configuration.Views.WorkspaceConfigurationWindow"
+                       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                       xmlns:profileViews="clr-namespace:FileMerger.Wpf.Features.Profile.Views"
+                       xmlns:sessionViews="clr-namespace:FileMerger.Wpf.Features.Session.Views"
+                       xmlns:sourcesViews="clr-namespace:FileMerger.Wpf.Features.Sources.Views"
+                       xmlns:viewModels="clr-namespace:FileMerger.Wpf.Features.Workspace.Configuration.ViewModels"
+                       xmlns:windowing="clr-namespace:Escarval.Wpf.Windowing;assembly=Escarval.Wpf.Windowing"
+                       xmlns:windows="clr-namespace:FileMerger.Wpf.Shell.Windows"
+                       Title="Workspace Configuration"
+                       Width="980"
+                       Height="780"
+                       MinWidth="920"
+                       MinHeight="640"
+                       ResizeMode="CanResize"
+                       Style="{StaticResource WindowingFixedDialogWindowStyle}"
+                       WindowStartupLocation="CenterOwner"
+                       d:DataContext="{d:DesignInstance Type=viewModels:WorkspaceConfigurationDialogViewModel, IsDesignTimeCreatable=False}"
+                       mc:Ignorable="d">
+    <windowing:WindowFrameHost Title="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Title}"
+                               BodyPadding="0"
+                               Subtitle="Edit session, sources, and the workspace profile for the selected workspace.">
+        <windowing:WindowFrameHost.BodyContent>
+            <Grid Background="{StaticResource Brush.WindowBackground}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <ScrollViewer Grid.Row="0"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Style="{StaticResource FlatScrollViewerStyle}"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16">
+                        <sessionViews:SessionSettingsView
+                            BrowseOutputCommand="{Binding DataContext.BrowseOutputCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            DataContext="{Binding WorkingDocument.SessionSettings}" />
+
+                        <sourcesViews:SourcesPaneView Height="260"
+                                                      Margin="0,12,0,0"
+                                                      DataContext="{Binding WorkingDocument.SourcesPane}" />
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource SurfaceCompactCardBorderStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="0"
+                                           Margin="0,0,8,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource Brush.TextSecondary}"
+                                           Text="Profile name:" />
+                                <TextBox Grid.Row="0"
+                                         Grid.Column="1"
+                                         Style="{StaticResource CompactTextBoxStyle}"
+                                         Text="{Binding WorkingDocument.ProfileEditor.WorkingProfileName, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock Grid.Row="2"
+                                           Grid.Column="0"
+                                           Margin="0,0,8,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource Brush.TextSecondary}"
+                                           Text="Source:" />
+                                <TextBlock Grid.Row="2"
+                                           Grid.Column="1"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource Brush.TextSecondary}"
+                                           Text="{Binding ProfileSourceText}"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding ProfileSourceText}" />
+                            </Grid>
+                        </Border>
+
+                        <profileViews:ProfileEditorView Height="520"
+                                                        Margin="0,12,0,0"
+                                                        DataContext="{Binding WorkingDocument.ProfileEditor}" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <Border Grid.Row="1"
+                        Padding="{DynamicResource Inset.DialogFooter}"
+                        Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border}"
+                        BorderThickness="0,1,0,0">
+                    <StackPanel Style="{StaticResource DialogFooterPanelStyle}">
+                        <Button Width="86"
+                                Height="32"
+                                Margin="0,0,6,0"
+                                Command="{Binding CancelCommand}"
+                                Content="Cancel"
+                                IsCancel="True"
+                                Style="{StaticResource CompactSecondaryButtonStyle}" />
+
+                        <Button Width="86"
+                                Height="32"
+                                Command="{Binding OkCommand}"
+                                Content="OK"
+                                IsDefault="True"
+                                Style="{StaticResource PrimaryButtonStyle}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </windowing:WindowFrameHost.BodyContent>
+    </windowing:WindowFrameHost>
+</windows:GuardedWindow>

@@ -1,0 +1,291 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style x:Key="SecondaryButtonStyle"
+           TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+        <Setter Property="Background" Value="{StaticResource Brush.ButtonBackground}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.ButtonBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="{DynamicResource Inset.Control}" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="FocusRing"
+                                Margin="-3"
+                                BorderBrush="{StaticResource Brush.InputBorderFocus}"
+                                BorderThickness="2"
+                                CornerRadius="{DynamicResource Radius.Medium}"
+                                Opacity="0" />
+
+                        <Border x:Name="RootBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource Radius.Small}">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="FocusRing" Property="Opacity" Value="0" />
+                        </Trigger>
+
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="FocusRing" Property="Opacity" Value="0" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource Brush.ButtonHover}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.ButtonBorder}" />
+            </Trigger>
+
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{StaticResource Brush.ButtonPressed}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.ButtonBorder}" />
+            </Trigger>
+
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="{StaticResource Brush.SecondaryButtonDisabledBackground}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.SecondaryButtonDisabledBorder}" />
+                <Setter Property="Foreground" Value="{StaticResource Brush.SecondaryButtonDisabledForeground}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style BasedOn="{StaticResource SecondaryButtonStyle}"
+           TargetType="Button" />
+
+    <Style x:Key="PrimaryButtonStyle"
+           BasedOn="{StaticResource SecondaryButtonStyle}"
+           TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource Brush.PrimaryActionBackground}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.PrimaryActionBackground}" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.TextOnAccent}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource Brush.PrimaryActionHover}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.PrimaryActionHover}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{StaticResource Brush.PrimaryActionPressed}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.PrimaryActionPressed}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="{StaticResource Brush.ButtonDisabledBackground}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.ButtonDisabledBorder}" />
+                <Setter Property="Foreground" Value="{StaticResource Brush.TextMuted}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="BuildPreviewButtonStyle"
+           BasedOn="{StaticResource PrimaryButtonStyle}"
+           TargetType="Button">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding PreviewDirtyTracker.IsPreviewDirty}"
+                         Value="True">
+                <Setter Property="Background" Value="{StaticResource Brush.Warning}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.Warning}" />
+                <Setter Property="Foreground" Value="{StaticResource Brush.WarningForeground}" />
+            </DataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding PreviewDirtyTracker.IsPreviewDirty}" Value="True" />
+                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Background" Value="{StaticResource Brush.WarningBorder}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.WarningBorder}" />
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding PreviewDirtyTracker.IsPreviewDirty}" Value="True" />
+                    <Condition Binding="{Binding IsPressed, RelativeSource={RelativeSource Self}}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Background" Value="{StaticResource Brush.WarningSurface}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.WarningBorder}" />
+            </MultiDataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="CompactSecondaryButtonStyle"
+           BasedOn="{StaticResource SecondaryButtonStyle}"
+           TargetType="Button">
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="Padding" Value="{DynamicResource Inset.ControlCompact}" />
+    </Style>
+
+    <Style x:Key="CompactSelectableButtonStyle"
+           BasedOn="{StaticResource CompactSecondaryButtonStyle}"
+           TargetType="Button">
+        <Setter Property="MinWidth" Value="112" />
+        <Setter Property="Margin" Value="{DynamicResource Gap.Right}" />
+        <Setter Property="Padding" Value="{DynamicResource Inset.ControlWide}" />
+
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                         Value="True">
+                <Setter Property="Background" Value="{StaticResource Brush.InfoSurface}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.InfoBorder}" />
+                <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+            </DataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True" />
+                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Background" Value="{StaticResource Brush.Selection}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.InfoBorder}" />
+                <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True" />
+                    <Condition Binding="{Binding IsPressed, RelativeSource={RelativeSource Self}}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Background" Value="{StaticResource Brush.InfoBorder}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.InfoBorder}" />
+                <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+            </MultiDataTrigger>
+
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="{StaticResource Brush.SecondaryButtonDisabledBackground}" />
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.SecondaryButtonDisabledBorder}" />
+                <Setter Property="Foreground" Value="{StaticResource Brush.SecondaryButtonDisabledForeground}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="CompactSectionNavigationButtonStyle"
+           BasedOn="{StaticResource CompactSelectableButtonStyle}"
+           TargetType="Button">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Margin" Value="{DynamicResource Gap.BottomSmall}" />
+        <Setter Property="Padding" Value="{DynamicResource Inset.Control}" />
+    </Style>
+
+    <Style x:Key="IconButtonStyle"
+           BasedOn="{StaticResource CompactSecondaryButtonStyle}"
+           TargetType="Button">
+        <Setter Property="Width" Value="36" />
+        <Setter Property="MinWidth" Value="36" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+    </Style>
+
+    <Style x:Key="GlyphOnlyButtonStyle"
+           TargetType="{x:Type Button}">
+        <Setter Property="Width" Value="24" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Padding" Value="{DynamicResource Spacing.None}" />
+        <Setter Property="Margin" Value="{DynamicResource Spacing.None}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.TextSecondary}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="HitArea"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                        <ContentPresenter x:Name="ContentPresenter"
+                                          Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Opacity="0.75"
+                                          RecognizesAccessKey="True" />
+                    </Border>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+                            <Setter TargetName="ContentPresenter" Property="Opacity" Value="1" />
+                        </Trigger>
+
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="ContentPresenter" Property="Opacity" Value="0.65" />
+                        </Trigger>
+
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Cursor" Value="Arrow" />
+                            <Setter TargetName="ContentPresenter" Property="Opacity" Value="0.35" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="IconHostStyle"
+           TargetType="Grid">
+        <Setter Property="Width" Value="18" />
+        <Setter Property="Height" Value="18" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="IconPathStyle"
+           TargetType="Path">
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Stretch" Value="Uniform" />
+        <Setter Property="Fill" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+        <Setter Property="Stroke" Value="{x:Null}" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="IconPathLargeStyle"
+           BasedOn="{StaticResource IconPathStyle}"
+           TargetType="Path">
+        <Setter Property="Width" Value="17" />
+        <Setter Property="Height" Value="17" />
+    </Style>
+
+    <Style x:Key="IconPathAddStyle"
+           BasedOn="{StaticResource IconPathLargeStyle}"
+           TargetType="Path" />
+
+    <Style x:Key="IconPathAccentStyle"
+           BasedOn="{StaticResource IconPathStyle}"
+           TargetType="Path">
+        <Setter Property="Width" Value="18" />
+        <Setter Property="Height" Value="18" />
+    </Style>
+
+</ResourceDictionary>

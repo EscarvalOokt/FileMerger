@@ -1,0 +1,44 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style x:Key="PillBadgeStyle"
+           TargetType="Border">
+        <Setter Property="Padding" Value="{DynamicResource Inset.Badge}" />
+        <Setter Property="Margin" Value="0,0,6,6" />
+        <Setter Property="Background" Value="{StaticResource Brush.SurfaceAlt}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Pill}" />
+    </Style>
+    <Style x:Key="InfoPillBadgeStyle"
+           BasedOn="{StaticResource PillBadgeStyle}"
+           TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource Brush.InfoSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.InfoBorder}" />
+    </Style>
+    <Style x:Key="WarningPillBadgeStyle"
+           BasedOn="{StaticResource PillBadgeStyle}"
+           TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource Brush.WarningSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.WarningBorder}" />
+    </Style>
+    <Style x:Key="SuccessPillBadgeStyle"
+           BasedOn="{StaticResource PillBadgeStyle}"
+           TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource Brush.SuccessSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.SuccessBorder}" />
+    </Style>
+    <Style x:Key="ErrorPillBadgeStyle"
+           BasedOn="{StaticResource PillBadgeStyle}"
+           TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource Brush.ErrorSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.ErrorBorder}" />
+    </Style>
+    <Style x:Key="SeverityBadgeStyle"
+           TargetType="Border">
+        <Setter Property="Padding" Value="{DynamicResource Inset.BadgeCompact}" />
+        <Setter Property="Background" Value="{StaticResource Brush.SurfaceAlt}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Small}" />
+    </Style>
+</ResourceDictionary>

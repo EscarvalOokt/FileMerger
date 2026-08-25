@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="../Libs/Escarval.Wpf.Windowing/Escarval.Wpf.Windowing/Escarval.Wpf.Windowing.csproj"/>
+  <Project Path="tests/FileMerge.Tests/FileMerger.Tests.csproj"/>
+  <Project Path="src/FileMerger.Application/FileMerger.Application.csproj" Id="2c0d429d-b37f-45fe-a503-77a5cd808fdb"/>
+  <Project Path="src/FileMerger.Domain/FileMerger.Domain.csproj"/>
+  <Project Path="src/FileMerger.Infrastructure/FileMerger.Infrastructure.csproj"
+           Id="0770a285-6fbd-4275-b9cb-0c7784d25c92"/>
+  <Project Path="src/FileMerger.Wpf/FileMerger.Wpf.csproj" Id="bc6e09a8-2ebe-4845-b4c2-fa75aa9e6d6d"/>
+</Solution>

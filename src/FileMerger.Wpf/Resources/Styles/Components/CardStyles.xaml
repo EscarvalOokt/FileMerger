@@ -1,0 +1,55 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style x:Key="SurfaceCardBorderStyle"
+           TargetType="Border">
+        <Setter Property="Padding" Value="{DynamicResource Inset.Card}" />
+        <Setter Property="Background" Value="{StaticResource Brush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Medium}" />
+    </Style>
+    <Style x:Key="SurfaceAltCardBorderStyle"
+           BasedOn="{StaticResource SurfaceCardBorderStyle}"
+           TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource Brush.SurfaceAlt}" />
+    </Style>
+    <Style x:Key="SurfaceCompactCardBorderStyle"
+           BasedOn="{StaticResource SurfaceCardBorderStyle}"
+           TargetType="Border">
+        <Setter Property="Padding" Value="{DynamicResource Inset.CardCompact}" />
+    </Style>
+    <Style x:Key="SurfaceAltCompactCardBorderStyle"
+           BasedOn="{StaticResource SurfaceAltCardBorderStyle}"
+           TargetType="Border">
+        <Setter Property="Padding" Value="{DynamicResource Inset.CardCompact}" />
+    </Style>
+    <Style x:Key="SurfacePanelBorderStyle"
+           BasedOn="{StaticResource SurfaceCardBorderStyle}"
+           TargetType="Border">
+        <Setter Property="Padding" Value="{DynamicResource Inset.Panel}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Large}" />
+    </Style>
+    <Style x:Key="SurfaceAltPanelBorderStyle"
+           BasedOn="{StaticResource SurfacePanelBorderStyle}"
+           TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource Brush.SurfaceAlt}" />
+    </Style>
+    <Style x:Key="InfoCardBorderStyle"
+           BasedOn="{StaticResource SurfaceCardBorderStyle}"
+           TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource Brush.InfoSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.InfoBorder}" />
+    </Style>
+    <Style x:Key="WarningCardBorderStyle"
+           BasedOn="{StaticResource SurfaceCardBorderStyle}"
+           TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource Brush.WarningSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.WarningBorder}" />
+    </Style>
+    <Style x:Key="EmptyStateCardBorderStyle"
+           BasedOn="{StaticResource SurfaceAltCardBorderStyle}"
+           TargetType="Border">
+        <Setter Property="Padding" Value="14" />
+        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Small}" />
+    </Style>
+</ResourceDictionary>

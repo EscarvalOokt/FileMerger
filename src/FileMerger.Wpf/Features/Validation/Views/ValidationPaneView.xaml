@@ -1,0 +1,213 @@
+<UserControl x:Class="FileMerger.Wpf.Features.Validation.Views.ValidationPaneView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:viewModels="clr-namespace:FileMerger.Wpf.Features.Validation.ViewModels">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
+        <Style x:Key="ValidationDetailsToggleButtonStyle"
+               TargetType="{x:Type ToggleButton}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="6,3" />
+            <Setter Property="Foreground" Value="{StaticResource Brush.TextSecondary}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                        <Border x:Name="Root"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True">
+                            <StackPanel VerticalAlignment="Center"
+                                        Orientation="Horizontal">
+                                <TextBlock x:Name="Glyph"
+                                           Width="16"
+                                           VerticalAlignment="Center"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{TemplateBinding Foreground}"
+                                           Text="▸"
+                                           TextAlignment="Center" />
+                                <TextBlock Margin="6,0,0,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{TemplateBinding Foreground}"
+                                           Text="{TemplateBinding Content}" />
+                            </StackPanel>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background"
+                                        Value="{StaticResource Brush.SurfaceAlt}" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+                                <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+                            </Trigger>
+
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush"
+                                        Value="{StaticResource Brush.BorderStrong}" />
+                            </Trigger>
+
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Glyph" Property="Text" Value="▾" />
+                                <Setter TargetName="Root" Property="Background"
+                                        Value="{StaticResource Brush.SurfaceAlt}" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+                                <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+                            </Trigger>
+
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.55" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+    <DockPanel LastChildFill="True">
+        <StackPanel Margin="0,0,0,8"
+                    DockPanel.Dock="Top">
+            <TextBlock Style="{StaticResource SectionHeaderTextStyle}"
+                       Text="Issues from validation, reading and merge pipeline" />
+            <Grid Margin="0,2,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                    <TextBlock Foreground="{StaticResource Brush.TextSecondary}"
+                               Text="{Binding SummaryText}" />
+                    <TextBlock Margin="10,0,0,0"
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Text="{Binding CounterSummaryText}" />
+                </StackPanel>
+                <Border Grid.Column="1"
+                        Padding="8,2"
+                        Background="{StaticResource Brush.ErrorSurface}"
+                        BorderBrush="{StaticResource Brush.ErrorBorder}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Visibility="{Binding HasErrors, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock FontSize="11"
+                               FontWeight="SemiBold"
+                               Text="{Binding ErrorCount, StringFormat=Errors: {0}}" />
+                </Border>
+                <Border Grid.Column="3"
+                        Padding="8,2"
+                        Background="{StaticResource Brush.WarningSurface}"
+                        BorderBrush="{StaticResource Brush.WarningBorder}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Visibility="{Binding HasWarnings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock FontSize="11"
+                               FontWeight="SemiBold"
+                               Text="{Binding WarningCount, StringFormat=Warnings: {0}}" />
+                </Border>
+                <Border Grid.Column="5"
+                        Padding="8,2"
+                        Background="{StaticResource Brush.InfoSurface}"
+                        BorderBrush="{StaticResource Brush.InfoBorder}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Visibility="{Binding HasInfo, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock FontSize="11"
+                               FontWeight="SemiBold"
+                               Text="{Binding InfoCount, StringFormat=Info: {0}}" />
+                </Border>
+            </Grid>
+        </StackPanel>
+        <Grid Visibility="{Binding HasIssues, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <ToggleButton Grid.Row="0"
+                          Content="{Binding DetailsToggleText}"
+                          IsChecked="{Binding IsDetailsExpanded, Mode=TwoWay}"
+                          Style="{StaticResource ValidationDetailsToggleButtonStyle}" />
+
+            <DataGrid Grid.Row="1"
+                      MinHeight="120"
+                      MaxHeight="220"
+                      Margin="0,8,0,0"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      HeadersVisibility="Column"
+                      ItemsSource="{Binding Issues}"
+                      SelectionMode="Single"
+                      SelectionUnit="FullRow"
+                      Visibility="{Binding HasVisibleDetails, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Width="110"
+                                            Header="Severity">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate DataType="{x:Type viewModels:ValidationIssueItemViewModel}">
+                                <Border Padding="6,2"
+                                        BorderThickness="1"
+                                        CornerRadius="4">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{StaticResource Brush.SurfaceAlt}" />
+                                            <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SeverityStatus}"
+                                                             Value="Info">
+                                                    <Setter Property="Background"
+                                                            Value="{StaticResource Brush.InfoSurface}" />
+                                                    <Setter Property="BorderBrush"
+                                                            Value="{StaticResource Brush.InfoBorder}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SeverityStatus}"
+                                                             Value="Warning">
+                                                    <Setter Property="Background"
+                                                            Value="{StaticResource Brush.WarningSurface}" />
+                                                    <Setter Property="BorderBrush"
+                                                            Value="{StaticResource Brush.WarningBorder}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SeverityStatus}"
+                                                             Value="Error">
+                                                    <Setter Property="Background"
+                                                            Value="{StaticResource Brush.ErrorSurface}" />
+                                                    <Setter Property="BorderBrush"
+                                                            Value="{StaticResource Brush.ErrorBorder}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock FontWeight="SemiBold"
+                                               Text="{Binding Severity}" />
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTextColumn Width="160"
+                                        Binding="{Binding Code}"
+                                        ElementStyle="{StaticResource ValidationCodeCellStyle}"
+                                        Header="Code" />
+
+                    <DataGridTextColumn Width="*"
+                                        Binding="{Binding Message}"
+                                        ElementStyle="{StaticResource ValidationMessageCellStyle}"
+                                        Header="Message" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </DockPanel>
+</UserControl>

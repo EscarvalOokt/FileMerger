@@ -1,0 +1,81 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style x:Key="StatusBarBorderStyle"
+           TargetType="Border">
+        <Setter Property="Background"
+                Value="{StaticResource Brush.StatusBackground}" />
+        <Setter Property="BorderBrush"
+                Value="{StaticResource Brush.StatusBorder}" />
+        <Setter Property="BorderThickness"
+                Value="1" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding OperationStatus.StatusSeverity}"
+                         Value="Warning">
+                <Setter Property="Background"
+                        Value="{StaticResource Brush.WarningSurface}" />
+                <Setter Property="BorderBrush"
+                        Value="{StaticResource Brush.WarningBorder}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding OperationStatus.StatusSeverity}"
+                         Value="Error">
+                <Setter Property="Background"
+                        Value="{StaticResource Brush.ErrorSurface}" />
+                <Setter Property="BorderBrush"
+                        Value="{StaticResource Brush.ErrorBorder}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding OperationStatus.StatusSeverity}"
+                         Value="Success">
+                <Setter Property="Background"
+                        Value="{StaticResource Brush.SuccessSurface}" />
+                <Setter Property="BorderBrush"
+                        Value="{StaticResource Brush.SuccessBorder}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding OperationStatus.StatusSeverity}"
+                         Value="Info">
+                <Setter Property="Background"
+                        Value="{StaticResource Brush.InfoSurface}" />
+                <Setter Property="BorderBrush"
+                        Value="{StaticResource Brush.InfoBorder}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+    <Style x:Key="MainFooterBorderStyle"
+           TargetType="Border">
+        <Setter Property="Background"
+                Value="{StaticResource Brush.StatusBackground}" />
+        <Setter Property="BorderBrush"
+                Value="{StaticResource Brush.StatusBorder}" />
+        <Setter Property="BorderThickness"
+                Value="1" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding FooterSeverity}"
+                         Value="Warning">
+                <Setter Property="Background"
+                        Value="{StaticResource Brush.WarningSurface}" />
+                <Setter Property="BorderBrush"
+                        Value="{StaticResource Brush.WarningBorder}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding FooterSeverity}"
+                         Value="Error">
+                <Setter Property="Background"
+                        Value="{StaticResource Brush.ErrorSurface}" />
+                <Setter Property="BorderBrush"
+                        Value="{StaticResource Brush.ErrorBorder}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding FooterSeverity}"
+                         Value="Success">
+                <Setter Property="Background"
+                        Value="{StaticResource Brush.SuccessSurface}" />
+                <Setter Property="BorderBrush"
+                        Value="{StaticResource Brush.SuccessBorder}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding FooterSeverity}"
+                         Value="Info">
+                <Setter Property="Background"
+                        Value="{StaticResource Brush.InfoSurface}" />
+                <Setter Property="BorderBrush"
+                        Value="{StaticResource Brush.InfoBorder}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+</ResourceDictionary>

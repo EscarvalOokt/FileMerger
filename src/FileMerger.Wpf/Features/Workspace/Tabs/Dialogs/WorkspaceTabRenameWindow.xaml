@@ -1,0 +1,68 @@
+<windows:ShellDialogWindow x:Class="FileMerger.Wpf.Features.Workspace.Tabs.Dialogs.WorkspaceTabRenameWindow"
+                           xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                           xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                           xmlns:windowing="clr-namespace:Escarval.Wpf.Windowing;assembly=Escarval.Wpf.Windowing"
+                           xmlns:windows="clr-namespace:FileMerger.Wpf.Shell.Windows"
+                           Title="Rename Workspace Tab"
+                           Width="420"
+                           Height="220"
+                           MinWidth="380"
+                           MinHeight="210"
+                           Style="{StaticResource WindowingFixedDialogWindowStyle}"
+                           WindowStartupLocation="CenterOwner">
+    <windowing:WindowFrameHost Title="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Title}"
+                               BodyPadding="0"
+                               Subtitle="Update the visible workspace tab name.">
+        <windowing:WindowFrameHost.BodyContent>
+            <Grid Background="{StaticResource Brush.WindowBackground}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0"
+                      Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="6" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="4" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0"
+                               FontWeight="SemiBold"
+                               Text="Workspace tab name" />
+                    <TextBox Grid.Row="2"
+                             MinHeight="30"
+                             Loaded="WorkspaceNameTextBox_Loaded"
+                             Style="{StaticResource CompactTextBoxStyle}"
+                             Text="{Binding WorkspaceName, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Grid.Row="4"
+                               MinHeight="18"
+                               Foreground="{StaticResource Brush.Warning}"
+                               Text="{Binding ValidationMessage}" />
+                </Grid>
+                <Border Grid.Row="1"
+                        Padding="{DynamicResource Inset.DialogFooter}"
+                        Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border}"
+                        BorderThickness="0,1,0,0">
+                    <StackPanel Style="{StaticResource DialogFooterPanelStyle}">
+                        <Button Width="86"
+                                Height="30"
+                                Margin="0,0,6,0"
+                                Click="OkButton_Click"
+                                Content="OK"
+                                IsDefault="True"
+                                IsEnabled="{Binding CanConfirm}"
+                                Style="{StaticResource CompactSecondaryButtonStyle}" />
+                        <Button Width="86"
+                                Height="30"
+                                Content="Cancel"
+                                IsCancel="True"
+                                Style="{StaticResource CompactSecondaryButtonStyle}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </windowing:WindowFrameHost.BodyContent>
+    </windowing:WindowFrameHost>
+</windows:ShellDialogWindow>

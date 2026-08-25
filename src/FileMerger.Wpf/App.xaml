@@ -1,0 +1,14 @@
+<Application x:Class="FileMerger.Wpf.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary
+                    Source="pack://application:,,,/Escarval.Wpf.Windowing;component/Resources/WindowingResources.xaml" />
+                <ResourceDictionary Source="/Resources/Themes/Theme.Dark.xaml" />
+                <ResourceDictionary Source="/Resources/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

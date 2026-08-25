@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\FileMerger_Icon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\FileMerger_Icon.ico"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Libs\Escarval.Wpf.Windowing\Escarval.Wpf.Windowing\Escarval.Wpf.Windowing.csproj"/>
+    <ProjectReference Include="..\FileMerger.Application\FileMerger.Application.csproj"/>
+    <ProjectReference Include="..\FileMerger.Domain\FileMerger.Domain.csproj"/>
+    <ProjectReference Include="..\FileMerger.Infrastructure\FileMerger.Infrastructure.csproj"/>
+  </ItemGroup>
+
+</Project>

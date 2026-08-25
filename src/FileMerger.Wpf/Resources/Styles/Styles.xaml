@@ -1,0 +1,24 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/Resources/Icons/IconGeometries.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Foundation/LayoutTokens.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Foundation/BaseControlStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Foundation/TextStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Foundation/SeparatorStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Inputs/InputStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Buttons/ButtonStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Scrolling/ScrollBarStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Scrolling/ScrollViewerStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Indicators/ProgressStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Status/StatusStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Overlays/ToolTipStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Overlays/ContextMenuStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Overlays/DialogStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Data/ListBoxStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Data/DataGridStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Components/CardStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Components/BadgeStyles.xaml" />
+        <ResourceDictionary Source="/Resources/Styles/Components/FileStateBadgeStyles.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+</ResourceDictionary>
