@@ -97,8 +97,9 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
     {
         OutputMetadataOptions options = profile.GeneralOptions.OutputMetadataOptions;
 
-        return options.IncludeSourceExcludedFiles &&
-               options.SkippedFilesMetadataMode != SkippedFilesMetadataMode.None;
+        return options.SkippedFilesMetadataMode != SkippedFilesMetadataMode.None &&
+               options.EffectiveSkippedFileCategories.Includes(
+                   SkippedFileCategory.SourceExclusion);
     }
 
     private static Dictionary<string, FileTypeDefinition> BuildFileTypeLookup(

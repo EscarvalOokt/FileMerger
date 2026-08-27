@@ -5,23 +5,17 @@ namespace FileMerger.Tests.Wpf.Diagnostics;
 
 public sealed class CrashLogWriterTests : IDisposable
 {
-    private readonly string _tempRoot;
-
-    public CrashLogWriterTests()
-    {
-        _tempRoot = Path.Combine(
-            Path.GetTempPath(),
-            "FileMerger.Tests",
-            nameof(CrashLogWriterTests),
-            Guid.NewGuid().ToString("N"));
-    }
+    private readonly string _tempRoot = Path.Combine(
+        Path.GetTempPath(),
+        "FileMerger.Tests",
+        nameof(CrashLogWriterTests),
+        Guid.NewGuid().ToString("N"));
 
     [Fact]
     public void Write_Should_Create_Directory_And_Write_Formatted_Log()
     {
         CrashLogPathPolicy pathPolicy = new(_tempRoot);
-        CrashLogFormatter formatter = new();
-        CrashLogWriter writer = new(pathPolicy, formatter);
+        CrashLogWriter writer = new(pathPolicy);
 
         Exception exception = CreateExceptionWithStackTrace();
         CrashLogContext context = CreateContext("WriterTest");
@@ -46,8 +40,7 @@ public sealed class CrashLogWriterTests : IDisposable
     public void Write_Should_Return_Failure_When_Log_Cannot_Be_Written()
     {
         CrashLogPathPolicy pathPolicy = new("\0");
-        CrashLogFormatter formatter = new();
-        CrashLogWriter writer = new(pathPolicy, formatter);
+        CrashLogWriter writer = new(pathPolicy);
 
         Exception exception = new InvalidOperationException("Writer failure");
         CrashLogContext context = CreateContext("WriterFailureTest");

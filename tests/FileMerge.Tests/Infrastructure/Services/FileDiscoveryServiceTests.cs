@@ -1040,14 +1040,16 @@ public sealed class FileDiscoveryServiceTests : IDisposable
     private static MergeProfile CreateProfile(
         IReadOnlyCollection<FileTypeDefinition> fileTypes,
         bool includeSourceExcludedFiles,
-        SkippedFilesMetadataMode skippedFilesMetadataMode)
+        SkippedFilesMetadataMode skippedFilesMetadataMode,
+        SkippedFileCategorySelection? skippedFileCategories = null)
     {
         return new MergeProfile(
             name: "Test",
             generalOptions: new GeneralMergeOptions(
                 outputMetadataOptions: new OutputMetadataOptions(
                     SkippedFilesMetadataMode: skippedFilesMetadataMode,
-                    IncludeSourceExcludedFiles: includeSourceExcludedFiles)),
+                    IncludeSourceExcludedFiles: includeSourceExcludedFiles,
+                    SkippedFileCategories: skippedFileCategories)),
             csOptions: new CsMergeOptions(),
             fileTypes: fileTypes);
     }
@@ -1145,6 +1147,19 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         }
     }
 
+    private static SkippedFileCategorySelection CreateSkippedFileCategorySelection(
+        bool includeSourceExclusions)
+    {
+        return new SkippedFileCategorySelection(
+            IncludeDisabledFileTypes: true,
+            IncludeUnsupportedFiles: true,
+            IncludeProfileExclusions: true,
+            IncludeManualExclusions: true,
+            IncludeSourceExclusions: includeSourceExclusions,
+            IncludeProcessingFailures: true,
+            IncludeOther: true);
+    }
+
     [Fact]
     public void DiscoverFiles_Should_Not_Report_Source_Excluded_Files_By_Default()
     {
@@ -1193,6 +1208,89 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         FileDiscoveryResult result = service.DiscoverFiles([source], profile);
 
         Assert.Empty(result.InventoryFiles);
+        Assert.Empty(result.SourceExcludedFiles);
+    }
+
+    [Fact]
+    public void DiscoverFiles_Should_Report_Source_Excluded_Files_When_Explicit_Category_Selection_Includes_Them()
+    {
+        string root = CreateDirectory("project");
+        string excludedPath = CreateFile(root, "Excluded.cs", "class Excluded {}");
+
+        MergeSource source = new(
+            root,
+            MergeSourceType.Directory,
+            exclusions:
+            [
+                new MergeSourceExclusion("Excluded.cs", MergeSourceExclusionType.File)
+            ]);
+
+        FileDiscoveryService service = new();
+        MergeProfile profile = CreateProfile(
+            [new FileTypeDefinition(".cs", "C# source", FileKind.CSharp)],
+            includeSourceExcludedFiles: false,
+            skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed,
+            skippedFileCategories: CreateSkippedFileCategorySelection(
+                includeSourceExclusions: true));
+
+        FileDiscoveryResult result = service.DiscoverFiles([source], profile);
+
+        InputFile excluded = Assert.Single(result.SourceExcludedFiles);
+        Assert.Equal(excludedPath, excluded.FullPath);
+        Assert.Equal("source.exclude", excluded.SkipReason?.Code);
+    }
+
+    [Fact]
+    public void DiscoverFiles_Should_Not_Report_Source_Excluded_Files_When_Explicit_Category_Selection_Excludes_Them()
+    {
+        string root = CreateDirectory("project");
+        CreateFile(root, "Excluded.cs", "class Excluded {}");
+
+        MergeSource source = new(
+            root,
+            MergeSourceType.Directory,
+            exclusions:
+            [
+                new MergeSourceExclusion("Excluded.cs", MergeSourceExclusionType.File)
+            ]);
+
+        FileDiscoveryService service = new();
+        MergeProfile profile = CreateProfile(
+            [new FileTypeDefinition(".cs", "C# source", FileKind.CSharp)],
+            includeSourceExcludedFiles: true,
+            skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed,
+            skippedFileCategories: CreateSkippedFileCategorySelection(
+                includeSourceExclusions: false));
+
+        FileDiscoveryResult result = service.DiscoverFiles([source], profile);
+
+        Assert.Empty(result.SourceExcludedFiles);
+    }
+
+    [Fact]
+    public void DiscoverFiles_Should_Not_Report_Source_Excluded_Files_When_Mode_Is_None_Even_If_Explicit_Category_Selection_Includes_Them()
+    {
+        string root = CreateDirectory("project");
+        CreateFile(root, "Excluded.cs", "class Excluded {}");
+
+        MergeSource source = new(
+            root,
+            MergeSourceType.Directory,
+            exclusions:
+            [
+                new MergeSourceExclusion("Excluded.cs", MergeSourceExclusionType.File)
+            ]);
+
+        FileDiscoveryService service = new();
+        MergeProfile profile = CreateProfile(
+            [new FileTypeDefinition(".cs", "C# source", FileKind.CSharp)],
+            includeSourceExcludedFiles: false,
+            skippedFilesMetadataMode: SkippedFilesMetadataMode.None,
+            skippedFileCategories: CreateSkippedFileCategorySelection(
+                includeSourceExclusions: true));
+
+        FileDiscoveryResult result = service.DiscoverFiles([source], profile);
+
         Assert.Empty(result.SourceExcludedFiles);
     }
 

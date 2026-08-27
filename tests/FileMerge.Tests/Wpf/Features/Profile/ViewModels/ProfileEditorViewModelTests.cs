@@ -468,6 +468,240 @@ public sealed class ProfileEditorViewModelTests
     }
 
     [Fact]
+    public void ApplyAndCaptureProfile_Should_Preserve_Skipped_File_Category_Selection()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
+
+        editor.ApplyProfile(CreateProfile(
+            skippedFileCategories: selection));
+
+        WorkspaceProfileDto captured = editor.CaptureProfile();
+
+        Assert.Equal(selection, captured.SkippedFileCategories);
+    }
+
+    [Fact]
+    public void BuildProfile_Should_Use_Skipped_File_Category_Selection()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
+
+        editor.ApplyProfile(CreateProfile(
+            skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed,
+            includeSourceExcludedFiles: true,
+            skippedFileCategories: selection));
+
+        OutputMetadataOptions options =
+            editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
+
+        Assert.Equal(selection, options.SkippedFileCategories);
+        Assert.Equal(selection, options.EffectiveSkippedFileCategories);
+        Assert.True(options.IncludeSourceExcludedFiles);
+    }
+
+    [Fact]
+    public void ApplyAndCaptureProfile_Should_Preserve_Null_Legacy_Skipped_File_Category_Selection()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+
+        editor.ApplyProfile(CreateProfile(
+            includeSourceExcludedFiles: true,
+            skippedFileCategories: null));
+
+        WorkspaceProfileDto captured = editor.CaptureProfile();
+
+        Assert.Null(captured.SkippedFileCategories);
+        Assert.True(captured.IncludeSourceExcludedFiles);
+    }
+
+    [Fact]
+    public void BuildProfile_Should_Use_Legacy_Source_Exclusion_Fallback_When_Category_Selection_Is_Null()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+
+        editor.ApplyProfile(CreateProfile(
+            includeSourceExcludedFiles: true,
+            skippedFileCategories: null));
+
+        OutputMetadataOptions options =
+            editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
+
+        Assert.Null(options.SkippedFileCategories);
+        Assert.True(options.EffectiveSkippedFileCategories.IncludeDisabledFileTypes);
+        Assert.True(options.EffectiveSkippedFileCategories.IncludeUnsupportedFiles);
+        Assert.True(options.EffectiveSkippedFileCategories.IncludeProfileExclusions);
+        Assert.True(options.EffectiveSkippedFileCategories.IncludeManualExclusions);
+        Assert.True(options.EffectiveSkippedFileCategories.IncludeSourceExclusions);
+        Assert.True(options.EffectiveSkippedFileCategories.IncludeProcessingFailures);
+        Assert.True(options.EffectiveSkippedFileCategories.IncludeOther);
+    }
+
+    [Fact]
+    public void ApplyProfile_Should_Expose_Explicit_Skipped_File_Category_Selection()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
+
+        editor.ApplyProfile(CreateProfile(
+            includeSourceExcludedFiles: true,
+            skippedFileCategories: selection));
+
+        Assert.True(editor.IncludeDisabledFileTypesInSkippedMetadata);
+        Assert.False(editor.IncludeUnsupportedFilesInSkippedMetadata);
+        Assert.True(editor.IncludeProfileExclusionsInSkippedMetadata);
+        Assert.False(editor.IncludeManualExclusionsInSkippedMetadata);
+        Assert.False(editor.IncludeSourceExclusionsInSkippedMetadata);
+        Assert.True(editor.IncludeProcessingFailuresInSkippedMetadata);
+        Assert.False(editor.IncludeOtherInSkippedMetadata);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ApplyProfile_Should_Expose_Legacy_Effective_Skipped_File_Category_Selection(
+        bool includeSourceExcludedFiles)
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+
+        editor.ApplyProfile(CreateProfile(
+            includeSourceExcludedFiles: includeSourceExcludedFiles,
+            skippedFileCategories: null));
+
+        Assert.True(editor.IncludeDisabledFileTypesInSkippedMetadata);
+        Assert.True(editor.IncludeUnsupportedFilesInSkippedMetadata);
+        Assert.True(editor.IncludeProfileExclusionsInSkippedMetadata);
+        Assert.True(editor.IncludeManualExclusionsInSkippedMetadata);
+        Assert.Equal(includeSourceExcludedFiles, editor.IncludeSourceExclusionsInSkippedMetadata);
+        Assert.True(editor.IncludeProcessingFailuresInSkippedMetadata);
+        Assert.True(editor.IncludeOtherInSkippedMetadata);
+    }
+
+    [Fact]
+    public void Setting_Skipped_Category_To_Current_Effective_Value_Should_Not_Materialize_Legacy_Selection()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        editor.ApplyProfile(CreateProfile(
+            includeSourceExcludedFiles: false,
+            skippedFileCategories: null));
+
+        editor.IncludeUnsupportedFilesInSkippedMetadata = true;
+
+        WorkspaceProfileDto captured = editor.CaptureProfile();
+
+        Assert.Null(captured.SkippedFileCategories);
+    }
+
+    [Fact]
+    public void Changing_Skipped_Category_Should_Materialize_Explicit_Selection_From_Legacy_Effective_State()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        editor.ApplyProfile(CreateProfile(
+            includeSourceExcludedFiles: true,
+            skippedFileCategories: null));
+
+        editor.IncludeUnsupportedFilesInSkippedMetadata = false;
+
+        WorkspaceProfileDto captured = editor.CaptureProfile();
+        OutputMetadataOptions runtimeOptions =
+            editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
+
+        Assert.NotNull(captured.SkippedFileCategories);
+        Assert.True(captured.SkippedFileCategories.IncludeDisabledFileTypes);
+        Assert.False(captured.SkippedFileCategories.IncludeUnsupportedFiles);
+        Assert.True(captured.SkippedFileCategories.IncludeProfileExclusions);
+        Assert.True(captured.SkippedFileCategories.IncludeManualExclusions);
+        Assert.True(captured.SkippedFileCategories.IncludeSourceExclusions);
+        Assert.True(captured.SkippedFileCategories.IncludeProcessingFailures);
+        Assert.True(captured.SkippedFileCategories.IncludeOther);
+        Assert.Equal(captured.SkippedFileCategories, runtimeOptions.SkippedFileCategories);
+    }
+
+    [Fact]
+    public void Explicit_Source_Category_Should_Take_Precedence_Over_Legacy_Source_Option_In_Editor()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
+
+        editor.ApplyProfile(CreateProfile(
+            includeSourceExcludedFiles: true,
+            skippedFileCategories: selection));
+
+        Assert.True(editor.IncludeSourceExcludedFiles);
+        Assert.False(editor.IncludeSourceExclusionsInSkippedMetadata);
+    }
+
+    [Fact]
+    public void Changing_Source_Category_Should_Not_Overwrite_Legacy_Source_Option()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        editor.ApplyProfile(CreateProfile(
+            includeSourceExcludedFiles: false,
+            skippedFileCategories: null));
+
+        editor.IncludeSourceExclusionsInSkippedMetadata = true;
+
+        WorkspaceProfileDto captured = editor.CaptureProfile();
+
+        Assert.False(captured.IncludeSourceExcludedFiles);
+        Assert.NotNull(captured.SkippedFileCategories);
+        Assert.True(captured.SkippedFileCategories.IncludeSourceExclusions);
+    }
+
+    [Fact]
+    public void BuildPreviewProfileSnapshot_Should_Change_When_Skipped_File_Category_Changes()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+
+        PreviewProfileStateSnapshot before = editor.BuildPreviewProfileSnapshot();
+
+        editor.IncludeUnsupportedFilesInSkippedMetadata = false;
+
+        PreviewProfileStateSnapshot after = editor.BuildPreviewProfileSnapshot();
+
+        Assert.NotEqual(before, after);
+    }
+
+    [Fact]
+    public void BuildPreviewProfileSnapshot_Should_Treat_Legacy_And_Equivalent_Explicit_Category_Selections_As_Equal()
+    {
+        ProfileEditorViewModel legacyEditor = CreateEditor();
+        ProfileEditorViewModel explicitEditor = CreateEditor();
+        var equivalentSelection =
+            SkippedFileCategorySelection.ForCurrentBehavior(includeSourceExcludedFiles: true);
+
+        legacyEditor.ApplyProfile(CreateProfile(
+            includeSourceExcludedFiles: true,
+            skippedFileCategories: null));
+        explicitEditor.ApplyProfile(CreateProfile(
+            includeSourceExcludedFiles: true,
+            skippedFileCategories: equivalentSelection));
+
+        Assert.Equal(
+            legacyEditor.BuildPreviewProfileSnapshot(),
+            explicitEditor.BuildPreviewProfileSnapshot());
+    }
+
+    [Fact]
+    public void BuildPreviewProfileSnapshot_Should_Return_To_Equivalent_State_When_Category_Edit_Is_Reverted()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        editor.ApplyProfile(CreateProfile(
+            includeSourceExcludedFiles: false,
+            skippedFileCategories: null));
+
+        PreviewProfileStateSnapshot before = editor.BuildPreviewProfileSnapshot();
+
+        editor.IncludeUnsupportedFilesInSkippedMetadata = false;
+        editor.IncludeUnsupportedFilesInSkippedMetadata = true;
+
+        PreviewProfileStateSnapshot after = editor.BuildPreviewProfileSnapshot();
+
+        Assert.Equal(before, after);
+        Assert.NotNull(editor.CaptureProfile().SkippedFileCategories);
+    }
+
+    [Fact]
     public void BuildPreviewProfileSnapshot_Should_Change_When_Output_Metadata_Toggle_Changes()
     {
         ProfileEditorViewModel editor = CreateEditor();
@@ -886,7 +1120,8 @@ public sealed class ProfileEditorViewModelTests
         bool includeOutputPathMetadata = true,
         bool includeFileSummaryMetadata = true,
         SkippedFilesMetadataMode skippedFilesMetadataMode = SkippedFilesMetadataMode.None,
-        bool includeSourceExcludedFiles = false)
+        bool includeSourceExcludedFiles = false,
+        SkippedFileCategorySelection? skippedFileCategories = null)
     {
         fileTypes ??=
         [
@@ -927,7 +1162,20 @@ public sealed class ProfileEditorViewModelTests
             IncludeOutputPathMetadata: includeOutputPathMetadata,
             IncludeFileSummaryMetadata: includeFileSummaryMetadata,
             SkippedFilesMetadataMode: skippedFilesMetadataMode,
-            IncludeSourceExcludedFiles: includeSourceExcludedFiles);
+            IncludeSourceExcludedFiles: includeSourceExcludedFiles,
+            SkippedFileCategories: skippedFileCategories);
+    }
+
+    private static SkippedFileCategorySelection CreateSkippedFileCategorySelection()
+    {
+        return new SkippedFileCategorySelection(
+            IncludeDisabledFileTypes: true,
+            IncludeUnsupportedFiles: false,
+            IncludeProfileExclusions: true,
+            IncludeManualExclusions: false,
+            IncludeSourceExclusions: false,
+            IncludeProcessingFailures: true,
+            IncludeOther: false);
     }
 
     private static WorkspaceFileFilterRuleDto ExcludeDirectoryRule(

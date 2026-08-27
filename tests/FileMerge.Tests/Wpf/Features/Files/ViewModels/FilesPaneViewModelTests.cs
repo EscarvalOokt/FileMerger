@@ -852,6 +852,38 @@ public sealed class FilesPaneViewModelTests
     }
 
     [Fact]
+    public void ApplyFiles_Should_Not_Treat_ProcessingFailure_As_ManualOverride()
+    {
+        FilesPaneViewModel viewModel = CreateViewModel();
+
+        var automaticFile = new InputFile(
+            fullPath: @"D:\Project\Broken.cs",
+            relativePath: "Broken.cs",
+            extension: ".cs",
+            kind: FileKind.CSharp);
+
+        InputFile processingFailedFile = automaticFile.Exclude(new SkipReason(
+            "file.read.failed",
+            "Failed to read 'Broken.cs': Access denied."));
+
+        viewModel.ApplyFiles([automaticFile], [processingFailedFile]);
+
+        InputFileItemViewModel item = Assert.Single(viewModel.Files);
+
+        Assert.True(item.IsMergeCandidate);
+        Assert.True(item.CanOverrideInclusion);
+        Assert.False(item.IsIncluded);
+        Assert.False(item.HasManualOverride);
+        Assert.True(item.HasSkippedStatus);
+        Assert.Equal("file.read.failed", item.SkipReasonCode);
+        Assert.Equal(
+            "Failed to read 'Broken.cs': Access denied.",
+            item.SkipReason);
+        Assert.Empty(viewModel.BuildOverrides());
+        Assert.Empty(viewModel.CaptureOverridesDictionary());
+    }
+
+    [Fact]
     public void ApplyFiles_Should_Discard_Persisted_Override_For_NonCandidate_File()
     {
         FilesPaneViewModel viewModel = CreateViewModel();

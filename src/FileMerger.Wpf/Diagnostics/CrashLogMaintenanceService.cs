@@ -59,8 +59,7 @@ public sealed class CrashLogMaintenanceService : ICrashLogMaintenanceService
                     files.Add(new CrashLogFileInfo(
                         Path: file.FullName,
                         FileName: file.Name,
-                        LastWriteTimeUtc: file.LastWriteTimeUtc,
-                        SizeInBytes: file.Length));
+                        LastWriteTimeUtc: file.LastWriteTimeUtc));
                 }
                 catch (FileNotFoundException)
                 {

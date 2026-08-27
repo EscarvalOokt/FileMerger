@@ -21,7 +21,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
     private const string DocumentsGroupKey = "documents";
     private const string OtherGroupKey = "other";
 
-    private static readonly IReadOnlyList<FileTypeGroupDefinition> FileTypeGroupDefinitions =
+    private static readonly IReadOnlyList<FileTypeGroupDefinition> _fileTypeGroupDefinitions =
     [
         new(
             SourceCodeGroupKey,
@@ -59,7 +59,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             "File types that are not part of the built-in grouping rules.")
     ];
 
-    private static readonly HashSet<string> SourceCodeExtensions = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _sourceCodeExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".cs",
         ".js",
@@ -72,7 +72,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         ".cts"
     };
 
-    private static readonly HashSet<string> WebAndStylesExtensions = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _webAndStylesExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".html",
         ".htm",
@@ -84,7 +84,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         ".gql"
     };
 
-    private static readonly HashSet<string> DataAndConfigurationExtensions = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _dataAndConfigurationExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".xml",
         ".json",
@@ -100,7 +100,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         ".lock"
     };
 
-    private static readonly HashSet<string> DotNetExtensions = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _dotNetExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".xaml",
         ".csproj",
@@ -115,7 +115,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         ".ruleset"
     };
 
-    private static readonly HashSet<string> UnityExtensions = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _unityExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".asmdef",
         ".asmref",
@@ -142,7 +142,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         ".vfx"
     };
 
-    private static readonly HashSet<string> DocumentExtensions = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _documentExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".txt",
         ".md"
@@ -191,6 +191,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
     private bool _includeFileSummaryMetadata = true;
     private bool _includeSourceExcludedFiles;
     private SkippedFilesMetadataMode _skippedFilesMetadataMode;
+    private SkippedFileCategorySelection? _skippedFileCategories;
 
     public ProfileEditorViewModel(IFileTypeCatalog fileTypeCatalog)
     {
@@ -307,8 +308,10 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     public ProfileFilterRuleFiltersViewModel FilterRuleFilters { get; }
 
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public IReadOnlyCollection<EnumOptionViewModel<ProfileFileTypeFilterMode>> FileTypeFilterModeOptions { get; }
 
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public IReadOnlyCollection<EnumOptionViewModel<ProfileFilterRuleStatusFilterMode>> FilterRuleStatusFilterOptions { get; }
 
     public bool HasVisibleFileTypeGroups
@@ -364,10 +367,13 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         }
     }
 
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public IReadOnlyCollection<EnumOptionViewModel<FilterMode>> FilterModeOptions { get; }
 
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public IReadOnlyCollection<EnumOptionViewModel<FilterTarget>> FilterTargetOptions { get; }
 
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public IReadOnlyCollection<EnumOptionViewModel<RulePatternType>> RulePatternTypeOptions { get; }
 
     public ProfileEditorSection SelectedSection
@@ -401,7 +407,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     public bool IsFilterRulesSectionSelected => SelectedSection == ProfileEditorSection.FilterRules;
 
-    public bool ShowCSharpOptions => FileTypes.Any(x => x.Kind == FileKind.CSharp && x.IsEnabled);
+    public bool ShowCSharpOptions => FileTypes.Any(x => x is { Kind: FileKind.CSharp, IsEnabled: true });
 
     public bool HasFilterRules => FilterRules.Count > 0;
 
@@ -514,7 +520,112 @@ public sealed class ProfileEditorViewModel : ViewModelBase
     public bool IncludeSourceExcludedFiles
     {
         get => _includeSourceExcludedFiles;
-        set => SetProperty(ref _includeSourceExcludedFiles, value);
+        set
+        {
+            if (!SetProperty(ref _includeSourceExcludedFiles, value))
+                return;
+
+            if (_skippedFileCategories is null)
+                OnPropertyChanged(nameof(IncludeSourceExclusionsInSkippedMetadata));
+        }
+    }
+
+    public bool IncludeDisabledFileTypesInSkippedMetadata
+    {
+        get => EffectiveSkippedFileCategories.IncludeDisabledFileTypes;
+        set
+        {
+            SkippedFileCategorySelection selection = EffectiveSkippedFileCategories;
+            if (selection.IncludeDisabledFileTypes == value)
+                return;
+
+            _skippedFileCategories = selection with { IncludeDisabledFileTypes = value };
+            OnPropertyChanged();
+        }
+    }
+
+    public bool IncludeUnsupportedFilesInSkippedMetadata
+    {
+        get => EffectiveSkippedFileCategories.IncludeUnsupportedFiles;
+        set
+        {
+            SkippedFileCategorySelection selection = EffectiveSkippedFileCategories;
+            if (selection.IncludeUnsupportedFiles == value)
+                return;
+
+            _skippedFileCategories = selection with { IncludeUnsupportedFiles = value };
+            OnPropertyChanged();
+        }
+    }
+
+    public bool IncludeProfileExclusionsInSkippedMetadata
+    {
+        get => EffectiveSkippedFileCategories.IncludeProfileExclusions;
+        set
+        {
+            SkippedFileCategorySelection selection = EffectiveSkippedFileCategories;
+            if (selection.IncludeProfileExclusions == value)
+                return;
+
+            _skippedFileCategories = selection with { IncludeProfileExclusions = value };
+            OnPropertyChanged();
+        }
+    }
+
+    public bool IncludeManualExclusionsInSkippedMetadata
+    {
+        get => EffectiveSkippedFileCategories.IncludeManualExclusions;
+        set
+        {
+            SkippedFileCategorySelection selection = EffectiveSkippedFileCategories;
+            if (selection.IncludeManualExclusions == value)
+                return;
+
+            _skippedFileCategories = selection with { IncludeManualExclusions = value };
+            OnPropertyChanged();
+        }
+    }
+
+    public bool IncludeSourceExclusionsInSkippedMetadata
+    {
+        get => EffectiveSkippedFileCategories.IncludeSourceExclusions;
+        set
+        {
+            SkippedFileCategorySelection selection = EffectiveSkippedFileCategories;
+            if (selection.IncludeSourceExclusions == value)
+                return;
+
+            _skippedFileCategories = selection with { IncludeSourceExclusions = value };
+            OnPropertyChanged();
+        }
+    }
+
+    public bool IncludeProcessingFailuresInSkippedMetadata
+    {
+        get => EffectiveSkippedFileCategories.IncludeProcessingFailures;
+        set
+        {
+            SkippedFileCategorySelection selection = EffectiveSkippedFileCategories;
+            if (selection.IncludeProcessingFailures == value)
+                return;
+
+            _skippedFileCategories = selection with { IncludeProcessingFailures = value };
+            OnPropertyChanged();
+        }
+    }
+
+    public bool IncludeOtherInSkippedMetadata
+    {
+        get => EffectiveSkippedFileCategories.IncludeOther;
+        set
+        {
+            SkippedFileCategorySelection selection = EffectiveSkippedFileCategories;
+            if (selection.IncludeOther == value)
+                return;
+
+            _skippedFileCategories = selection with { IncludeOther = value };
+            OnPropertyChanged();
+        }
     }
 
     public SkippedFilesMetadataMode SkippedFilesMetadataMode
@@ -583,7 +694,8 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             IncludeOutputPathMetadata: IncludeOutputPathMetadata,
             IncludeFileSummaryMetadata: IncludeFileSummaryMetadata,
             SkippedFilesMetadataMode: SkippedFilesMetadataMode,
-            IncludeSourceExcludedFiles: IncludeSourceExcludedFiles);
+            IncludeSourceExcludedFiles: IncludeSourceExcludedFiles,
+            SkippedFileCategories: _skippedFileCategories);
     }
 
     public void ApplyProfile(WorkspaceProfileDto profile)
@@ -623,6 +735,8 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         IncludeFileSummaryMetadata = profile.IncludeFileSummaryMetadata;
         IncludeSourceExcludedFiles = profile.IncludeSourceExcludedFiles;
         SkippedFilesMetadataMode = profile.SkippedFilesMetadataMode;
+        _skippedFileCategories = profile.SkippedFileCategories;
+        NotifySkippedFileCategoryPropertiesChanged();
     }
 
     public MergeProfile BuildProfile()
@@ -650,7 +764,8 @@ public sealed class ProfileEditorViewModel : ViewModelBase
                     IncludeOutputPath: IncludeOutputPathMetadata,
                     IncludeFileSummary: IncludeFileSummaryMetadata,
                     SkippedFilesMetadataMode: SkippedFilesMetadataMode,
-                    IncludeSourceExcludedFiles: IncludeSourceExcludedFiles)),
+                    IncludeSourceExcludedFiles: IncludeSourceExcludedFiles,
+                    SkippedFileCategories: _skippedFileCategories)),
             csOptions: new CsMergeOptions(
                 RemoveUsingDirectives: RemoveUsingDirectives),
             fileTypes: BuildFileTypes(),
@@ -695,7 +810,23 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             includeOutputPathMetadata: IncludeOutputPathMetadata,
             includeFileSummaryMetadata: IncludeFileSummaryMetadata,
             skippedFilesMetadataMode: SkippedFilesMetadataMode,
-            includeSourceExcludedFiles: IncludeSourceExcludedFiles);
+            includeSourceExcludedFiles: IncludeSourceExcludedFiles,
+            skippedFileCategories: EffectiveSkippedFileCategories);
+    }
+
+    private SkippedFileCategorySelection EffectiveSkippedFileCategories =>
+        _skippedFileCategories ??
+        SkippedFileCategorySelection.ForCurrentBehavior(IncludeSourceExcludedFiles);
+
+    private void NotifySkippedFileCategoryPropertiesChanged()
+    {
+        OnPropertyChanged(nameof(IncludeDisabledFileTypesInSkippedMetadata));
+        OnPropertyChanged(nameof(IncludeUnsupportedFilesInSkippedMetadata));
+        OnPropertyChanged(nameof(IncludeProfileExclusionsInSkippedMetadata));
+        OnPropertyChanged(nameof(IncludeManualExclusionsInSkippedMetadata));
+        OnPropertyChanged(nameof(IncludeSourceExclusionsInSkippedMetadata));
+        OnPropertyChanged(nameof(IncludeProcessingFailuresInSkippedMetadata));
+        OnPropertyChanged(nameof(IncludeOtherInSkippedMetadata));
     }
 
     private void SelectSection(ProfileEditorSection section)
@@ -969,7 +1100,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
                     x => x.ToList(),
                     StringComparer.OrdinalIgnoreCase);
 
-        foreach (FileTypeGroupDefinition definition in FileTypeGroupDefinitions)
+        foreach (FileTypeGroupDefinition definition in _fileTypeGroupDefinitions)
         {
             if (!fileTypesByGroup.TryGetValue(definition.Key, out List<FileTypeOptionViewModel>? groupFileTypes))
                 continue;
@@ -1040,22 +1171,22 @@ public sealed class ProfileEditorViewModel : ViewModelBase
     {
         string extension = fileType.Extension.Trim();
 
-        if (SourceCodeExtensions.Contains(extension))
+        if (_sourceCodeExtensions.Contains(extension))
             return SourceCodeGroupKey;
 
-        if (WebAndStylesExtensions.Contains(extension))
+        if (_webAndStylesExtensions.Contains(extension))
             return WebAndStylesGroupKey;
 
-        if (DataAndConfigurationExtensions.Contains(extension))
+        if (_dataAndConfigurationExtensions.Contains(extension))
             return DataAndConfigurationGroupKey;
 
-        if (DotNetExtensions.Contains(extension))
+        if (_dotNetExtensions.Contains(extension))
             return DotNetGroupKey;
 
-        if (UnityExtensions.Contains(extension))
+        if (_unityExtensions.Contains(extension))
             return UnityGroupKey;
 
-        if (DocumentExtensions.Contains(extension))
+        if (_documentExtensions.Contains(extension))
             return DocumentsGroupKey;
 
         return OtherGroupKey;
@@ -1188,7 +1319,8 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             IncludeOutputPathMetadata: profile.GeneralOptions.OutputMetadataOptions.IncludeOutputPath,
             IncludeFileSummaryMetadata: profile.GeneralOptions.OutputMetadataOptions.IncludeFileSummary,
             SkippedFilesMetadataMode: profile.GeneralOptions.OutputMetadataOptions.SkippedFilesMetadataMode,
-            IncludeSourceExcludedFiles: profile.GeneralOptions.OutputMetadataOptions.IncludeSourceExcludedFiles);
+            IncludeSourceExcludedFiles: profile.GeneralOptions.OutputMetadataOptions.IncludeSourceExcludedFiles,
+            SkippedFileCategories: profile.GeneralOptions.OutputMetadataOptions.SkippedFileCategories);
     }
 
     private static void AddFilterRuleIfMissing(

@@ -434,8 +434,7 @@ public sealed class PreferencesDialogViewModelTests
             crashLogs.Files.Add(new CrashLogFileInfo(
                 Path: $@"C:\FileMerger\CrashLogs\crash-{i}.log",
                 FileName: $"crash-{i}.log",
-                LastWriteTimeUtc: DateTime.UtcNow.AddMinutes(-i),
-                SizeInBytes: 100 + i));
+                LastWriteTimeUtc: DateTime.UtcNow.AddMinutes(-i)));
         }
     }
 

@@ -17,8 +17,7 @@ public sealed class CrashDiagnosticsService
     public static CrashDiagnosticsService CreateDefault()
     {
         CrashLogPathPolicy pathPolicy = new();
-        CrashLogFormatter formatter = new();
-        CrashLogWriter writer = new(pathPolicy, formatter);
+        CrashLogWriter writer = new(pathPolicy);
 
         return new CrashDiagnosticsService(writer);
     }

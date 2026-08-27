@@ -1,6 +1,8 @@
 using System.IO;
 using System.Text;
 
+// ReSharper disable InconsistentNaming
+
 namespace FileMerger.Wpf.Diagnostics;
 
 public sealed class CrashLogWriter
@@ -8,17 +10,11 @@ public sealed class CrashLogWriter
     private static readonly UTF8Encoding Utf8WithoutBom = new(encoderShouldEmitUTF8Identifier: false);
 
     private readonly CrashLogPathPolicy _pathPolicy;
-    private readonly CrashLogFormatter _formatter;
 
-    public CrashLogWriter(
-        CrashLogPathPolicy pathPolicy,
-        CrashLogFormatter formatter)
+    public CrashLogWriter(CrashLogPathPolicy pathPolicy)
     {
         ArgumentNullException.ThrowIfNull(pathPolicy);
-        ArgumentNullException.ThrowIfNull(formatter);
-
         _pathPolicy = pathPolicy;
-        _formatter = formatter;
     }
 
     public CrashLogWriteResult Write(Exception exception, CrashLogContext context)

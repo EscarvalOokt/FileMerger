@@ -372,6 +372,8 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
         JsonWorkspacePersistenceService service = new();
         string path = Path.Combine(_tempRoot, "workspace.filemerger.workspace.json");
 
+        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
+
         WorkspaceDto workspace = CreateWorkspace(
             sources: [],
             profile: CreateProfile(
@@ -380,7 +382,8 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
                 includeOutputPathMetadata: false,
                 includeFileSummaryMetadata: false,
                 skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed,
-                includeSourceExcludedFiles: true));
+                includeSourceExcludedFiles: true,
+                skippedFileCategories: selection));
 
         await service.SaveWorkspaceAsync(workspace, path);
 
@@ -392,6 +395,7 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
         Assert.Contains("\"includeFileSummaryMetadata\"", json);
         Assert.Contains("\"skippedFilesMetadataMode\"", json);
         Assert.Contains("\"includeSourceExcludedFiles\"", json);
+        Assert.Contains("\"skippedFileCategories\"", json);
 
         using var document = JsonDocument.Parse(json);
 
@@ -409,6 +413,16 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
         Assert.Equal(
             (int)SkippedFilesMetadataMode.Detailed,
             profileElement.GetProperty("skippedFilesMetadataMode").GetInt32());
+
+        JsonElement categories = profileElement.GetProperty("skippedFileCategories");
+
+        Assert.Equal(selection.IncludeDisabledFileTypes, categories.GetProperty("includeDisabledFileTypes").GetBoolean());
+        Assert.Equal(selection.IncludeUnsupportedFiles, categories.GetProperty("includeUnsupportedFiles").GetBoolean());
+        Assert.Equal(selection.IncludeProfileExclusions, categories.GetProperty("includeProfileExclusions").GetBoolean());
+        Assert.Equal(selection.IncludeManualExclusions, categories.GetProperty("includeManualExclusions").GetBoolean());
+        Assert.Equal(selection.IncludeSourceExclusions, categories.GetProperty("includeSourceExclusions").GetBoolean());
+        Assert.Equal(selection.IncludeProcessingFailures, categories.GetProperty("includeProcessingFailures").GetBoolean());
+        Assert.Equal(selection.IncludeOther, categories.GetProperty("includeOther").GetBoolean());
     }
 
     [Fact]
@@ -416,6 +430,8 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
     {
         JsonWorkspacePersistenceService service = new();
         string path = Path.Combine(_tempRoot, "workspace.filemerger.workspace.json");
+
+        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
 
         WorkspaceDto workspace = CreateWorkspace(
             sources: [],
@@ -425,7 +441,8 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
                 includeOutputPathMetadata: false,
                 includeFileSummaryMetadata: false,
                 skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple,
-                includeSourceExcludedFiles: true));
+                includeSourceExcludedFiles: true,
+                skippedFileCategories: selection));
 
         string json = JsonSerializer.Serialize(workspace, CreateJsonOptions());
         await File.WriteAllTextAsync(path, json);
@@ -440,6 +457,54 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
         Assert.False(profile.IncludeFileSummaryMetadata);
         Assert.True(profile.IncludeSourceExcludedFiles);
         Assert.Equal(SkippedFilesMetadataMode.Simple, profile.SkippedFilesMetadataMode);
+        Assert.Equal(selection, profile.SkippedFileCategories);
+    }
+
+    [Fact]
+    public async Task SaveAndLoadWorkspaceAsync_Should_RoundTrip_Skipped_File_Category_Selection()
+    {
+        JsonWorkspacePersistenceService service = new();
+        string path = Path.Combine(_tempRoot, "workspace.filemerger.workspace.json");
+        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
+
+        WorkspaceDto workspace = CreateWorkspace(
+            sources: [],
+            profile: CreateProfile(
+                includeSourceExcludedFiles: true,
+                skippedFileCategories: selection));
+
+        await service.SaveWorkspaceAsync(workspace, path);
+        WorkspaceDto result = await service.LoadWorkspaceAsync(path);
+
+        Assert.Equal(selection, result.Document.Profile.SkippedFileCategories);
+        Assert.True(result.Document.Profile.IncludeSourceExcludedFiles);
+    }
+
+    [Fact]
+    public async Task LoadWorkspaceAsync_Should_Preserve_Legacy_Metadata_State_When_Skipped_File_Categories_Are_Missing()
+    {
+        JsonWorkspacePersistenceService service = new();
+        string path = Path.Combine(_tempRoot, "workspace.filemerger.workspace.json");
+
+        WorkspaceDto workspace = CreateWorkspace(
+            sources: [],
+            profile: CreateProfile(
+                includeSourceExcludedFiles: true,
+                skippedFileCategories: CreateSkippedFileCategorySelection()));
+
+        string json = JsonSerializer.Serialize(workspace, CreateJsonOptions());
+        var root = JsonNode.Parse(json)!;
+        JsonObject profile = root["document"]!["profile"]!.AsObject();
+        profile.Remove("skippedFileCategories");
+
+        await File.WriteAllTextAsync(
+            path,
+            root.ToJsonString(CreateJsonOptions()));
+
+        WorkspaceDto result = await service.LoadWorkspaceAsync(path);
+
+        Assert.Null(result.Document.Profile.SkippedFileCategories);
+        Assert.True(result.Document.Profile.IncludeSourceExcludedFiles);
     }
 
     [Fact]
@@ -498,7 +563,8 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
         bool includeOutputPathMetadata = true,
         bool includeFileSummaryMetadata = true,
         SkippedFilesMetadataMode skippedFilesMetadataMode = SkippedFilesMetadataMode.None,
-        bool includeSourceExcludedFiles = false)
+        bool includeSourceExcludedFiles = false,
+        SkippedFileCategorySelection? skippedFileCategories = null)
     {
         return new WorkspaceProfileDto(
             IncludeHeaderComment: false,
@@ -530,7 +596,20 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
             IncludeOutputPathMetadata: includeOutputPathMetadata,
             IncludeFileSummaryMetadata: includeFileSummaryMetadata,
             SkippedFilesMetadataMode: skippedFilesMetadataMode,
-            IncludeSourceExcludedFiles: includeSourceExcludedFiles);
+            IncludeSourceExcludedFiles: includeSourceExcludedFiles,
+            SkippedFileCategories: skippedFileCategories);
+    }
+
+    private static SkippedFileCategorySelection CreateSkippedFileCategorySelection()
+    {
+        return new SkippedFileCategorySelection(
+            IncludeDisabledFileTypes: true,
+            IncludeUnsupportedFiles: false,
+            IncludeProfileExclusions: true,
+            IncludeManualExclusions: false,
+            IncludeSourceExclusions: false,
+            IncludeProcessingFailures: true,
+            IncludeOther: false);
     }
 
     private static JsonSerializerOptions CreateJsonOptions()

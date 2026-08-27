@@ -3,7 +3,7 @@ using System.Text;
 
 namespace FileMerger.Wpf.Diagnostics;
 
-public sealed class CrashLogFormatter
+public static class CrashLogFormatter
 {
     public static string Format(Exception exception, CrashLogContext context)
     {
@@ -76,8 +76,7 @@ public sealed class CrashLogFormatter
             builder.AppendLine(exception.StackTrace);
         }
 
-        if (exception is AggregateException aggregateException &&
-            aggregateException.InnerExceptions.Count > 0)
+        if (exception is AggregateException { InnerExceptions.Count: > 0 } aggregateException)
         {
             for (int i = 0; i < aggregateException.InnerExceptions.Count; i++)
             {

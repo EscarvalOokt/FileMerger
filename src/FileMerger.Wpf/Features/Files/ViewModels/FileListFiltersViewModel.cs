@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using FileMerger.Domain.Enums;
 using FileMerger.Wpf.Shared.ViewModels;
 
 namespace FileMerger.Wpf.Features.Files.ViewModels;
@@ -6,9 +7,6 @@ namespace FileMerger.Wpf.Features.Files.ViewModels;
 public sealed class FileListFiltersViewModel : ViewModelBase
 {
     private const string FallbackTextSearchLabel = "Fallback text";
-    private const string ProfileRuleExcludeReasonCode = "filter.rule.exclude";
-    private const string DisabledFileTypeReasonCode = "discovery.file-type-disabled";
-    private const string UnsupportedFileTypeReasonCode = "discovery.unsupported-file-type";
 
     private string _searchText = string.Empty;
     private bool _showOnlySelected;
@@ -145,11 +143,17 @@ public sealed class FileListFiltersViewModel : ViewModelBase
             FileListFacet.Included => file.IsIncluded,
             FileListFacet.NotIncluded => file.IsNotIncluded,
             FileListFacet.ExcludedByProfileRule =>
-                file.IsNotIncluded && HasSkipReasonCode(file, ProfileRuleExcludeReasonCode),
+                file.IsNotIncluded && HasSkipReasonCategory(
+                    file,
+                    SkippedFileCategory.ProfileExclusion),
             FileListFacet.DisabledType =>
-                file.IsNotIncluded && HasSkipReasonCode(file, DisabledFileTypeReasonCode),
+                file.IsNotIncluded && HasSkipReasonCategory(
+                    file,
+                    SkippedFileCategory.DisabledFileType),
             FileListFacet.Unsupported =>
-                file.IsNotIncluded && HasSkipReasonCode(file, UnsupportedFileTypeReasonCode),
+                file.IsNotIncluded && HasSkipReasonCategory(
+                    file,
+                    SkippedFileCategory.UnsupportedFile),
             FileListFacet.Fallback => file.HasFallbackStatus,
             FileListFacet.Overridden => file.HasOverrideStatus,
             FileListFacet.NotApplied => file.HasPendingPreviewState,
@@ -188,14 +192,11 @@ public sealed class FileListFiltersViewModel : ViewModelBase
         return MatchesFacetGroup(file, facets);
     }
 
-    private static bool HasSkipReasonCode(
+    private static bool HasSkipReasonCategory(
         InputFileItemViewModel file,
-        string reasonCode)
+        SkippedFileCategory category)
     {
-        return string.Equals(
-            file.SkipReasonCode,
-            reasonCode,
-            StringComparison.Ordinal);
+        return file.Model.SkipReason?.Category == category;
     }
 
     private static bool MatchesSearch(

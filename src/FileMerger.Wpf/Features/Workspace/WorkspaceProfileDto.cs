@@ -25,4 +25,5 @@ public sealed record WorkspaceProfileDto(
     bool IncludeOutputPathMetadata = true,
     bool IncludeFileSummaryMetadata = true,
     SkippedFilesMetadataMode SkippedFilesMetadataMode = SkippedFilesMetadataMode.None,
-    bool IncludeSourceExcludedFiles = false);
+    bool IncludeSourceExcludedFiles = false,
+    SkippedFileCategorySelection? SkippedFileCategories = null);

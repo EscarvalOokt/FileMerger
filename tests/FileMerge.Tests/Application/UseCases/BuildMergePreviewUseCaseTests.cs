@@ -149,7 +149,7 @@ public sealed class BuildMergePreviewUseCaseTests
 
 
     [Fact]
-    public async Task ExecuteAsync_Should_Process_Only_MergeCandidates_And_Retain_Complete_AutomaticInventory()
+    public async Task ExecuteAsync_Should_Process_Only_MergeCandidates_And_Retain_Complete_Inventories()
     {
         var candidate = new InputFile(
             fullPath: @"D:\Project\Included.cs",
@@ -157,7 +157,18 @@ public sealed class BuildMergePreviewUseCaseTests
             extension: ".cs",
             kind: FileKind.CSharp);
 
-        var nonCandidate = new InputFile(
+        var disabledNonCandidate = new InputFile(
+            fullPath: @"D:\Project\Disabled.cs",
+            relativePath: "Disabled.cs",
+            extension: ".cs",
+            kind: FileKind.CSharp,
+            isIncluded: false,
+            skipReason: new SkipReason(
+                "discovery.file-type-disabled",
+                "File type is disabled by the current profile."),
+            isMergeCandidate: false);
+
+        var unsupportedNonCandidate = new InputFile(
             fullPath: @"D:\Project\Unsupported.bin",
             relativePath: "Unsupported.bin",
             extension: ".bin",
@@ -171,15 +182,16 @@ public sealed class BuildMergePreviewUseCaseTests
         var filter = new FakeFileFilterService([candidate]);
         var overrides = new FakeFileInclusionOverrideService([candidate]);
         var reader = new FakeContentReader(ContentReadResult.Success("raw", "utf-8"));
+        var builder = new FakeMergeBuilder();
 
         var useCase = new BuildMergePreviewUseCase(
             new FakeMergeSessionValidator([]),
-            new FakeFileDiscoveryService([candidate, nonCandidate]),
+            new FakeFileDiscoveryService([candidate, disabledNonCandidate, unsupportedNonCandidate]),
             filter,
             overrides,
             reader,
             new FakeContentTransformationService("transformed"),
-            new FakeMergeBuilder());
+            builder);
 
         BuildMergePreviewResult result = await useCase.ExecuteAsync(new BuildMergePreviewRequest(CreateSession()));
 
@@ -194,19 +206,44 @@ public sealed class BuildMergePreviewUseCaseTests
         InputFile readInput = Assert.Single(reader.ReadCalls).File;
         Assert.Equal(candidate.FullPath, readInput.FullPath);
 
-        InputFile sessionFile = Assert.Single(result.Session.Files);
-        Assert.Equal(candidate.FullPath, sessionFile.FullPath);
+        Assert.Equal(3, result.AutomaticFiles.Count);
+        Assert.Equal(3, result.Session.Files.Count);
 
-        Assert.Equal(2, result.AutomaticFiles.Count);
         Assert.Contains(result.AutomaticFiles, x => x.FullPath == candidate.FullPath);
+        Assert.Contains(result.Session.Files, x => x.FullPath == candidate.FullPath);
 
-        InputFile retainedNonCandidate = Assert.Single(
+        InputFile automaticDisabled = Assert.Single(
             result.AutomaticFiles,
-            x => x.FullPath == nonCandidate.FullPath);
+            x => x.FullPath == disabledNonCandidate.FullPath);
+        InputFile effectiveDisabled = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == disabledNonCandidate.FullPath);
 
-        Assert.False(retainedNonCandidate.IsMergeCandidate);
-        Assert.False(retainedNonCandidate.IsIncluded);
-        Assert.Equal("discovery.unsupported-file-type", retainedNonCandidate.SkipReason?.Code);
+        Assert.False(automaticDisabled.IsMergeCandidate);
+        Assert.False(automaticDisabled.IsIncluded);
+        Assert.Equal("discovery.file-type-disabled", automaticDisabled.SkipReason?.Code);
+        Assert.False(effectiveDisabled.IsMergeCandidate);
+        Assert.False(effectiveDisabled.IsIncluded);
+        Assert.Equal("discovery.file-type-disabled", effectiveDisabled.SkipReason?.Code);
+
+        InputFile automaticUnsupported = Assert.Single(
+            result.AutomaticFiles,
+            x => x.FullPath == unsupportedNonCandidate.FullPath);
+        InputFile effectiveUnsupported = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == unsupportedNonCandidate.FullPath);
+
+        Assert.False(automaticUnsupported.IsMergeCandidate);
+        Assert.False(automaticUnsupported.IsIncluded);
+        Assert.Equal("discovery.unsupported-file-type", automaticUnsupported.SkipReason?.Code);
+        Assert.False(effectiveUnsupported.IsMergeCandidate);
+        Assert.False(effectiveUnsupported.IsIncluded);
+        Assert.Equal("discovery.unsupported-file-type", effectiveUnsupported.SkipReason?.Code);
+
+        MergeSession buildSession = Assert.Single(builder.BuildCalls).Session;
+        Assert.Equal(3, buildSession.Files.Count);
+        Assert.Contains(buildSession.Files, x => x.FullPath == disabledNonCandidate.FullPath);
+        Assert.Contains(buildSession.Files, x => x.FullPath == unsupportedNonCandidate.FullPath);
     }
 
     [Fact]
@@ -232,14 +269,17 @@ public sealed class BuildMergePreviewUseCaseTests
                 "File type is not supported by the current profile."),
             isMergeCandidate: false);
 
+        var reader = new FakeContentReader(ContentReadResult.Success("raw", "utf-8"));
+        var builder = new FakeMergeBuilder();
+
         var useCase = new BuildMergePreviewUseCase(
             new FakeMergeSessionValidator([]),
             new FakeFileDiscoveryService([candidate, nonCandidate]),
             new FakeFileFilterService([filteredCandidate]),
             new FakeFileInclusionOverrideService([filteredCandidate]),
-            new FakeContentReader(ContentReadResult.Success("raw", "utf-8")),
+            reader,
             new FakeContentTransformationService("transformed"),
-            new FakeMergeBuilder());
+            builder);
 
         BuildMergePreviewResult result = await useCase.ExecuteAsync(new BuildMergePreviewRequest(CreateSession()));
 
@@ -249,7 +289,26 @@ public sealed class BuildMergePreviewUseCaseTests
 
         Assert.False(automaticCandidate.IsIncluded);
         Assert.Equal(filterReason, automaticCandidate.SkipReason);
-        Assert.DoesNotContain(result.Session.Files, x => x.IsIncluded);
+
+        InputFile effectiveCandidate = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == candidate.FullPath);
+
+        Assert.False(effectiveCandidate.IsIncluded);
+        Assert.Equal(filterReason, effectiveCandidate.SkipReason);
+
+        InputFile effectiveNonCandidate = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == nonCandidate.FullPath);
+
+        Assert.False(effectiveNonCandidate.IsMergeCandidate);
+        Assert.False(effectiveNonCandidate.IsIncluded);
+        Assert.Equal("discovery.unsupported-file-type", effectiveNonCandidate.SkipReason?.Code);
+
+        Assert.Equal(2, result.AutomaticFiles.Count);
+        Assert.Equal(2, result.Session.Files.Count);
+        Assert.Empty(reader.ReadCalls);
+        Assert.Equal(2, Assert.Single(builder.BuildCalls).Session.Files.Count);
     }
 
     [Fact]
@@ -261,31 +320,44 @@ public sealed class BuildMergePreviewUseCaseTests
             extension: ".cs",
             kind: FileKind.CSharp);
 
+        var nonCandidate = new InputFile(
+            fullPath: @"D:\Project\Unsupported.bin",
+            relativePath: "Unsupported.bin",
+            extension: ".bin",
+            kind: FileKind.Unknown,
+            isIncluded: false,
+            skipReason: new SkipReason(
+                "discovery.unsupported-file-type",
+                "File type is not supported by the current profile."),
+            isMergeCandidate: false);
+
         InputFile[] filteredFiles =
         [
             sourceFile
         ];
 
+        var manualReason = new SkipReason("manual.exclude", "Excluded manually by user.");
         InputFile[] overriddenFiles =
         [
-            sourceFile.Exclude(new SkipReason("manual.exclude", "Excluded manually by user."))
+            sourceFile.Exclude(manualReason)
         ];
 
         var output = new MergeOutput(
             content: "",
             sections: [],
-            statistics: new MergeStatistics(1, 0, 1, 0, TimeSpan.Zero),
+            statistics: new MergeStatistics(2, 0, 2, 0, TimeSpan.Zero),
             generatedAtUtc: DateTime.UtcNow,
             outputTarget: new OutputTarget(@"D:\Output\merged.txt"));
 
         var builder = new FakeMergeBuilder(output);
+        var reader = new FakeContentReader(ContentReadResult.Success("raw", "utf-8"));
 
         var useCase = new BuildMergePreviewUseCase(
             new FakeMergeSessionValidator([]),
-            new FakeFileDiscoveryService([sourceFile]),
+            new FakeFileDiscoveryService([sourceFile, nonCandidate]),
             new FakeFileFilterService(filteredFiles),
             new FakeFileInclusionOverrideService(overriddenFiles),
-            new FakeContentReader(ContentReadResult.Success("raw", "utf-8")),
+            reader,
             new FakeContentTransformationService("transformed"),
             builder);
 
@@ -294,9 +366,41 @@ public sealed class BuildMergePreviewUseCaseTests
             [new FileInclusionOverride(sourceFile.FullPath, false)]));
 
         Assert.True(result.IsSuccessful);
-        Assert.Single(result.Session.Files);
-        Assert.False(result.Session.Files.Single().IsIncluded);
-        Assert.Empty(builder.BuildCalls.Single().Sections);
+        Assert.Equal(2, result.AutomaticFiles.Count);
+        Assert.Equal(2, result.Session.Files.Count);
+
+        InputFile automaticCandidate = Assert.Single(
+            result.AutomaticFiles,
+            x => x.FullPath == sourceFile.FullPath);
+        Assert.True(automaticCandidate.IsIncluded);
+        Assert.Null(automaticCandidate.SkipReason);
+
+        InputFile effectiveCandidate = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == sourceFile.FullPath);
+        Assert.False(effectiveCandidate.IsIncluded);
+        Assert.Equal(manualReason, effectiveCandidate.SkipReason);
+
+        InputFile effectiveNonCandidate = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == nonCandidate.FullPath);
+        Assert.False(effectiveNonCandidate.IsMergeCandidate);
+        Assert.False(effectiveNonCandidate.IsIncluded);
+        Assert.Equal("discovery.unsupported-file-type", effectiveNonCandidate.SkipReason?.Code);
+
+        Assert.Empty(reader.ReadCalls);
+
+        (MergeSession Session, IReadOnlyCollection<MergeSection> Sections, TimeSpan TotalDuration, IReadOnlyCollection<InputFile> SourceExcludedFiles) buildCall = Assert.Single(builder.BuildCalls);
+        Assert.Empty(buildCall.Sections);
+        Assert.Equal(2, buildCall.Session.Files.Count);
+
+        InputFile builtCandidate = Assert.Single(
+            buildCall.Session.Files,
+            x => x.FullPath == sourceFile.FullPath);
+        Assert.False(builtCandidate.IsIncluded);
+        Assert.Equal(manualReason, builtCandidate.SkipReason);
+
+        Assert.Contains(buildCall.Session.Files, x => x.FullPath == nonCandidate.FullPath);
     }
 
     [Fact]
@@ -450,22 +554,63 @@ public sealed class BuildMergePreviewUseCaseTests
             return ContentReadResult.Success("raw content", "utf-8");
         });
 
+        var transformation = new FakeContentTransformationService("transformed content");
+
         var useCase = new BuildMergePreviewUseCase(
             new FakeMergeSessionValidator([]),
             new FakeFileDiscoveryService([readableFile, brokenFile]),
             new FakeFileFilterService([readableFile, brokenFile]),
             new FakeFileInclusionOverrideService([readableFile, brokenFile]),
             reader,
-            new FakeContentTransformationService("transformed content"),
+            transformation,
             builder);
 
         BuildMergePreviewResult result = await useCase.ExecuteAsync(new BuildMergePreviewRequest(CreateSession()));
 
         Assert.True(result.IsSuccessful);
-        Assert.Single(builder.BuildCalls.Single().Sections);
-        Assert.Equal("Ok.cs", builder.BuildCalls.Single().Sections.Single().SourceFile.RelativePath);
 
-        Assert.Contains(result.ValidationIssues, x => x.Code == "file.read.failed");
+        MergeSection section = Assert.Single(builder.BuildCalls.Single().Sections);
+        Assert.Equal("Ok.cs", section.SourceFile.RelativePath);
+
+        InputFile automaticBrokenFile = Assert.Single(
+            result.AutomaticFiles,
+            x => x.FullPath == brokenFile.FullPath);
+        Assert.True(automaticBrokenFile.IsMergeCandidate);
+        Assert.True(automaticBrokenFile.IsIncluded);
+        Assert.Null(automaticBrokenFile.SkipReason);
+
+        InputFile effectiveReadableFile = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == readableFile.FullPath);
+        Assert.True(effectiveReadableFile.IsIncluded);
+
+        InputFile effectiveBrokenFile = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == brokenFile.FullPath);
+        Assert.True(effectiveBrokenFile.IsMergeCandidate);
+        Assert.False(effectiveBrokenFile.IsIncluded);
+        Assert.Equal("file.read.failed", effectiveBrokenFile.SkipReason?.Code);
+        Assert.Equal(
+            "Failed to read 'Broken.cs': Access denied.",
+            effectiveBrokenFile.SkipReason?.Description);
+
+        ValidationIssue readIssue = Assert.Single(
+            result.ValidationIssues,
+            x => x.Code == "file.read.failed");
+        Assert.Equal(ValidationSeverity.Warning, readIssue.Severity);
+        Assert.Equal(
+            "Failed to read 'Broken.cs': Access denied.",
+            readIssue.Message);
+
+        (MergeSession Session, IReadOnlyCollection<MergeSection> Sections, TimeSpan TotalDuration, IReadOnlyCollection<InputFile> SourceExcludedFiles) buildCall = Assert.Single(builder.BuildCalls);
+        InputFile builtBrokenFile = Assert.Single(
+            buildCall.Session.Files,
+            x => x.FullPath == brokenFile.FullPath);
+        Assert.False(builtBrokenFile.IsIncluded);
+        Assert.Equal("file.read.failed", builtBrokenFile.SkipReason?.Code);
+
+        (string Content, InputFile File, MergeProfile Profile) transformCall = Assert.Single(transformation.TransformCalls);
+        Assert.Equal(readableFile.FullPath, transformCall.File.FullPath);
     }
 
     [Fact]
@@ -711,6 +856,319 @@ public sealed class BuildMergePreviewUseCaseTests
         Assert.Same(sourceExcluded, Assert.Single(buildCall.SourceExcludedFiles));
     }
 
+    [Fact]
+    public async Task ExecuteAsync_Should_Preserve_Complete_Output_Accounting_Across_All_File_States()
+    {
+        var includedFile = new InputFile(
+            fullPath: @"D:\Project\Included.cs",
+            relativePath: "Included.cs",
+            extension: ".cs",
+            kind: FileKind.CSharp);
+
+        var fallbackFile = new InputFile(
+            fullPath: @"D:\Project\Notes.custom",
+            relativePath: "Notes.custom",
+            extension: ".custom",
+            kind: FileKind.Text,
+            isFallbackText: true);
+
+        var disabledFile = new InputFile(
+            fullPath: @"D:\Project\Disabled.json",
+            relativePath: "Disabled.json",
+            extension: ".json",
+            kind: FileKind.Json,
+            isIncluded: false,
+            skipReason: new SkipReason(
+                "discovery.file-type-disabled",
+                "File type is disabled by the current profile."),
+            isMergeCandidate: false);
+
+        var unsupportedFile = new InputFile(
+            fullPath: @"D:\Project\Unsupported.bin",
+            relativePath: "Unsupported.bin",
+            extension: ".bin",
+            kind: FileKind.Unknown,
+            isIncluded: false,
+            skipReason: new SkipReason(
+                "discovery.unsupported-file-type",
+                "File type is not supported by the current profile."),
+            isMergeCandidate: false);
+
+        var profileExcludedFile = new InputFile(
+            fullPath: @"D:\Project\ProfileExcluded.cs",
+            relativePath: "ProfileExcluded.cs",
+            extension: ".cs",
+            kind: FileKind.CSharp);
+
+        var manualExcludedFile = new InputFile(
+            fullPath: @"D:\Project\ManualExcluded.cs",
+            relativePath: "ManualExcluded.cs",
+            extension: ".cs",
+            kind: FileKind.CSharp);
+
+        var manualOverride = new FileInclusionOverride(
+            manualExcludedFile.FullPath,
+            false);
+
+        var brokenFile = new InputFile(
+            fullPath: @"D:\Project\Broken.cs",
+            relativePath: "Broken.cs",
+            extension: ".cs",
+            kind: FileKind.CSharp);
+
+        var sourceExcludedFile = new InputFile(
+            fullPath: @"D:\Project\Generated.cs",
+            relativePath: "Generated.cs",
+            extension: ".cs",
+            kind: FileKind.Unknown,
+            isIncluded: false,
+            skipReason: new SkipReason(
+                "source.exclude",
+                "Excluded by a source-specific exclusion."),
+            isMergeCandidate: false);
+
+        var profileReason = new SkipReason(
+            "filter.rule.exclude",
+            "Excluded by profile filter.");
+        var manualReason = new SkipReason(
+            "manual.exclude",
+            "Excluded manually by user.");
+
+        InputFile filteredProfileExcludedFile = profileExcludedFile.Exclude(profileReason);
+        InputFile overriddenManualExcludedFile = manualExcludedFile.Exclude(manualReason);
+
+        InputFile[] filteredFiles =
+        [
+            includedFile,
+            fallbackFile,
+            filteredProfileExcludedFile,
+            manualExcludedFile,
+            brokenFile
+        ];
+
+        InputFile[] overriddenFiles =
+        [
+            includedFile,
+            fallbackFile,
+            filteredProfileExcludedFile,
+            overriddenManualExcludedFile,
+            brokenFile
+        ];
+
+        var discovery = new FakeFileDiscoveryService(
+            [
+                includedFile,
+                fallbackFile,
+                disabledFile,
+                unsupportedFile,
+                profileExcludedFile,
+                manualExcludedFile,
+                brokenFile
+            ],
+            sourceExcludedFiles: [sourceExcludedFile]);
+        var filter = new FakeFileFilterService(filteredFiles);
+        var overrides = new FakeFileInclusionOverrideService(overriddenFiles);
+        var reader = new DelegatingContentReader((file, _) =>
+        {
+            if (file.FullPath == brokenFile.FullPath)
+            {
+                return ContentReadResult.Failure(new ValidationIssue(
+                    ValidationSeverity.Warning,
+                    "file.read.failed",
+                    "Failed to read 'Broken.cs': Access denied."));
+            }
+
+            return ContentReadResult.Success($"raw:{file.RelativePath}", "utf-8");
+        });
+        var transformation = new FakeContentTransformationService("transformed content");
+        var builder = new FakeMergeBuilder();
+
+        var useCase = new BuildMergePreviewUseCase(
+            new FakeMergeSessionValidator([]),
+            discovery,
+            filter,
+            overrides,
+            reader,
+            transformation,
+            builder);
+
+        BuildMergePreviewResult result = await useCase.ExecuteAsync(
+            new BuildMergePreviewRequest(
+                CreateSession(),
+                [manualOverride]));
+
+        Assert.True(result.IsSuccessful);
+
+        IReadOnlyCollection<InputFile> filterInput = Assert.Single(filter.ApplyCalls).Files;
+        Assert.Equal(5, filterInput.Count);
+        Assert.Equal(
+            new[]
+            {
+                includedFile.FullPath,
+                fallbackFile.FullPath,
+                profileExcludedFile.FullPath,
+                manualExcludedFile.FullPath,
+                brokenFile.FullPath
+            }.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray(),
+            filterInput
+                .Select(x => x.FullPath)
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .ToArray());
+        Assert.DoesNotContain(filterInput, x => x.FullPath == disabledFile.FullPath);
+        Assert.DoesNotContain(filterInput, x => x.FullPath == unsupportedFile.FullPath);
+        Assert.DoesNotContain(filterInput, x => x.FullPath == sourceExcludedFile.FullPath);
+
+        (IReadOnlyCollection<InputFile> Files, IReadOnlyCollection<FileInclusionOverride> Overrides) overrideCall = Assert.Single(overrides.ApplyCalls);
+        IReadOnlyCollection<InputFile> overrideInput = overrideCall.Files;
+        Assert.Equal([manualOverride], overrideCall.Overrides);
+        Assert.Equal(5, overrideInput.Count);
+        InputFile overrideProfileExcluded = Assert.Single(
+            overrideInput,
+            x => x.FullPath == profileExcludedFile.FullPath);
+        Assert.False(overrideProfileExcluded.IsIncluded);
+        Assert.Equal("filter.rule.exclude", overrideProfileExcluded.SkipReason?.Code);
+        Assert.DoesNotContain(overrideInput, x => x.FullPath == disabledFile.FullPath);
+        Assert.DoesNotContain(overrideInput, x => x.FullPath == unsupportedFile.FullPath);
+        Assert.DoesNotContain(overrideInput, x => x.FullPath == sourceExcludedFile.FullPath);
+
+        Assert.Equal(3, reader.ReadCalls.Count);
+        Assert.Equal(
+            new[]
+            {
+                includedFile.FullPath,
+                fallbackFile.FullPath,
+                brokenFile.FullPath
+            }.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray(),
+            reader.ReadCalls
+                .Select(x => x.File.FullPath)
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .ToArray());
+
+        Assert.Equal(2, transformation.TransformCalls.Count);
+        Assert.Equal(
+            new[]
+            {
+                includedFile.FullPath,
+                fallbackFile.FullPath
+            }.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray(),
+            transformation.TransformCalls
+                .Select(x => x.File.FullPath)
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .ToArray());
+
+        Assert.Equal(7, result.AutomaticFiles.Count);
+
+        InputFile automaticIncluded = Assert.Single(
+            result.AutomaticFiles,
+            x => x.FullPath == includedFile.FullPath);
+        Assert.True(automaticIncluded.IsIncluded);
+
+        InputFile automaticFallback = Assert.Single(
+            result.AutomaticFiles,
+            x => x.FullPath == fallbackFile.FullPath);
+        Assert.True(automaticFallback.IsIncluded);
+        Assert.True(automaticFallback.IsFallbackText);
+
+        InputFile automaticDisabled = Assert.Single(
+            result.AutomaticFiles,
+            x => x.FullPath == disabledFile.FullPath);
+        Assert.False(automaticDisabled.IsIncluded);
+        Assert.False(automaticDisabled.IsMergeCandidate);
+        Assert.Equal("discovery.file-type-disabled", automaticDisabled.SkipReason?.Code);
+
+        InputFile automaticUnsupported = Assert.Single(
+            result.AutomaticFiles,
+            x => x.FullPath == unsupportedFile.FullPath);
+        Assert.False(automaticUnsupported.IsIncluded);
+        Assert.False(automaticUnsupported.IsMergeCandidate);
+        Assert.Equal("discovery.unsupported-file-type", automaticUnsupported.SkipReason?.Code);
+
+        InputFile automaticProfileExcluded = Assert.Single(
+            result.AutomaticFiles,
+            x => x.FullPath == profileExcludedFile.FullPath);
+        Assert.False(automaticProfileExcluded.IsIncluded);
+        Assert.Equal("filter.rule.exclude", automaticProfileExcluded.SkipReason?.Code);
+
+        InputFile automaticManualExcluded = Assert.Single(
+            result.AutomaticFiles,
+            x => x.FullPath == manualExcludedFile.FullPath);
+        Assert.True(automaticManualExcluded.IsIncluded);
+        Assert.Null(automaticManualExcluded.SkipReason);
+
+        InputFile automaticBroken = Assert.Single(
+            result.AutomaticFiles,
+            x => x.FullPath == brokenFile.FullPath);
+        Assert.True(automaticBroken.IsIncluded);
+        Assert.Null(automaticBroken.SkipReason);
+
+        Assert.Equal(7, result.Session.Files.Count);
+
+        InputFile effectiveIncluded = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == includedFile.FullPath);
+        Assert.True(effectiveIncluded.IsIncluded);
+
+        InputFile effectiveFallback = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == fallbackFile.FullPath);
+        Assert.True(effectiveFallback.IsIncluded);
+        Assert.True(effectiveFallback.IsFallbackText);
+
+        InputFile effectiveDisabled = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == disabledFile.FullPath);
+        Assert.False(effectiveDisabled.IsIncluded);
+        Assert.False(effectiveDisabled.IsMergeCandidate);
+        Assert.Equal("discovery.file-type-disabled", effectiveDisabled.SkipReason?.Code);
+
+        InputFile effectiveUnsupported = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == unsupportedFile.FullPath);
+        Assert.False(effectiveUnsupported.IsIncluded);
+        Assert.False(effectiveUnsupported.IsMergeCandidate);
+        Assert.Equal("discovery.unsupported-file-type", effectiveUnsupported.SkipReason?.Code);
+
+        InputFile effectiveProfileExcluded = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == profileExcludedFile.FullPath);
+        Assert.False(effectiveProfileExcluded.IsIncluded);
+        Assert.Equal("filter.rule.exclude", effectiveProfileExcluded.SkipReason?.Code);
+
+        InputFile effectiveManualExcluded = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == manualExcludedFile.FullPath);
+        Assert.False(effectiveManualExcluded.IsIncluded);
+        Assert.Equal("manual.exclude", effectiveManualExcluded.SkipReason?.Code);
+
+        InputFile effectiveBroken = Assert.Single(
+            result.Session.Files,
+            x => x.FullPath == brokenFile.FullPath);
+        Assert.True(effectiveBroken.IsMergeCandidate);
+        Assert.False(effectiveBroken.IsIncluded);
+        Assert.Equal("file.read.failed", effectiveBroken.SkipReason?.Code);
+
+        Assert.Contains(result.ValidationIssues, x => x.Code == "file.read.failed");
+
+        (MergeSession Session, IReadOnlyCollection<MergeSection> Sections, TimeSpan TotalDuration, IReadOnlyCollection<InputFile> SourceExcludedFiles) buildCall = Assert.Single(builder.BuildCalls);
+        Assert.Equal(7, buildCall.Session.Files.Count);
+        Assert.Equal(2, buildCall.Sections.Count);
+        Assert.Equal(
+            buildCall.Session.Files
+                .Where(x => x.IsIncluded)
+                .Select(x => x.FullPath)
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .ToArray(),
+            buildCall.Sections
+                .Select(x => x.SourceFile.FullPath)
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .ToArray());
+
+        Assert.DoesNotContain(result.AutomaticFiles, x => x.FullPath == sourceExcludedFile.FullPath);
+        Assert.DoesNotContain(result.Session.Files, x => x.FullPath == sourceExcludedFile.FullPath);
+        Assert.Same(sourceExcludedFile, Assert.Single(result.SourceExcludedFiles));
+        Assert.Same(sourceExcludedFile, Assert.Single(buildCall.SourceExcludedFiles));
+    }
+
     private static MergeSession CreateSession(
         bool includeFileSeparators = true,
         bool includeRelativePathInSeparator = true,
@@ -842,8 +1300,11 @@ public sealed class BuildMergePreviewUseCaseTests
         private readonly Func<InputFile, InputReadOptions, ContentReadResult> _read =
             read ?? throw new ArgumentNullException(nameof(read));
 
+        public List<(InputFile File, InputReadOptions Options)> ReadCalls { get; } = [];
+
         public ContentReadResult Read(InputFile file, InputReadOptions options)
         {
+            ReadCalls.Add((file, options));
             return _read(file, options);
         }
     }

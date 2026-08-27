@@ -1,3 +1,5 @@
+using FileMerger.Domain.Enums;
+
 namespace FileMerger.Domain.ValueObjects;
 
 public sealed record SkipReason
@@ -21,4 +23,15 @@ public sealed record SkipReason
     public string Code { get; }
     public string Description { get; }
     public SkipRuleDetails? RuleDetails { get; }
+
+    public SkippedFileCategory Category => Code switch
+    {
+        "discovery.file-type-disabled" => SkippedFileCategory.DisabledFileType,
+        "discovery.unsupported-file-type" => SkippedFileCategory.UnsupportedFile,
+        "filter.rule.exclude" => SkippedFileCategory.ProfileExclusion,
+        "manual.exclude" => SkippedFileCategory.ManualExclusion,
+        "source.exclude" => SkippedFileCategory.SourceExclusion,
+        "file.read.failed" => SkippedFileCategory.ProcessingFailure,
+        _ => SkippedFileCategory.Other
+    };
 }

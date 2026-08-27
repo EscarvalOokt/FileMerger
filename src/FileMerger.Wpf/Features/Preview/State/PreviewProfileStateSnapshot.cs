@@ -25,7 +25,8 @@ public sealed class PreviewProfileStateSnapshot(
     bool includeOutputPathMetadata = true,
     bool includeFileSummaryMetadata = true,
     SkippedFilesMetadataMode skippedFilesMetadataMode = SkippedFilesMetadataMode.None,
-    bool includeSourceExcludedFiles = false) : IEquatable<PreviewProfileStateSnapshot>
+    bool includeSourceExcludedFiles = false,
+    SkippedFileCategorySelection? skippedFileCategories = null) : IEquatable<PreviewProfileStateSnapshot>
 {
     public bool IncludeHeaderComment { get; } = includeHeaderComment;
     public bool IncludeFileSeparators { get; } = includeFileSeparators;
@@ -56,6 +57,10 @@ public sealed class PreviewProfileStateSnapshot(
     public SkippedFilesMetadataMode SkippedFilesMetadataMode { get; } = skippedFilesMetadataMode;
     public bool IncludeSourceExcludedFiles { get; } = includeSourceExcludedFiles;
 
+    public SkippedFileCategorySelection SkippedFileCategories { get; } =
+        skippedFileCategories ??
+        SkippedFileCategorySelection.ForCurrentBehavior(includeSourceExcludedFiles);
+
     public bool Equals(PreviewProfileStateSnapshot? other)
     {
         if (ReferenceEquals(this, other))
@@ -84,6 +89,7 @@ public sealed class PreviewProfileStateSnapshot(
                IncludeFileSummaryMetadata == other.IncludeFileSummaryMetadata &&
                SkippedFilesMetadataMode == other.SkippedFilesMetadataMode &&
                IncludeSourceExcludedFiles == other.IncludeSourceExcludedFiles &&
+               SkippedFileCategories == other.SkippedFileCategories &&
                FileTypeSnapshotsEqual(FileTypes, other.FileTypes) &&
                FilterRuleSnapshotsEqual(FilterRules, other.FilterRules);
     }
@@ -117,6 +123,7 @@ public sealed class PreviewProfileStateSnapshot(
         hash.Add(IncludeFileSummaryMetadata);
         hash.Add(SkippedFilesMetadataMode);
         hash.Add(IncludeSourceExcludedFiles);
+        hash.Add(SkippedFileCategories);
 
         foreach (PreviewFileTypeStateSnapshot fileType in FileTypes)
             hash.Add(fileType);

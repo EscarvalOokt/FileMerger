@@ -35,6 +35,23 @@ public sealed class SkipReasonTests
         Assert.Equal(ruleDetails, result.RuleDetails);
     }
 
+    [Theory]
+    [InlineData("discovery.file-type-disabled", SkippedFileCategory.DisabledFileType)]
+    [InlineData("discovery.unsupported-file-type", SkippedFileCategory.UnsupportedFile)]
+    [InlineData("filter.rule.exclude", SkippedFileCategory.ProfileExclusion)]
+    [InlineData("manual.exclude", SkippedFileCategory.ManualExclusion)]
+    [InlineData("source.exclude", SkippedFileCategory.SourceExclusion)]
+    [InlineData("file.read.failed", SkippedFileCategory.ProcessingFailure)]
+    [InlineData("custom.exclude", SkippedFileCategory.Other)]
+    public void Category_Should_Map_Reason_Code_To_Semantic_Category(
+        string code,
+        SkippedFileCategory expectedCategory)
+    {
+        SkipReason result = new(code, "Description");
+
+        Assert.Equal(expectedCategory, result.Category);
+    }
+
     [Fact]
     public void Constructor_Should_Allow_Null_RuleDetails()
     {

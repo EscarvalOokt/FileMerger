@@ -286,6 +286,35 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
     }
 
     [Fact]
+    public void Skipped_File_Category_Change_Should_Refresh_Dirty_State_For_Active_Document()
+    {
+        TestContext context = CreateContext();
+
+        WorkspaceDocumentViewModel firstDocument = context.ViewModel.CurrentDocument;
+        WorkspaceTabViewModel secondTab = context.WorkspaceTabs.CreateNewTab();
+        WorkspaceDocumentViewModel secondDocument = secondTab.Document;
+
+        context.WorkspaceTabs.SelectTab(secondTab);
+
+        int workspaceRefreshCount = context.DirtyStateService.WorkspaceRefreshedDocuments.Count;
+        int previewRefreshCount = context.DirtyStateService.PreviewRefreshedDocuments.Count;
+
+        secondDocument.ProfileEditor.IncludeUnsupportedFilesInSkippedMetadata = false;
+
+        Assert.True(
+            context.DirtyStateService.WorkspaceRefreshedDocuments.Count > workspaceRefreshCount);
+        Assert.True(
+            context.DirtyStateService.PreviewRefreshedDocuments.Count > previewRefreshCount);
+        Assert.Same(
+            secondDocument,
+            context.DirtyStateService.WorkspaceRefreshedDocuments[^1]);
+        Assert.Same(
+            secondDocument,
+            context.DirtyStateService.PreviewRefreshedDocuments[^1]);
+        Assert.NotSame(firstDocument, secondDocument);
+    }
+
+    [Fact]
     public void SaveCommand_CanExecute_Should_Follow_ActiveTab_LastOutput_And_OutputPath()
     {
         TestContext context = CreateContext();

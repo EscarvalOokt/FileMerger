@@ -1,3 +1,4 @@
+using FileMerger.Domain.ValueObjects;
 using FileMerger.Wpf.Features.Workspace;
 using FileMerger.Wpf.Shared.ViewModels;
 
@@ -218,12 +219,48 @@ public sealed class ProfileSummaryViewModel : ViewModelBase
 
         parts.Add($"Skipped files: {profile.SkippedFilesMetadataMode}");
 
-        if (profile.IncludeSourceExcludedFiles)
-            parts.Add("Source-excluded files");
+        SkippedFileCategorySelection selection =
+            profile.SkippedFileCategories ??
+            SkippedFileCategorySelection.ForCurrentBehavior(profile.IncludeSourceExcludedFiles);
+
+        string[] selectedCategories =
+        [
+            .. BuildSkippedCategoryLabels(selection)
+        ];
+
+        parts.Add(selectedCategories.Length == 0
+            ? "Skipped categories: none"
+            : $"Skipped categories: {string.Join(", ", selectedCategories)}");
 
         return parts.Count == 0
             ? "No output metadata."
             : string.Join(" · ", parts);
+    }
+
+
+    private static IEnumerable<string> BuildSkippedCategoryLabels(
+        SkippedFileCategorySelection selection)
+    {
+        if (selection.IncludeDisabledFileTypes)
+            yield return "Disabled file types";
+
+        if (selection.IncludeUnsupportedFiles)
+            yield return "Unsupported files";
+
+        if (selection.IncludeProfileExclusions)
+            yield return "Profile exclusions";
+
+        if (selection.IncludeManualExclusions)
+            yield return "Manual exclusions";
+
+        if (selection.IncludeSourceExclusions)
+            yield return "Source exclusions";
+
+        if (selection.IncludeProcessingFailures)
+            yield return "Processing failures";
+
+        if (selection.IncludeOther)
+            yield return "Other";
     }
 
     private static string BuildUnsupportedTextFallbackSummary(WorkspaceProfileDto profile)

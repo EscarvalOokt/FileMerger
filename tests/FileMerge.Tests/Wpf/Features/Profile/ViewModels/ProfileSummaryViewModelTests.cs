@@ -54,12 +54,14 @@ public sealed class ProfileSummaryViewModelTests
             skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed));
 
         Assert.Equal(
-            "Build timestamp · Output path · File summary · Skipped files: Detailed",
+            "Build timestamp · Output path · File summary · Skipped files: Detailed · " +
+            "Skipped categories: Disabled file types, Unsupported files, Profile exclusions, " +
+            "Manual exclusions, Processing failures, Other",
             summary.OutputMetadata);
     }
 
     [Fact]
-    public void Apply_Should_Include_Source_Excluded_Files_In_Output_Metadata_Summary()
+    public void Apply_Should_Include_Legacy_Source_Exclusions_In_Output_Metadata_Category_Summary()
     {
         var summary = new ProfileSummaryViewModel();
 
@@ -68,7 +70,55 @@ public sealed class ProfileSummaryViewModelTests
             includeSourceExcludedFiles: true));
 
         Assert.Contains("Skipped files: Detailed", summary.OutputMetadata);
-        Assert.Contains("Source-excluded files", summary.OutputMetadata);
+        Assert.Contains("Source exclusions", summary.OutputMetadata);
+        Assert.DoesNotContain("Source-excluded files", summary.OutputMetadata);
+    }
+
+    [Fact]
+    public void Apply_Should_Build_Output_Metadata_Summary_From_Explicit_Skipped_Category_Selection()
+    {
+        var summary = new ProfileSummaryViewModel();
+        SkippedFileCategorySelection selection = new(
+            IncludeDisabledFileTypes: true,
+            IncludeUnsupportedFiles: false,
+            IncludeProfileExclusions: true,
+            IncludeManualExclusions: false,
+            IncludeSourceExclusions: true,
+            IncludeProcessingFailures: false,
+            IncludeOther: true);
+
+        summary.Apply(CreateProfile(
+            skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple,
+            includeSourceExcludedFiles: false,
+            skippedFileCategories: selection));
+
+        Assert.Contains("Skipped files: Simple", summary.OutputMetadata);
+        Assert.Contains(
+            "Skipped categories: Disabled file types, Profile exclusions, Source exclusions, Other",
+            summary.OutputMetadata);
+        Assert.DoesNotContain("Unsupported files", summary.OutputMetadata);
+        Assert.DoesNotContain("Manual exclusions", summary.OutputMetadata);
+        Assert.DoesNotContain("Processing failures", summary.OutputMetadata);
+    }
+
+    [Fact]
+    public void Apply_Should_Show_None_When_Explicit_Skipped_Category_Selection_Is_Empty()
+    {
+        var summary = new ProfileSummaryViewModel();
+        SkippedFileCategorySelection selection = new(
+            IncludeDisabledFileTypes: false,
+            IncludeUnsupportedFiles: false,
+            IncludeProfileExclusions: false,
+            IncludeManualExclusions: false,
+            IncludeSourceExclusions: false,
+            IncludeProcessingFailures: false,
+            IncludeOther: false);
+
+        summary.Apply(CreateProfile(
+            skippedFileCategories: selection));
+
+        Assert.Contains("Skipped files: None", summary.OutputMetadata);
+        Assert.Contains("Skipped categories: none", summary.OutputMetadata);
     }
 
     [Fact]
@@ -126,7 +176,8 @@ public sealed class ProfileSummaryViewModelTests
         bool includeOutputPathMetadata = true,
         bool includeFileSummaryMetadata = true,
         SkippedFilesMetadataMode skippedFilesMetadataMode = SkippedFilesMetadataMode.None,
-        bool includeSourceExcludedFiles = false)
+        bool includeSourceExcludedFiles = false,
+        SkippedFileCategorySelection? skippedFileCategories = null)
     {
         return new WorkspaceProfileDto(
             IncludeHeaderComment: true,
@@ -150,7 +201,8 @@ public sealed class ProfileSummaryViewModelTests
             IncludeOutputPathMetadata: includeOutputPathMetadata,
             IncludeFileSummaryMetadata: includeFileSummaryMetadata,
             SkippedFilesMetadataMode: skippedFilesMetadataMode,
-            IncludeSourceExcludedFiles: includeSourceExcludedFiles);
+            IncludeSourceExcludedFiles: includeSourceExcludedFiles,
+            SkippedFileCategories: skippedFileCategories);
     }
 
     private static WorkspaceFileTypeDto FileType(

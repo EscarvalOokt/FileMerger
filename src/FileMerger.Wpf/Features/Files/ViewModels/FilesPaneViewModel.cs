@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Windows.Data;
 using FileMerger.Application.UseCases.Common;
 using FileMerger.Domain.Entities;
+using FileMerger.Domain.Enums;
 using FileMerger.Wpf.Shared.Commands;
 using FileMerger.Wpf.Shared.Integration;
 using FileMerger.Wpf.Shared.ViewModels;
@@ -174,31 +175,38 @@ public sealed class FilesPaneViewModel : ViewModelBase
                 continue;
 
             bool automaticIncluded = automaticFile.IsIncluded;
+            currentMap.TryGetValue(path, out InputFile? currentFile);
+
+            bool hasProcessingFailure =
+                currentFile?.SkipReason?.Category == SkippedFileCategory.ProcessingFailure;
 
             bool currentIncluded = automaticFile.IsMergeCandidate
-                ? _manualInclusionOverrides.TryGetValue(path, out bool manualValue)
-                    ? manualValue
-                    : currentMap.TryGetValue(path, out InputFile? currentFile)
-                        ? currentFile.IsIncluded
-                        : automaticIncluded
+                ? hasProcessingFailure && currentFile is not null
+                    ? currentFile.IsIncluded
+                    : _manualInclusionOverrides.TryGetValue(path, out bool manualValue)
+                        ? manualValue
+                        : currentFile?.IsIncluded ?? automaticIncluded
                 : automaticIncluded;
 
             bool appliedIncluded = automaticFile.IsMergeCandidate
                 ? appliedInclusionState is not null &&
                   appliedInclusionState.TryGetValue(path, out bool appliedValue)
                     ? appliedValue
-                    : currentMap.TryGetValue(path, out InputFile? currentFileForApplied)
-                        ? currentFileForApplied.IsIncluded
-                        : automaticIncluded
+                    : currentFile?.IsIncluded ?? automaticIncluded
                 : automaticIncluded;
 
+            InputFile model = hasProcessingFailure && currentFile is not null
+                ? currentFile
+                : automaticFile;
+
             InputFileItemViewModel item = new(
-                model: automaticFile,
+                model: model,
                 automaticIncluded: automaticIncluded,
                 currentIncluded: currentIncluded,
                 appliedIncluded: appliedIncluded)
             {
-                HasManualOverride = currentIncluded != automaticIncluded,
+                HasManualOverride = !hasProcessingFailure &&
+                                    currentIncluded != automaticIncluded,
                 IsAppliedInPreview = currentIncluded == appliedIncluded
             };
 

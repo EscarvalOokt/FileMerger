@@ -119,11 +119,18 @@ public sealed class MergeBuilder : IMergeBuilder
         if (mode == SkippedFilesMetadataMode.None)
             return;
 
-        IEnumerable<InputFile> skippedFileCandidates =
-            session.Files.Where(x => !x.IsIncluded);
+        SkippedFileCategorySelection categorySelection =
+            metadataOptions.EffectiveSkippedFileCategories;
 
-        if (metadataOptions.IncludeSourceExcludedFiles)
+        IEnumerable<InputFile> skippedFileCandidates =
+            session.Files.Where(x =>
+                !x.IsIncluded &&
+                ShouldIncludeSkippedFile(x, categorySelection));
+
+        if (categorySelection.Includes(SkippedFileCategory.SourceExclusion))
+        {
             skippedFileCandidates = skippedFileCandidates.Concat(sourceExcludedFiles);
+        }
 
         InputFile[] skippedFiles =
         [
@@ -151,6 +158,16 @@ public sealed class MergeBuilder : IMergeBuilder
 
             AppendDetailedSkippedFile(builder, file);
         }
+    }
+
+    private static bool ShouldIncludeSkippedFile(
+        InputFile file,
+        SkippedFileCategorySelection categorySelection)
+    {
+        SkippedFileCategory category =
+            file.SkipReason?.Category ?? SkippedFileCategory.Other;
+
+        return categorySelection.Includes(category);
     }
 
     private static void AppendDetailedSkippedFile(

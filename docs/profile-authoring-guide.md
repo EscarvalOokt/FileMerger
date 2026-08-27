@@ -170,12 +170,71 @@ Main fields:
 | `includeSessionNameMetadata`              |     boolean | Adds session name metadata if header is enabled.     |
 | `includeOutputPathMetadata`               |     boolean | Adds output path metadata if header is enabled.      |
 | `includeFileSummaryMetadata`              |     boolean | Adds file summary metadata if header is enabled.     |
-| `skippedFilesMetadataMode`                |      number | See enum table below.                                |
-| `includeSourceExcludedFiles`              |     boolean | Includes source-excluded files in skipped-file metadata when enabled. Defaults to `false`. |
+| `skippedFilesMetadataMode`                |      number | Controls skipped-file metadata representation. See enum table below. |
+| `includeSourceExcludedFiles`              |     boolean | Legacy compatibility fallback for source-exclusion reporting. Defaults to `false` when missing. |
+| `skippedFileCategories`                   | object/null | Explicit semantic category selection for skipped-file metadata. `null` or missing uses legacy-compatible fallback behavior. |
 
-`includeSourceExcludedFiles` is an opt-in output metadata setting. It only contributes source-specific exclusions to skipped-file metadata when `skippedFilesMetadataMode` is `1` (`Simple`) or `2` (`Detailed`). When the mode is `0` (`None`), source-excluded files are not reported through skipped-file metadata even if the flag is `true`.
+### Skipped-file metadata policy
 
-This setting does not make source-excluded files merge candidates and does not add them to the normal discovered/session file inventory. Missing `includeSourceExcludedFiles` values are treated as `false`.
+Skipped-file metadata has two independent profile settings:
+
+* `skippedFilesMetadataMode` controls **representation**:
+  * `0` (`None`) — no skipped-file section is written;
+  * `1` (`Simple`) — selected skipped entries are listed by path;
+  * `2` (`Detailed`) — selected skipped entries also include skip reasons and filter-rule details when available.
+* `skippedFileCategories` controls **membership**: which semantic categories of already-skipped entries are allowed to appear in that section.
+
+An explicit `skippedFileCategories` object has this shape:
+
+```json
+{
+  "includeDisabledFileTypes": true,
+  "includeUnsupportedFiles": true,
+  "includeProfileExclusions": true,
+  "includeManualExclusions": true,
+  "includeSourceExclusions": false,
+  "includeProcessingFailures": true,
+  "includeOther": true
+}
+```
+
+The fields correspond to the categories exposed by the Profile Editor:
+
+| Field | Category | Meaning |
+| ----- | -------- | ------- |
+| `includeDisabledFileTypes` | Disabled file types | Known file types disabled by the current profile. |
+| `includeUnsupportedFiles` | Unsupported files | Files that are not supported and did not become fallback text candidates. |
+| `includeProfileExclusions` | Profile exclusions | Files skipped by profile filter rules. |
+| `includeManualExclusions` | Manual exclusions | Eligible merge candidates excluded by a workspace manual override. |
+| `includeSourceExclusions` | Source exclusions | Source-specific audit exclusions kept outside the normal discovered/session inventory. |
+| `includeProcessingFailures` | Processing failures | Files intended for inclusion that could not be read during processing. |
+| `includeOther` | Other | Fallback for skipped reasons that do not map to one of the known semantic categories. |
+
+Category selection does not change whether a file is included or skipped. It only controls metadata membership. `None` suppresses the skipped-file section regardless of category values, while `Simple` and `Detailed` format the selected entries.
+
+Source exclusions remain a separate audit path. Enabling `includeSourceExclusions` allows those audit entries to appear in skipped-file metadata, but does not make them merge candidates, add them to the normal discovered/session inventory, or make them eligible for manual inclusion overrides.
+
+A processing failure remains a skipped file and also retains its validation signal for the read error.
+
+### Backward compatibility for skipped-file categories
+
+The category-selection feature is a backward-compatible additive extension of profile schema version `1`; the schema version remains `1`.
+
+When `skippedFileCategories` is missing or `null`, FileMerger preserves legacy-compatible behavior:
+
+* Disabled file types — enabled;
+* Unsupported files — enabled;
+* Profile exclusions — enabled;
+* Manual exclusions — enabled;
+* Processing failures — enabled;
+* Other — enabled;
+* Source exclusions — controlled by `includeSourceExcludedFiles`.
+
+If `includeSourceExcludedFiles` is also missing, its legacy default is `false`.
+
+When `skippedFileCategories` is present, all seven values in that object are authoritative. In particular, `skippedFileCategories.includeSourceExclusions` takes precedence over the legacy `includeSourceExcludedFiles` value. The legacy field remains part of schema version `1` for compatibility but is not a second source of truth when an explicit category object exists.
+
+Loading and saving a legacy profile does not by itself materialize an explicit category object. A missing or `null` `skippedFileCategories` value remains legacy state until the category policy is actually changed through the Profile Editor or an explicit object is authored manually.
 
 ## File type entries
 
@@ -198,7 +257,7 @@ Fields:
 | `extension`                          |  string | File extension or special dot-file name such as `.editorconfig`.  |
 | `displayName`                        |  string | Display name shown in UI.                                         |
 | `kind`                               |  number | File kind enum value.                                             |
-| `isEnabled`                          | boolean | Whether this file type is included by the profile.                |
+| `isEnabled`                          | boolean | Whether this known file type is enabled for merge candidacy by the profile. |
 | `supportsLanguageSpecificProcessing` | boolean | `true` for file types with language-specific options, such as C#. |
 
 For predictable results, export an existing profile and edit its `fileTypes` list. Exported profiles contain the catalog-compatible structure expected by the current app.
@@ -505,8 +564,17 @@ Example JSON:
     "includeSessionNameMetadata": true,
     "includeOutputPathMetadata": true,
     "includeFileSummaryMetadata": true,
-    "skippedFilesMetadataMode": 0,
-    "includeSourceExcludedFiles": false
+    "skippedFilesMetadataMode": 2,
+    "includeSourceExcludedFiles": false,
+    "skippedFileCategories": {
+      "includeDisabledFileTypes": true,
+      "includeUnsupportedFiles": true,
+      "includeProfileExclusions": true,
+      "includeManualExclusions": true,
+      "includeSourceExclusions": false,
+      "includeProcessingFailures": true,
+      "includeOther": true
+    }
   }
 }
 ```
@@ -529,7 +597,9 @@ Before adding a manually created profile file, verify:
 * regex filter rules are valid regular expressions;
 * encoding names are valid .NET encoding names;
 * unsupported text fallback is enabled only when intentionally needed;
-* `profile.includeSourceExcludedFiles` is enabled only when source-specific exclusions should be included in skipped-file metadata, with `skippedFilesMetadataMode` set to `Simple` or `Detailed`.
+* `profile.skippedFilesMetadataMode` uses a valid numeric `SkippedFilesMetadataMode` value;
+* if `profile.skippedFileCategories` is explicit, it contains all seven boolean category flags documented above;
+* use `profile.includeSourceExcludedFiles` only as the legacy/null-category fallback for source exclusions; an explicit `profile.skippedFileCategories.includeSourceExclusions` value takes precedence.
 
 After editing:
 

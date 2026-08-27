@@ -6,6 +6,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              xmlns:viewModels="clr-namespace:FileMerger.Wpf.Features.Profile.ViewModels"
+             d:DataContext="{d:DesignInstance Type=viewModels:ProfileEditorViewModel, IsDesignTimeCreatable=False}"
              mc:Ignorable="d">
     <UserControl.Resources>
         <ObjectDataProvider x:Key="LineEndingModesProvider"
@@ -289,16 +290,20 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Margin="0,0,8,8"
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   Margin="0,0,8,8"
                                    VerticalAlignment="Center"
                                    Text="Line endings:" />
-                        <ComboBox Grid.Column="1"
+                        <ComboBox Grid.Row="0"
+                                  Grid.Column="1"
                                   Margin="0,0,0,8"
                                   ItemsSource="{Binding Source={StaticResource LineEndingModesProvider}}"
                                   SelectedItem="{Binding LineEndingMode}"
                                   Style="{StaticResource CompactComboBoxStyle}" />
 
                         <TextBlock Grid.Row="1"
+                                   Grid.Column="0"
                                    Margin="0,0,8,0"
                                    VerticalAlignment="Center"
                                    Text="Sort mode:" />
@@ -345,9 +350,30 @@
                                   SelectedItem="{Binding SkippedFilesMetadataMode}" />
                     </Grid>
 
-                    <CheckBox Margin="0,8,0,0"
-                              Content="Include source-excluded files"
-                              IsChecked="{Binding IncludeSourceExcludedFiles}"
+                    <TextBlock Margin="0,10,0,4"
+                               FontWeight="SemiBold"
+                               Text="Skipped categories" />
+
+                    <CheckBox Content="Disabled file types"
+                              IsChecked="{Binding IncludeDisabledFileTypesInSkippedMetadata}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                    <CheckBox Content="Unsupported files"
+                              IsChecked="{Binding IncludeUnsupportedFilesInSkippedMetadata}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                    <CheckBox Content="Profile exclusions"
+                              IsChecked="{Binding IncludeProfileExclusionsInSkippedMetadata}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                    <CheckBox Content="Manual exclusions"
+                              IsChecked="{Binding IncludeManualExclusionsInSkippedMetadata}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                    <CheckBox Content="Source exclusions"
+                              IsChecked="{Binding IncludeSourceExclusionsInSkippedMetadata}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                    <CheckBox Content="Processing failures"
+                              IsChecked="{Binding IncludeProcessingFailuresInSkippedMetadata}"
+                              Style="{StaticResource CompactCheckBoxStyle}" />
+                    <CheckBox Content="Other"
+                              IsChecked="{Binding IncludeOtherInSkippedMetadata}"
                               Style="{StaticResource CompactCheckBoxStyle}" />
 
                     <TextBlock Margin="0,6,0,0"
@@ -356,7 +382,7 @@
                                TextWrapping="Wrap" />
                     <TextBlock Margin="0,4,0,0"
                                Foreground="{StaticResource Brush.TextSecondary}"
-                               Text="When enabled, source-specific exclusions are added to skipped-file metadata in Simple or Detailed mode. They remain excluded and do not appear in the discovered-files list."
+                               Text="Skipped categories control which skipped entries appear in metadata. They do not change whether files are included or skipped."
                                TextWrapping="Wrap" />
                 </StackPanel>
 
@@ -378,16 +404,20 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Margin="0,0,8,8"
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   Margin="0,0,8,8"
                                    VerticalAlignment="Center"
                                    Text="Mode:" />
-                        <ComboBox Grid.Column="1"
+                        <ComboBox Grid.Row="0"
+                                  Grid.Column="1"
                                   Margin="0,0,0,8"
                                   ItemsSource="{Binding Source={StaticResource InputEncodingModesProvider}}"
                                   SelectedItem="{Binding InputEncodingMode}"
                                   Style="{StaticResource CompactComboBoxStyle}" />
 
                         <TextBlock Grid.Row="1"
+                                   Grid.Column="0"
                                    Margin="0,0,8,8"
                                    VerticalAlignment="Center"
                                    Text="Preferred encoding:" />
@@ -398,6 +428,7 @@
                                  Text="{Binding PreferredInputEncodingName, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock Grid.Row="2"
+                                   Grid.Column="0"
                                    Margin="0,0,8,0"
                                    VerticalAlignment="Center"
                                    Text="Fallback encoding:" />
@@ -713,13 +744,12 @@
                                     <DataGridTemplateColumn Width="70"
                                                             Header="Enabled">
                                         <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
+                                            <DataTemplate DataType="{x:Type viewModels:ProfileFilterRuleItemViewModel}">
                                                 <Grid HorizontalAlignment="Stretch"
                                                       VerticalAlignment="Stretch">
-                                                    <CheckBox HorizontalAlignment="Center"
-                                                              VerticalAlignment="Center"
-                                                              IsChecked="{Binding IsEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                              Style="{StaticResource DataGridEditableCheckBoxStyle}" />
+                                                    <CheckBox
+                                                        IsChecked="{Binding IsEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                        Style="{StaticResource DataGridEditableCheckBoxStyle}" />
                                                 </Grid>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
@@ -728,7 +758,7 @@
                                     <DataGridTemplateColumn Width="110"
                                                             Header="Mode">
                                         <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
+                                            <DataTemplate DataType="{x:Type viewModels:ProfileFilterRuleItemViewModel}">
                                                 <ComboBox DisplayMemberPath="DisplayName"
                                                           ItemsSource="{Binding DataContext.FilterModeOptions, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                           SelectedValue="{Binding Mode, UpdateSourceTrigger=PropertyChanged}"
@@ -741,7 +771,7 @@
                                     <DataGridTemplateColumn Width="150"
                                                             Header="Target">
                                         <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
+                                            <DataTemplate DataType="{x:Type viewModels:ProfileFilterRuleItemViewModel}">
                                                 <ComboBox DisplayMemberPath="DisplayName"
                                                           ItemsSource="{Binding DataContext.FilterTargetOptions, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                           SelectedValue="{Binding Target, UpdateSourceTrigger=PropertyChanged}"
@@ -754,7 +784,7 @@
                                     <DataGridTemplateColumn Width="120"
                                                             Header="Match">
                                         <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
+                                            <DataTemplate DataType="{x:Type viewModels:ProfileFilterRuleItemViewModel}">
                                                 <ComboBox DisplayMemberPath="DisplayName"
                                                           ItemsSource="{Binding DataContext.RulePatternTypeOptions, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                           SelectedValue="{Binding PatternType, UpdateSourceTrigger=PropertyChanged}"

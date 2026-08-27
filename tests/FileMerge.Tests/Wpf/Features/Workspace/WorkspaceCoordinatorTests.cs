@@ -98,7 +98,10 @@ public sealed class WorkspaceCoordinatorTests
             new FakeOpenFileDialogService());
 
         WorkspaceDocumentViewModel document = CreateDocument();
+        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
 
+        document.ProfileEditor.ApplyProfile(
+            CreateProfile(skippedFileCategories: selection));
         document.ProfileEditor.WorkingProfileName = "Unity Repository";
         document.CurrentProfileEntryId = "profile-unity";
         document.ProfileOriginEntryId = "profile-origin";
@@ -112,6 +115,7 @@ public sealed class WorkspaceCoordinatorTests
         Assert.Equal("profile-unity", persistence.SavedWorkspace.Document.ProfileEntryId);
         Assert.Equal("profile-origin", persistence.SavedWorkspace.Document.ProfileOriginEntryId);
         Assert.Equal("Origin Profile", persistence.SavedWorkspace.Document.ProfileOriginDisplayName);
+        Assert.Equal(selection, persistence.SavedWorkspace.Document.Profile.SkippedFileCategories);
     }
 
     [Fact]
@@ -442,6 +446,8 @@ public sealed class WorkspaceCoordinatorTests
         {
             WorkspaceToLoad = CreateWorkspace(
                 sources: [],
+                profile: CreateProfile(
+                    skippedFileCategories: CreateSkippedFileCategorySelection()),
                 profileDisplayName: "Saved Workspace Profile",
                 profileEntryId: "profile-saved",
                 profileOriginEntryId: "profile-origin",
@@ -473,6 +479,9 @@ public sealed class WorkspaceCoordinatorTests
         Assert.Equal("profile-saved", document.CurrentProfileEntryId);
         Assert.Equal("profile-origin", document.ProfileOriginEntryId);
         Assert.Equal("Origin Profile", document.ProfileOriginDisplayName);
+        Assert.Equal(
+            CreateSkippedFileCategorySelection(),
+            document.ProfileEditor.CaptureProfile().SkippedFileCategories);
     }
 
     [Fact]
@@ -482,6 +491,9 @@ public sealed class WorkspaceCoordinatorTests
         {
             WorkspaceToLoad = CreateWorkspace(
                 sources: [],
+                profile: CreateProfile(
+                    includeSourceExcludedFiles: true,
+                    skippedFileCategories: null),
                 profileDisplayName: "Legacy Profile",
                 profileEntryId: "legacy-profile")
         };
@@ -504,6 +516,9 @@ public sealed class WorkspaceCoordinatorTests
         Assert.Equal("legacy-profile", document.CurrentProfileEntryId);
         Assert.Equal("legacy-profile", document.ProfileOriginEntryId);
         Assert.Equal("Legacy Profile", document.ProfileOriginDisplayName);
+        Assert.True(document.ProfileEditor.IncludeSourceExclusionsInSkippedMetadata);
+        Assert.Null(document.ProfileEditor.CaptureProfile().SkippedFileCategories);
+        Assert.True(document.ProfileEditor.CaptureProfile().IncludeSourceExcludedFiles);
     }
 
     [Fact]
@@ -576,6 +591,7 @@ public sealed class WorkspaceCoordinatorTests
     private static WorkspaceDto CreateWorkspace(
         List<WorkspaceSourceDto> sources,
         Dictionary<string, bool>? inclusionOverrides = null,
+        WorkspaceProfileDto? profile = null,
         string? profileDisplayName = null,
         string? profileEntryId = null,
         string? profileOriginEntryId = null,
@@ -586,7 +602,7 @@ public sealed class WorkspaceCoordinatorTests
                 SessionName: "Loaded Session",
                 OutputPath: @"D:\Output\loaded.txt",
                 Sources: sources,
-                Profile: CreateProfile(),
+                Profile: profile ?? CreateProfile(),
                 InclusionOverrides: inclusionOverrides ?? [],
                 ProfileDisplayName: profileDisplayName,
                 ProfileEntryId: profileEntryId,
@@ -594,7 +610,9 @@ public sealed class WorkspaceCoordinatorTests
                 ProfileOriginDisplayName: profileOriginDisplayName));
     }
 
-    private static WorkspaceProfileDto CreateProfile()
+    private static WorkspaceProfileDto CreateProfile(
+        bool includeSourceExcludedFiles = false,
+        SkippedFileCategorySelection? skippedFileCategories = null)
     {
         return new WorkspaceProfileDto(
             IncludeHeaderComment: false,
@@ -616,7 +634,21 @@ public sealed class WorkspaceCoordinatorTests
             InputEncodingMode: InputEncodingMode.Auto,
             PreferredInputEncodingName: null,
             FallbackInputEncodingName: "windows-1251",
-            FilterRules: []);
+            FilterRules: [],
+            IncludeSourceExcludedFiles: includeSourceExcludedFiles,
+            SkippedFileCategories: skippedFileCategories);
+    }
+
+    private static SkippedFileCategorySelection CreateSkippedFileCategorySelection()
+    {
+        return new SkippedFileCategorySelection(
+            IncludeDisabledFileTypes: true,
+            IncludeUnsupportedFiles: false,
+            IncludeProfileExclusions: true,
+            IncludeManualExclusions: false,
+            IncludeSourceExclusions: true,
+            IncludeProcessingFailures: true,
+            IncludeOther: false);
     }
 
     private sealed class FakeWorkspacePersistenceService : IWorkspacePersistenceService

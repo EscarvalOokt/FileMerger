@@ -109,6 +109,10 @@ public sealed class BuildMergePreviewUseCase
             IReadOnlyCollection<InputFile> filteredFiles =
                 _fileFilterService.ApplyFilters(mergeCandidates, validatedSession.Profile);
 
+            IReadOnlyCollection<InputFile> automaticFiles = ReconcileInventory(
+                discoveryResult.InventoryFiles,
+                filteredFiles);
+
             cancellationToken.ThrowIfCancellationRequested();
 
             progress?.Report(new BuildMergePreviewProgress(
@@ -122,17 +126,22 @@ public sealed class BuildMergePreviewUseCase
                     filteredFiles,
                     request.InclusionOverrides);
 
-            MergeSession sessionWithFiles = validatedSession.WithFiles(overriddenFiles);
+            IReadOnlyCollection<InputFile> effectiveFiles = ReconcileInventory(
+                automaticFiles,
+                overriddenFiles);
+
+            MergeSession sessionWithFiles = validatedSession.WithFiles(effectiveFiles);
 
             List<ValidationIssue> allIssues = [.. validationIssues];
             List<MergeSection> sections = [];
+            List<InputFile> processingFailedFiles = [];
 
             InputReadOptions readOptions = new(
                 sessionWithFiles.Profile.GeneralOptions.InputEncodingMode,
                 sessionWithFiles.Profile.GeneralOptions.PreferredInputEncodingName,
                 sessionWithFiles.Profile.GeneralOptions.FallbackInputEncodingName);
 
-            InputFile[] includedFiles = [.. sessionWithFiles.Files.Where(x => x.IsIncluded)];
+            InputFile[] includedFiles = [.. overriddenFiles.Where(x => x.IsIncluded)];
 
             for (int i = 0; i < includedFiles.Length; i++)
             {
@@ -149,9 +158,9 @@ public sealed class BuildMergePreviewUseCase
                 ContentReadResult readResult = _contentReader.Read(file, readOptions);
                 if (!readResult.IsSuccessful)
                 {
-                    if (readResult.Issue is not null)
-                        allIssues.Add(readResult.Issue);
-
+                    ValidationIssue issue = readResult.Issue!;
+                    allIssues.Add(issue);
+                    processingFailedFiles.Add(file.Exclude(new SkipReason(issue.Code, issue.Message)));
                     continue;
                 }
 
@@ -171,6 +180,12 @@ public sealed class BuildMergePreviewUseCase
                     headerText: headerText));
             }
 
+            IReadOnlyCollection<InputFile> processedFiles = ReconcileInventory(
+                sessionWithFiles.Files,
+                processingFailedFiles);
+
+            MergeSession processedSession = sessionWithFiles.WithFiles(processedFiles);
+
             cancellationToken.ThrowIfCancellationRequested();
 
             progress?.Report(new BuildMergePreviewProgress(
@@ -180,12 +195,12 @@ public sealed class BuildMergePreviewUseCase
                 Message: "Building merged output."));
 
             MergeOutput output = _mergeBuilder.Build(
-                sessionWithFiles,
+                processedSession,
                 sections,
                 stopwatch.Elapsed,
                 discoveryResult.SourceExcludedFiles);
 
-            MergeSession finalSession = sessionWithFiles
+            MergeSession finalSession = processedSession
                 .WithValidationIssues(allIssues)
                 .WithLastOutput(output);
 
@@ -194,10 +209,6 @@ public sealed class BuildMergePreviewUseCase
                 Current: 1,
                 Total: 1,
                 Message: $"Preview built. Sections: {sections.Count}"));
-
-            IReadOnlyCollection<InputFile> automaticFiles = BuildAutomaticInventory(
-                discoveryResult.InventoryFiles,
-                filteredFiles);
 
             return new BuildMergePreviewResult(
                 session: finalSession,
@@ -210,11 +221,11 @@ public sealed class BuildMergePreviewUseCase
     }
 
 
-    private static IReadOnlyCollection<InputFile> BuildAutomaticInventory(
-        IReadOnlyCollection<InputFile> inventoryFiles,
-        IReadOnlyCollection<InputFile> filteredFiles)
+    private static IReadOnlyCollection<InputFile> ReconcileInventory(
+        IReadOnlyCollection<InputFile> baselineFiles,
+        IReadOnlyCollection<InputFile> updatedFiles)
     {
-        var filteredMap = filteredFiles
+        var updatedMap = updatedFiles
             .GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 x => x.Key,
@@ -223,8 +234,8 @@ public sealed class BuildMergePreviewUseCase
 
         return
         [
-            .. inventoryFiles.Select(file =>
-                filteredMap.GetValueOrDefault(file.FullPath, file))
+            .. baselineFiles.Select(file =>
+                updatedMap.GetValueOrDefault(file.FullPath, file))
         ];
     }
 

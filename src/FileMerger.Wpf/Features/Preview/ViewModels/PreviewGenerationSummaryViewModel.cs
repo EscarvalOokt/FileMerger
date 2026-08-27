@@ -1,16 +1,12 @@
 using System.Globalization;
 using FileMerger.Domain.Entities;
+using FileMerger.Domain.Enums;
 using FileMerger.Wpf.Shared.ViewModels;
 
 namespace FileMerger.Wpf.Features.Preview.ViewModels;
 
 public sealed class PreviewGenerationSummaryViewModel : ViewModelBase
 {
-    private const string DisabledFileTypeReasonCode = "discovery.file-type-disabled";
-    private const string UnsupportedFileTypeReasonCode = "discovery.unsupported-file-type";
-    private const string ProfileFilterReasonCode = "filter.rule.exclude";
-    private const string ManualExclusionReasonCode = "manual.exclude";
-
     public static PreviewGenerationSummaryViewModel Empty { get; } = new();
 
     private PreviewGenerationSummaryViewModel()
@@ -170,21 +166,21 @@ public sealed class PreviewGenerationSummaryViewModel : ViewModelBase
                 continue;
             }
 
-            switch (effectiveFile.SkipReason?.Code)
+            switch (effectiveFile.SkipReason?.Category)
             {
-                case DisabledFileTypeReasonCode:
+                case SkippedFileCategory.DisabledFileType:
                     disabledFileTypeFiles++;
                     break;
 
-                case UnsupportedFileTypeReasonCode:
+                case SkippedFileCategory.UnsupportedFile:
                     unsupportedFiles++;
                     break;
 
-                case ProfileFilterReasonCode:
+                case SkippedFileCategory.ProfileExclusion:
                     profileExcludedFiles++;
                     break;
 
-                case ManualExclusionReasonCode:
+                case SkippedFileCategory.ManualExclusion:
                     manuallyExcludedFiles++;
                     break;
 

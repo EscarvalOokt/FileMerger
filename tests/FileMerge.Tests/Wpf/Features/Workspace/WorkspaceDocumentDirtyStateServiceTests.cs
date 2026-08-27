@@ -1,4 +1,5 @@
 using FileMerger.Tests.Wpf.TestSupport;
+using FileMerger.Wpf.Features.Preview;
 using FileMerger.Wpf.Features.Workspace;
 using FileMerger.Wpf.Shell.Main;
 
@@ -31,6 +32,45 @@ public sealed class WorkspaceDocumentDirtyStateServiceTests
         service.RefreshPreviewDirtyState(document);
 
         Assert.True(document.PreviewDirtyTracker.IsPreviewDirty);
+    }
+
+    [Fact]
+    public void RefreshPreviewDirtyState_Should_Update_When_Skipped_File_Category_Changes()
+    {
+        WorkspaceDocumentViewModel document = CreateDocument();
+        WorkspaceDocumentDirtyStateService service = new(new MainStateFactory());
+
+        service.MarkPreviewApplied(document);
+
+        document.ProfileEditor.IncludeUnsupportedFilesInSkippedMetadata = false;
+        service.RefreshPreviewDirtyState(document);
+
+        Assert.True(document.PreviewDirtyTracker.IsPreviewDirty);
+        Assert.Equal(
+            PreviewDirtyReason.ProfileChanged,
+            document.PreviewDirtyTracker.PreviewDirtyReason);
+    }
+
+    [Fact]
+    public void RefreshPreviewDirtyState_Should_Clear_When_Skipped_File_Category_Change_Is_Reverted()
+    {
+        WorkspaceDocumentViewModel document = CreateDocument();
+        WorkspaceDocumentDirtyStateService service = new(new MainStateFactory());
+
+        service.MarkPreviewApplied(document);
+
+        document.ProfileEditor.IncludeUnsupportedFilesInSkippedMetadata = false;
+        service.RefreshPreviewDirtyState(document);
+
+        Assert.True(document.PreviewDirtyTracker.IsPreviewDirty);
+
+        document.ProfileEditor.IncludeUnsupportedFilesInSkippedMetadata = true;
+        service.RefreshPreviewDirtyState(document);
+
+        Assert.False(document.PreviewDirtyTracker.IsPreviewDirty);
+        Assert.Equal(
+            PreviewDirtyReason.None,
+            document.PreviewDirtyTracker.PreviewDirtyReason);
     }
 
     [Fact]
@@ -82,6 +122,20 @@ public sealed class WorkspaceDocumentDirtyStateServiceTests
 
         document.SessionSettings.SessionName = "Changed Session";
 
+        service.RefreshWorkspaceDirtyState(document);
+
+        Assert.True(document.WorkspaceDirtyTracker.IsWorkspaceDirty);
+    }
+
+    [Fact]
+    public void RefreshWorkspaceDirtyState_Should_Update_When_Skipped_File_Category_Changes()
+    {
+        WorkspaceDocumentViewModel document = CreateDocument();
+        WorkspaceDocumentDirtyStateService service = new(new MainStateFactory());
+
+        service.MarkWorkspaceSaved(document);
+
+        document.ProfileEditor.IncludeUnsupportedFilesInSkippedMetadata = false;
         service.RefreshWorkspaceDirtyState(document);
 
         Assert.True(document.WorkspaceDirtyTracker.IsWorkspaceDirty);

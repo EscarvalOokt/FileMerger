@@ -55,7 +55,7 @@ A session can include multiple sources:
 
 For folder sources, recursion can be toggled per source. Sources can also be enabled or disabled without removing them from the workspace.
 
-Folder sources support source-specific exclusions. This allows excluding nested folders or files from the normal discovery/session inventory for a specific source without changing global profile filter rules. When profile output metadata enables source-excluded reporting, those files can still be included in skipped-file audit metadata without becoming normal discovered/session files.
+Folder sources support source-specific exclusions. This allows excluding nested folders or files from the normal discovery/session inventory for a specific source without changing global profile filter rules. Source-excluded files remain a separate audit path. When skipped-file metadata is enabled and the effective category policy includes **Source exclusions**, those files can be reported in skipped-file metadata without becoming normal discovered/session files.
 
 Typical examples:
 
@@ -82,7 +82,7 @@ The profile controls:
 * output metadata behavior
 * content transformations
 
-After discovery and filtering, eligible merge candidates can still be manually included or excluded for the current workspace. Known-but-disabled and unsupported non-candidates remain visible for inspection but cannot be manually included.
+After discovery and filtering, eligible merge candidates can still be manually included or excluded for the current workspace. Known-but-disabled and unsupported non-candidates remain visible for inspection but cannot be manually included. If an intended-included file cannot be read during preview generation, it is accounted for as a skipped processing failure and the read failure is also reported as a validation issue.
 
 ### File inclusion workflow
 
@@ -116,7 +116,7 @@ During preview generation, it reports progress for:
 
 Unsupported-text probing reports discovery progress while unknown files are being classified.
 
-The generation summary reports discovered, included, and not-included files, with separate counts for disabled file types, unsupported files, profile exclusions, manual exclusions, other exclusion reasons, included fallback text files, and source-excluded audit entries when available.
+The generation summary reports discovered, included, and not-included files, with separate counts for disabled file types, unsupported files, profile exclusions, manual exclusions, processing failures, other exclusion reasons, included fallback text files, and source-excluded audit entries when available.
 
 If the preview is very large, the UI shows a truncated preview for responsiveness. Saving still writes the full merged output.
 
@@ -371,12 +371,24 @@ Profiles can control generated output metadata:
 * include file summary
 * skipped files metadata mode
 
-  * none
-  * simple
-  * detailed
-* include source-excluded files in skipped-file metadata
+  * `None` — do not write a skipped-file section
+  * `Simple` — list the paths of selected skipped files
+  * `Detailed` — list selected skipped files with skip reasons and filter-rule details when available
+* skipped-file categories
 
-Source-excluded reporting is opt-in and only contributes to skipped-file metadata when the skipped-files mode is `simple` or `detailed`. It does not make source-excluded files merge candidates or add them to the normal discovered/session inventory.
+  * Disabled file types
+  * Unsupported files
+  * Profile exclusions
+  * Manual exclusions
+  * Source exclusions
+  * Processing failures
+  * Other
+
+The skipped-files mode controls **representation**, while the category selection controls **membership**. `None` suppresses the skipped-file section regardless of the selected categories. `Simple` and `Detailed` apply only to skipped entries whose semantic categories are enabled.
+
+Category selection does not change whether a file is included or skipped. It only controls which already-skipped entries may appear in generated metadata. A processing failure is a file that was intended for inclusion but could not be read; the read error is also reported through validation.
+
+Source exclusions remain a separate audit path rather than part of the normal discovered/session inventory. Enabling the **Source exclusions** category allows those audit entries to appear in skipped-file metadata, but does not make them merge candidates or make them eligible for manual inclusion overrides. **Other** is the fallback category for skipped reasons that do not map to one of the known semantic categories.
 
 Output metadata changes generated output and is therefore profile-level behavior.
 

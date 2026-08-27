@@ -2,6 +2,8 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
+// ReSharper disable InconsistentNaming
+
 namespace FileMerger.Wpf.Diagnostics;
 
 public sealed record CrashLogContext(
