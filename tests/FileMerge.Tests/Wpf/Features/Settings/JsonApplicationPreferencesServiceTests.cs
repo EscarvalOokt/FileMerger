@@ -19,6 +19,12 @@ public sealed class JsonApplicationPreferencesServiceTests : IDisposable
         Directory.CreateDirectory(_tempRoot);
     }
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempRoot))
+            Directory.Delete(_tempRoot, recursive: true);
+    }
+
     [Fact]
     public async Task LoadAsync_Should_Return_Default_When_Storage_File_Is_Missing()
     {
@@ -109,12 +115,8 @@ public sealed class JsonApplicationPreferencesServiceTests : IDisposable
         ApplicationPreferences result = await service.LoadAsync();
 
         Assert.True(result.IsPreviewLineWrapEnabledByDefault);
-        Assert.Equal(
-            ApplicationPreferences.DefaultPreviewDisplayCharacterLimit,
-            result.PreviewDisplayCharacterLimit);
-        Assert.Equal(
-            ApplicationPreferences.DefaultCrashLogRetentionLimit,
-            result.CrashLogRetentionLimit);
+        Assert.Equal(ApplicationPreferences.DefaultPreviewDisplayCharacterLimit, result.PreviewDisplayCharacterLimit);
+        Assert.Equal(ApplicationPreferences.DefaultCrashLogRetentionLimit, result.CrashLogRetentionLimit);
     }
 
     [Fact]
@@ -133,9 +135,7 @@ public sealed class JsonApplicationPreferencesServiceTests : IDisposable
 
         ApplicationPreferences result = await service.LoadAsync();
 
-        Assert.Equal(
-            ApplicationPreferences.MinimumPreviewDisplayCharacterLimit,
-            result.PreviewDisplayCharacterLimit);
+        Assert.Equal(ApplicationPreferences.MinimumPreviewDisplayCharacterLimit, result.PreviewDisplayCharacterLimit);
     }
 
     [Fact]
@@ -154,27 +154,20 @@ public sealed class JsonApplicationPreferencesServiceTests : IDisposable
 
         ApplicationPreferences result = await service.LoadAsync();
 
-        Assert.Equal(
-            ApplicationPreferences.MaximumCrashLogRetentionLimit,
-            result.CrashLogRetentionLimit);
+        Assert.Equal(ApplicationPreferences.MaximumCrashLogRetentionLimit, result.CrashLogRetentionLimit);
     }
 
     [Fact]
     public async Task SaveAsync_Should_Normalize_Values_Before_Writing()
     {
         JsonApplicationPreferencesService service = CreateService();
-        var preferences = new ApplicationPreferences(
-            true,
-            int.MinValue,
-            int.MaxValue);
+        var preferences = new ApplicationPreferences(true, int.MinValue, int.MaxValue);
 
         await service.SaveAsync(preferences);
 
-        using var document = JsonDocument.Parse(
-            await File.ReadAllTextAsync(CreatePathPolicy().GetStorageFilePath()));
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(CreatePathPolicy().GetStorageFilePath()));
 
-        JsonElement savedPreferences =
-            document.RootElement.GetProperty("preferences");
+        JsonElement savedPreferences = document.RootElement.GetProperty("preferences");
 
         Assert.Equal(
             ApplicationPreferences.MinimumPreviewDisplayCharacterLimit,
@@ -188,8 +181,7 @@ public sealed class JsonApplicationPreferencesServiceTests : IDisposable
     public async Task SaveAsync_Should_Create_Storage_Directory()
     {
         JsonApplicationPreferencesService service = CreateService();
-        string storageDirectory = Path.GetDirectoryName(
-            CreatePathPolicy().GetStorageFilePath())!;
+        string storageDirectory = Path.GetDirectoryName(CreatePathPolicy().GetStorageFilePath())!;
 
         Assert.False(Directory.Exists(storageDirectory));
 
@@ -213,11 +205,5 @@ public sealed class JsonApplicationPreferencesServiceTests : IDisposable
         string storagePath = CreatePathPolicy().GetStorageFilePath();
         Directory.CreateDirectory(Path.GetDirectoryName(storagePath)!);
         await File.WriteAllTextAsync(storagePath, json);
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_tempRoot))
-            Directory.Delete(_tempRoot, recursive: true);
     }
 }

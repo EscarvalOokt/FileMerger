@@ -316,9 +316,7 @@ public sealed class FilesPaneViewModelTests
             automaticIncluded: false,
             currentIncluded: false,
             appliedIncluded: false,
-            skipReason: new SkipReason(
-                "discovery.file-type-disabled",
-                "File type is disabled in the current profile."),
+            skipReason: new SkipReason("discovery.file-type-disabled", "File type is disabled in the current profile."),
             isMergeCandidate: false);
 
         InputFileItemViewModel unsupported = CreateItem(
@@ -361,11 +359,7 @@ public sealed class FilesPaneViewModelTests
 
         viewModel.LoadFiles(
         [
-            CreateItem(
-                "ManualOff.cs",
-                automaticIncluded: true,
-                currentIncluded: false,
-                appliedIncluded: false),
+            CreateItem("ManualOff.cs", automaticIncluded: true, currentIncluded: false, appliedIncluded: false),
 
             CreateItem(
                 "Generated.g.cs",
@@ -431,11 +425,7 @@ public sealed class FilesPaneViewModelTests
                     "File type is not supported by the current profile."),
                 isMergeCandidate: false),
 
-            CreateItem(
-                "Included.custom",
-                extension: ".custom",
-                kind: FileKind.Text,
-                isFallbackText: true)
+            CreateItem("Included.custom", extension: ".custom", kind: FileKind.Text, isFallbackText: true)
         ]);
 
         SelectFacet(viewModel, FileListFacet.NotIncluded);
@@ -831,9 +821,7 @@ public sealed class FilesPaneViewModelTests
             automaticIncluded: false,
             currentIncluded: false,
             appliedIncluded: false,
-            skipReason: new SkipReason(
-                "discovery.file-type-disabled",
-                "File type is disabled in the current profile."),
+            skipReason: new SkipReason("discovery.file-type-disabled", "File type is disabled in the current profile."),
             isMergeCandidate: false);
 
         viewModel.LoadFiles([candidate, nonCandidate]);
@@ -862,9 +850,8 @@ public sealed class FilesPaneViewModelTests
             extension: ".cs",
             kind: FileKind.CSharp);
 
-        InputFile processingFailedFile = automaticFile.Exclude(new SkipReason(
-            "file.read.failed",
-            "Failed to read 'Broken.cs': Access denied."));
+        InputFile processingFailedFile = automaticFile.Exclude(
+            new SkipReason("file.read.failed", "Failed to read 'Broken.cs': Access denied."));
 
         viewModel.ApplyFiles([automaticFile], [processingFailedFile]);
 
@@ -876,11 +863,51 @@ public sealed class FilesPaneViewModelTests
         Assert.False(item.HasManualOverride);
         Assert.True(item.HasSkippedStatus);
         Assert.Equal("file.read.failed", item.SkipReasonCode);
-        Assert.Equal(
-            "Failed to read 'Broken.cs': Access denied.",
-            item.SkipReason);
+        Assert.Equal("Failed to read 'Broken.cs': Access denied.", item.SkipReason);
         Assert.Empty(viewModel.BuildOverrides());
         Assert.Empty(viewModel.CaptureOverridesDictionary());
+    }
+
+    [Fact]
+    public void ApplyFiles_Should_Refresh_ResetAllFileOverridesCommand_After_Persisted_Overrides_Are_Loaded()
+    {
+        FilesPaneViewModel viewModel = CreateViewModel();
+        string fullPath = @"D:\Project\Persisted.cs";
+
+        viewModel.ApplyOverridesDictionary(
+            new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
+            {
+                [fullPath] = false
+            });
+
+        Assert.False(viewModel.ResetAllFileOverridesCommand.CanExecute(null));
+
+        int canExecuteChangedCount = 0;
+        viewModel.ResetAllFileOverridesCommand.CanExecuteChanged += (_, _) => canExecuteChangedCount++;
+
+        var automaticFile = new InputFile(
+            fullPath: fullPath,
+            relativePath: "Persisted.cs",
+            extension: ".cs",
+            kind: FileKind.CSharp);
+
+        viewModel.ApplyFiles([automaticFile], [automaticFile]);
+
+        InputFileItemViewModel item = Assert.Single(viewModel.Files);
+        Assert.False(item.IsIncluded);
+        Assert.True(item.HasManualOverride);
+        Assert.True(viewModel.ResetAllFileOverridesCommand.CanExecute(null));
+        Assert.True(canExecuteChangedCount > 0);
+
+        int eventCountAfterLoad = canExecuteChangedCount;
+
+        viewModel.ResetAllFileOverridesCommand.Execute(null);
+
+        Assert.True(item.IsIncluded);
+        Assert.False(item.HasManualOverride);
+        Assert.Empty(viewModel.BuildOverrides());
+        Assert.False(viewModel.ResetAllFileOverridesCommand.CanExecute(null));
+        Assert.True(canExecuteChangedCount > eventCountAfterLoad);
     }
 
     [Fact]
@@ -889,10 +916,11 @@ public sealed class FilesPaneViewModelTests
         FilesPaneViewModel viewModel = CreateViewModel();
         string fullPath = @"D:\Project\Unsupported.bin";
 
-        viewModel.ApplyOverridesDictionary(new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
-        {
-            [fullPath] = true
-        });
+        viewModel.ApplyOverridesDictionary(
+            new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
+            {
+                [fullPath] = true
+            });
 
         Assert.Single(viewModel.BuildOverrides());
 
@@ -934,18 +962,18 @@ public sealed class FilesPaneViewModelTests
             isMergeCandidate: false);
 
         viewModel.LoadFiles([nonCandidate]);
-        viewModel.ApplyOverridesDictionary(new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
-        {
-            [nonCandidate.FullPath] = true
-        });
+        viewModel.ApplyOverridesDictionary(
+            new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
+            {
+                [nonCandidate.FullPath] = true
+            });
 
         Assert.False(nonCandidate.IsIncluded);
         Assert.False(nonCandidate.HasManualOverride);
         Assert.Empty(viewModel.BuildOverrides());
     }
 
-    private static FilesPaneViewModel CreateViewModel(
-        FakeClipboardService? clipboard = null)
+    private static FilesPaneViewModel CreateViewModel(FakeClipboardService? clipboard = null)
     {
         return new FilesPaneViewModel(clipboard ?? new FakeClipboardService());
     }
@@ -961,16 +989,12 @@ public sealed class FilesPaneViewModelTests
         Assert.False(option.IsSelected);
     }
 
-    private static int GetCount(
-        FilesPaneViewModel viewModel,
-        FileListFacet facet)
+    private static int GetCount(FilesPaneViewModel viewModel, FileListFacet facet)
     {
         return viewModel.Filters.AllFacets.Single(x => x.Facet == facet).Count;
     }
 
-    private static void SelectFacet(
-        FilesPaneViewModel viewModel,
-        FileListFacet facet)
+    private static void SelectFacet(FilesPaneViewModel viewModel, FileListFacet facet)
     {
         viewModel.Filters.AllFacets.Single(x => x.Facet == facet).IsSelected = true;
     }

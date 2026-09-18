@@ -1,0 +1,107 @@
+<windows:ShellDialogWindow x:Class="FileMerger.Wpf.Features.Workspace.Configuration.Views.WorkspaceLocalProfileWindow"
+                           xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                           xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                           xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                           xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                           xmlns:profileViews="clr-namespace:FileMerger.Wpf.Features.Profile.Views"
+                           xmlns:viewModels="clr-namespace:FileMerger.Wpf.Features.Workspace.Configuration.ViewModels"
+                           xmlns:windowing="clr-namespace:Escarval.Wpf.Windowing;assembly=Escarval.Wpf.Windowing"
+                           xmlns:windows="clr-namespace:FileMerger.Wpf.Shell.Windows"
+                           Title="Edit Local Profile"
+                           Width="1080"
+                           Height="760"
+                           MinWidth="900"
+                           MinHeight="620"
+                           ResizeMode="CanResize"
+                           Style="{StaticResource WindowingFixedDialogWindowStyle}"
+                           WindowStartupLocation="CenterOwner"
+                           d:DataContext="{d:DesignInstance Type=viewModels:WorkspaceLocalProfileDialogViewModel, IsDesignTimeCreatable=False}"
+                           mc:Ignorable="d">
+    <windowing:WindowFrameHost Title="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Title}"
+                               BodyPadding="0"
+                               Subtitle="Edit the workspace-local profile copy. Changes remain staged until Workspace Configuration is confirmed.">
+        <windowing:WindowFrameHost.BodyContent>
+            <Grid Background="{StaticResource Brush.WindowBackground}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0"
+                        Margin="12,12,12,8"
+                        Style="{StaticResource SurfaceCompactCardBorderStyle}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Margin="0,0,8,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   Text="Profile name:" />
+                        <TextBox Grid.Column="1"
+                                 Style="{StaticResource CompactTextBoxStyle}"
+                                 Text="{Binding Editor.WorkingProfileName, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                </Border>
+
+                <profileViews:ProfileEditorView Grid.Row="1"
+                                                Margin="12,0,12,12"
+                                                DataContext="{Binding Editor}" />
+
+                <Border Grid.Row="2"
+                        Padding="{DynamicResource Inset.DialogFooter}"
+                        Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border}"
+                        BorderThickness="0,1,0,0">
+                    <DockPanel LastChildFill="True">
+                        <StackPanel DockPanel.Dock="Right"
+                                    Style="{StaticResource DialogFooterPanelStyle}">
+                            <Button Width="86"
+                                    Height="32"
+                                    Margin="0,0,6,0"
+                                    Command="{Binding CancelCommand}"
+                                    Content="Cancel"
+                                    IsCancel="True"
+                                    Style="{StaticResource CompactSecondaryButtonStyle}" />
+
+                            <Button Width="86"
+                                    Height="32"
+                                    Command="{Binding OkCommand}"
+                                    Content="OK"
+                                    IsDefault="True"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    ToolTip="{Binding Editor.DraftValidationMessage}"
+                                    ToolTipService.ShowOnDisabled="True" />
+                        </StackPanel>
+
+                        <TextBlock Margin="0,0,16,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.Error}"
+                                   Text="{Binding Editor.DraftValidationMessage}">
+                            <TextBlock.Style>
+                                <Style BasedOn="{StaticResource DialogHintTextStyle}"
+                                       TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Editor.DraftValidationMessage}"
+                                                     Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Editor.DraftValidationMessage}"
+                                                     Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </windowing:WindowFrameHost.BodyContent>
+    </windowing:WindowFrameHost>
+</windows:ShellDialogWindow>

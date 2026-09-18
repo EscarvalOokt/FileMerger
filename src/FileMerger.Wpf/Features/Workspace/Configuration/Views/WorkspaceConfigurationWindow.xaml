@@ -10,10 +10,10 @@
                        xmlns:windowing="clr-namespace:Escarval.Wpf.Windowing;assembly=Escarval.Wpf.Windowing"
                        xmlns:windows="clr-namespace:FileMerger.Wpf.Shell.Windows"
                        Title="Workspace Configuration"
-                       Width="980"
-                       Height="780"
-                       MinWidth="920"
-                       MinHeight="640"
+                       Width="960"
+                       Height="640"
+                       MinWidth="720"
+                       MinHeight="480"
                        ResizeMode="CanResize"
                        Style="{StaticResource WindowingFixedDialogWindowStyle}"
                        WindowStartupLocation="CenterOwner"
@@ -38,53 +38,51 @@
                             BrowseOutputCommand="{Binding DataContext.BrowseOutputCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                             DataContext="{Binding WorkingDocument.SessionSettings}" />
 
-                        <sourcesViews:SourcesPaneView Height="260"
-                                                      Margin="0,12,0,0"
+                        <sourcesViews:SourcesPaneView Margin="0,12,0,0"
                                                       DataContext="{Binding WorkingDocument.SourcesPane}" />
 
                         <Border Margin="0,12,0,0"
                                 Style="{StaticResource SurfaceCompactCardBorderStyle}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="90" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="8" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Row="0"
-                                           Grid.Column="0"
-                                           Margin="0,0,8,0"
-                                           VerticalAlignment="Center"
-                                           Foreground="{StaticResource Brush.TextSecondary}"
-                                           Text="Profile name:" />
-                                <TextBox Grid.Row="0"
-                                         Grid.Column="1"
-                                         Style="{StaticResource CompactTextBoxStyle}"
-                                         Text="{Binding WorkingDocument.ProfileEditor.WorkingProfileName, UpdateSourceTrigger=PropertyChanged}" />
+                                    <StackPanel Grid.Column="0"
+                                                Margin="0,0,16,0">
+                                        <TextBlock FontWeight="SemiBold"
+                                                   Text="{Binding CurrentProfileCard.ProfileName}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding CurrentProfileCard.ProfileName}" />
+                                        <TextBlock Margin="0,3,0,0"
+                                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                                   Text="{Binding CurrentProfileCard.ProfileSourceText}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding CurrentProfileCard.ProfileSourceText}" />
+                                    </StackPanel>
 
-                                <TextBlock Grid.Row="2"
-                                           Grid.Column="0"
-                                           Margin="0,0,8,0"
-                                           VerticalAlignment="Center"
-                                           Foreground="{StaticResource Brush.TextSecondary}"
-                                           Text="Source:" />
-                                <TextBlock Grid.Row="2"
-                                           Grid.Column="1"
-                                           VerticalAlignment="Center"
-                                           Foreground="{StaticResource Brush.TextSecondary}"
-                                           Text="{Binding ProfileSourceText}"
-                                           TextTrimming="CharacterEllipsis"
-                                           ToolTip="{Binding ProfileSourceText}" />
-                            </Grid>
+                                    <Button Grid.Column="1"
+                                            Margin="0,0,6,0"
+                                            Command="{Binding EditLocalProfileCommand}"
+                                            Content="Edit local profile"
+                                            Style="{StaticResource CompactSecondaryButtonStyle}"
+                                            ToolTip="Edit the workspace-local profile copy. Changes remain staged until Workspace Configuration is confirmed." />
+
+                                    <Button Grid.Column="2"
+                                            Command="{Binding ChooseProfileCommand}"
+                                            Content="Choose profile"
+                                            Style="{StaticResource CompactSecondaryButtonStyle}"
+                                            ToolTip="Open the Profile Library and apply a profile to this workspace configuration." />
+                                </Grid>
+
+                                <Separator Margin="0,12,0,12" />
+
+                                <profileViews:ProfileSummaryView DataContext="{Binding CurrentProfileCard.Summary}" />
+                            </StackPanel>
                         </Border>
-
-                        <profileViews:ProfileEditorView Height="520"
-                                                        Margin="0,12,0,0"
-                                                        DataContext="{Binding WorkingDocument.ProfileEditor}" />
                     </StackPanel>
                 </ScrollViewer>
 
@@ -93,22 +91,51 @@
                         Background="{StaticResource Brush.Surface}"
                         BorderBrush="{StaticResource Brush.Border}"
                         BorderThickness="0,1,0,0">
-                    <StackPanel Style="{StaticResource DialogFooterPanelStyle}">
-                        <Button Width="86"
-                                Height="32"
-                                Margin="0,0,6,0"
-                                Command="{Binding CancelCommand}"
-                                Content="Cancel"
-                                IsCancel="True"
-                                Style="{StaticResource CompactSecondaryButtonStyle}" />
+                    <DockPanel LastChildFill="True">
+                        <StackPanel DockPanel.Dock="Right"
+                                    Style="{StaticResource DialogFooterPanelStyle}">
+                            <Button Width="86"
+                                    Height="32"
+                                    Margin="0,0,6,0"
+                                    Command="{Binding CancelCommand}"
+                                    Content="Cancel"
+                                    IsCancel="True"
+                                    Style="{StaticResource CompactSecondaryButtonStyle}" />
 
-                        <Button Width="86"
-                                Height="32"
-                                Command="{Binding OkCommand}"
-                                Content="OK"
-                                IsDefault="True"
-                                Style="{StaticResource PrimaryButtonStyle}" />
-                    </StackPanel>
+                            <Button Width="86"
+                                    Height="32"
+                                    Command="{Binding OkCommand}"
+                                    ToolTip="{Binding WorkingDocument.ProfileEditor.DraftValidationMessage}"
+                                    ToolTipService.ShowOnDisabled="True"
+                                    Content="OK"
+                                    IsDefault="True"
+                                    Style="{StaticResource PrimaryButtonStyle}" />
+                        </StackPanel>
+
+                        <TextBlock Margin="0,0,16,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.Error}"
+                                   Text="{Binding WorkingDocument.ProfileEditor.DraftValidationMessage}">
+                            <TextBlock.Style>
+                                <Style BasedOn="{StaticResource DialogHintTextStyle}"
+                                       TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger
+                                            Binding="{Binding WorkingDocument.ProfileEditor.DraftValidationMessage}"
+                                            Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <DataTrigger
+                                            Binding="{Binding WorkingDocument.ProfileEditor.DraftValidationMessage}"
+                                            Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </DockPanel>
                 </Border>
             </Grid>
         </windowing:WindowFrameHost.BodyContent>

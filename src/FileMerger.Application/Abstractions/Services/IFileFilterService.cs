@@ -5,7 +5,5 @@ namespace FileMerger.Application.Abstractions.Services;
 
 public interface IFileFilterService
 {
-    IReadOnlyCollection<InputFile> ApplyFilters(
-        IReadOnlyCollection<InputFile> files,
-        MergeProfile profile);
+    IReadOnlyCollection<InputFile> ApplyFilters(IReadOnlyCollection<InputFile> files, MergeProfile profile);
 }

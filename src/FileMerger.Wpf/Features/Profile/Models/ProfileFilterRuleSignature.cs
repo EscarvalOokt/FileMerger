@@ -20,20 +20,6 @@ public sealed class ProfileFilterRuleSignature(
     public string? Description { get; } = description;
     public bool IsUserEditable { get; } = isUserEditable;
 
-    public static ProfileFilterRuleSignature From(WorkspaceFileFilterRuleDto dto)
-    {
-        ArgumentNullException.ThrowIfNull(dto);
-
-        return new ProfileFilterRuleSignature(
-            dto.Mode,
-            dto.Target,
-            dto.PatternType,
-            dto.Pattern,
-            dto.IsEnabled,
-            dto.Description,
-            dto.IsUserEditable);
-    }
-
     public bool Equals(ProfileFilterRuleSignature? other)
     {
         if (ReferenceEquals(this, other))
@@ -49,6 +35,20 @@ public sealed class ProfileFilterRuleSignature(
                IsUserEditable == other.IsUserEditable &&
                string.Equals(Pattern, other.Pattern, StringComparison.OrdinalIgnoreCase) &&
                string.Equals(Description, other.Description, StringComparison.Ordinal);
+    }
+
+    public static ProfileFilterRuleSignature From(WorkspaceFileFilterRuleDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+
+        return new ProfileFilterRuleSignature(
+            dto.Mode,
+            dto.Target,
+            dto.PatternType,
+            dto.Pattern,
+            dto.IsEnabled,
+            dto.Description,
+            dto.IsUserEditable);
     }
 
     public override bool Equals(object? obj)

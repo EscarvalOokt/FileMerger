@@ -19,30 +19,32 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
     private const string ProfileLibraryFileFilter =
         "Profile library files (*.filemerger.profile.json)|*.filemerger.profile.json|JSON files (*.json)|*.json|All files (*.*)|*.*";
 
-    private readonly IProfileLibraryService _profileLibraryService;
-    private readonly ICurrentSessionProfileHost _currentSessionProfileHost;
-    private readonly IUserPromptService _userPromptService;
-    private readonly IOpenFileDialogService _openFileDialogService;
-    private readonly ISaveFileDialogService _saveFileDialogService;
     private readonly IClipboardService _clipboardService;
+    private readonly ProfileManagerContext _context;
+    private readonly ICurrentSessionProfileHost _currentSessionProfileHost;
 
     private readonly ProfileListFiltersViewModel _filters = new();
+    private readonly IOpenFileDialogService _openFileDialogService;
 
-    private ProfileLibraryListItemViewModel? _selectedProfile;
-    private bool _isBusy;
-    private bool _isDirty;
-    private bool _suppressDirtyTracking;
-    private bool _isCreatingProfileDraft;
-    private ProfileManagerPage _selectedPage = ProfileManagerPage.Overview;
-    private string _profileCreationSourceLabel = string.Empty;
+    private readonly IProfileLibraryService _profileLibraryService;
+    private readonly ISaveFileDialogService _saveFileDialogService;
+    private readonly IUserPromptService _userPromptService;
     private string? _creationDraftReturnProfileId;
     private string _description = string.Empty;
-    private string _statusMessage = "Ready.";
-    private StatusSeverity _statusSeverity = StatusSeverity.Info;
+    private bool _isBusy;
+    private bool _isCreatingProfileDraft;
+    private bool _isDirty;
+    private DateTime? _loadedCreatedAtUtc;
 
     private string? _loadedEntryId;
     private string? _loadedFilePath;
-    private DateTime? _loadedCreatedAtUtc;
+    private string _profileCreationSourceLabel = string.Empty;
+    private ProfileManagerPage _selectedPage = ProfileManagerPage.Overview;
+
+    private ProfileLibraryListItemViewModel? _selectedProfile;
+    private string _statusMessage = "Ready.";
+    private StatusSeverity _statusSeverity = StatusSeverity.Info;
+    private bool _suppressDirtyTracking;
 
     public ProfileManagerViewModel(
         IProfileLibraryService profileLibraryService,
@@ -51,7 +53,8 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
         IUserPromptService userPromptService,
         IOpenFileDialogService openFileDialogService,
         ISaveFileDialogService saveFileDialogService,
-        IClipboardService clipboardService)
+        IClipboardService clipboardService,
+        ProfileManagerContext context = ProfileManagerContext.CurrentSession)
     {
         ArgumentNullException.ThrowIfNull(profileLibraryService);
         ArgumentNullException.ThrowIfNull(profileEditorFactory);
@@ -61,12 +64,16 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
         ArgumentNullException.ThrowIfNull(saveFileDialogService);
         ArgumentNullException.ThrowIfNull(clipboardService);
 
+        if (!Enum.IsDefined(context))
+            throw new ArgumentOutOfRangeException(nameof(context));
+
         _profileLibraryService = profileLibraryService;
         _currentSessionProfileHost = currentSessionProfileHost;
         _userPromptService = userPromptService;
         _openFileDialogService = openFileDialogService;
         _saveFileDialogService = saveFileDialogService;
         _clipboardService = clipboardService;
+        _context = context;
 
         _filters.PropertyChanged += Filters_PropertyChanged;
 
@@ -95,7 +102,9 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
             StartProfileTemplateDraftAsync,
             template => !IsBusy && template is not null);
         CreateProfileDraftCommand = new AsyncRelayCommand(CreateProfileDraftAsync, () => CanCreateProfileDraft);
-        CancelProfileDraftCommand = new AsyncRelayCommand(CancelProfileDraftAsync, () => IsCreatingProfileDraft && !IsBusy);
+        CancelProfileDraftCommand = new AsyncRelayCommand(
+            CancelProfileDraftAsync,
+            () => IsCreatingProfileDraft && !IsBusy);
 
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsBusy && CanSave);
         SaveAsCommand = new AsyncRelayCommand(SaveAsAsync, () => !IsBusy && CanSaveAs);
@@ -214,9 +223,10 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
     public bool SelectedProfileIsReadOnly => SelectedProfile?.IsReadOnly == true;
     public bool SelectedProfileIsUsedByCurrentSession => SelectedProfile?.IsUsedByCurrentSession == true;
 
+    public string UsedProfileLabel => _context == ProfileManagerContext.WorkspaceConfiguration ? "Selected" : "Active";
+
     public bool SelectedProfileHasStorageLocation =>
-        SelectedProfile?.IsUserDefined == true &&
-        !string.IsNullOrWhiteSpace(SelectedProfile.Entry.FilePath);
+        SelectedProfile?.IsUserDefined == true && !string.IsNullOrWhiteSpace(SelectedProfile.Entry.FilePath);
 
     public bool HasProfileTemplates => ProfileTemplates.Count > 0;
 
@@ -243,35 +253,24 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
         }
     }
 
-    public bool HasProfileCreationSourceLabel =>
-        !string.IsNullOrWhiteSpace(ProfileCreationSourceLabel);
+    public bool HasProfileCreationSourceLabel => !string.IsNullOrWhiteSpace(ProfileCreationSourceLabel);
 
-    public bool CanSave =>
-        !IsCreatingProfileDraft &&
-        !string.IsNullOrWhiteSpace(Editor.WorkingProfileName) &&
-        Editor.CanUseProfile;
+    private bool IsEditorContentValidForSave =>
+        !string.IsNullOrWhiteSpace(Editor.WorkingProfileName) && Editor.CanUseProfile;
+
+    public bool CanSave => !IsCreatingProfileDraft && IsEditorContentValidForSave;
 
     public bool CanSaveAs => CanSave;
 
-    public bool CanDuplicate =>
-        !IsCreatingProfileDraft &&
-        HasSelection;
+    public bool CanDuplicate => !IsCreatingProfileDraft && HasSelection;
 
-    public bool CanApply =>
-        !IsCreatingProfileDraft &&
-        CanSave;
+    public bool CanApply => !IsCreatingProfileDraft && CanSave;
 
-    public bool CanDelete =>
-        !IsCreatingProfileDraft &&
-        SelectedProfile is { IsReadOnly: false };
+    public bool CanDelete => !IsCreatingProfileDraft && SelectedProfile is { IsReadOnly: false };
 
     public bool CanExport => CanSave;
 
-    public bool CanCreateProfileDraft =>
-        IsCreatingProfileDraft &&
-        !IsBusy &&
-        !string.IsNullOrWhiteSpace(Editor.WorkingProfileName) &&
-        Editor.CanUseProfile;
+    public bool CanCreateProfileDraft => IsCreatingProfileDraft && !IsBusy && IsEditorContentValidForSave;
 
     public bool CanCopyStoragePath => !string.IsNullOrWhiteSpace(ProfilesDirectory);
 
@@ -279,8 +278,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
 
     public int TotalProfileCount => Profiles.Count;
 
-    public string ProfilesSummary =>
-        $"{VisibleProfileCount} of {TotalProfileCount} profile(s) shown";
+    public string ProfilesSummary => $"{VisibleProfileCount} of {TotalProfileCount} profile(s) shown";
 
     public AsyncRelayCommand RefreshCommand { get; }
     public AsyncRelayCommand NewCommand { get; }
@@ -299,6 +297,11 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
     public RelayCommand CopyStoragePathCommand { get; }
     public RelayCommand ShowOverviewPageCommand { get; }
     public RelayCommand ShowEditorPageCommand { get; }
+
+    public Task<bool> CanCloseAsync()
+    {
+        return EnsureEditorCanBeReplacedAsync("closing the profile library");
+    }
 
     public async Task InitializeAsync()
     {
@@ -334,11 +337,6 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
 
         if (candidate is not null)
             await LoadSelectedProfileAsync(candidate);
-    }
-
-    public Task<bool> CanCloseAsync()
-    {
-        return EnsureEditorCanBeReplacedAsync("closing the profile library");
     }
 
     public Task<bool> TryCloseAsync()
@@ -382,10 +380,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
         if (!await EnsureEditorCanBeReplacedAsync("creating a new profile"))
             return;
 
-        BeginProfileCreationDraftCore(
-            profile: null,
-            sourceLabel: "Blank profile",
-            description: string.Empty);
+        BeginProfileCreationDraftCore(profile: null, sourceLabel: "Blank profile", description: string.Empty);
 
         ShowEditorPage();
 
@@ -432,10 +427,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
         if (!IsCreatingProfileDraft)
             return;
 
-        if (IsDirty &&
-            !_userPromptService.Confirm(
-                "Discard profile draft",
-                "Discard the current profile draft?"))
+        if (IsDirty && !_userPromptService.Confirm("Discard profile draft", "Discard the current profile draft?"))
         {
             return;
         }
@@ -448,8 +440,10 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
 
         if (!string.IsNullOrWhiteSpace(returnProfileId))
         {
-            target = Profiles.FirstOrDefault(x =>
-                string.Equals(x.Id, returnProfileId, StringComparison.OrdinalIgnoreCase));
+            target = Profiles.FirstOrDefault(x => string.Equals(
+                x.Id,
+                returnProfileId,
+                StringComparison.OrdinalIgnoreCase));
         }
 
         target ??= Profiles.FirstOrDefault();
@@ -468,10 +462,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
         RaiseCommandStates();
     }
 
-    private void BeginProfileCreationDraftCore(
-        WorkspaceProfileDto? profile,
-        string sourceLabel,
-        string? description)
+    private void BeginProfileCreationDraftCore(WorkspaceProfileDto? profile, string sourceLabel, string? description)
     {
         _suppressDirtyTracking = true;
         try
@@ -492,9 +483,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
             Editor.WorkingProfileName = BuildNextUntitledName();
             Description = description ?? string.Empty;
 
-            SetProfileCreationDraftState(
-                isCreatingProfileDraft: true,
-                sourceLabel: sourceLabel);
+            SetProfileCreationDraftState(isCreatingProfileDraft: true, sourceLabel: sourceLabel);
 
             IsDirty = false;
 
@@ -539,9 +528,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
         }
     }
 
-    private void SetProfileCreationDraftState(
-        bool isCreatingProfileDraft,
-        string sourceLabel)
+    private void SetProfileCreationDraftState(bool isCreatingProfileDraft, string sourceLabel)
     {
         if (SetProperty(ref _isCreatingProfileDraft, isCreatingProfileDraft, nameof(IsCreatingProfileDraft)))
             OnPropertyChanged(nameof(IsNotCreatingProfileDraft));
@@ -553,16 +540,12 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
     {
         _creationDraftReturnProfileId = null;
 
-        SetProfileCreationDraftState(
-            isCreatingProfileDraft: false,
-            sourceLabel: string.Empty);
+        SetProfileCreationDraftState(isCreatingProfileDraft: false, sourceLabel: string.Empty);
     }
 
     private string BuildNextUntitledName()
     {
-        var usedNames = Profiles
-            .Select(x => x.DisplayName)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var usedNames = Profiles.Select(x => x.DisplayName).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         int index = 1;
 
@@ -654,6 +637,20 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
 
     private async Task<bool> SaveCurrentAsync(bool saveAsNew)
     {
+        if (IsBusy)
+            return false;
+
+        if (!IsEditorContentValidForSave)
+        {
+            SetStatus(
+                string.IsNullOrWhiteSpace(Editor.WorkingProfileName)
+                    ? "Profile was not saved. Profile name cannot be empty."
+                    : $"Profile was not saved. {Editor.DraftValidationMessage}",
+                StatusSeverity.Error);
+
+            return false;
+        }
+
         try
         {
             IsBusy = true;
@@ -665,9 +662,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
             await AfterSaveAsync(saved);
 
             SetStatus(
-                saveAsNew
-                    ? $"Profile '{saved.DisplayName}' saved as new."
-                    : $"Profile '{saved.DisplayName}' saved.",
+                saveAsNew ? $"Profile '{saved.DisplayName}' saved as new." : $"Profile '{saved.DisplayName}' saved.",
                 StatusSeverity.Success);
 
             return true;
@@ -685,13 +680,10 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
 
     private bool ShouldSaveAsNew()
     {
-        return SelectedProfile?.IsReadOnly == true ||
-               string.IsNullOrWhiteSpace(_loadedEntryId);
+        return SelectedProfile?.IsReadOnly == true || string.IsNullOrWhiteSpace(_loadedEntryId);
     }
 
-    private void ApplyLoadedEntry(
-        ProfileLibraryEntry entry,
-        ProfileLibraryListItemViewModel? selected)
+    private void ApplyLoadedEntry(ProfileLibraryEntry entry, ProfileLibraryListItemViewModel? selected)
     {
         ArgumentNullException.ThrowIfNull(entry);
 
@@ -728,9 +720,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
         string profileName = NormalizeProfileName(Editor.WorkingProfileName);
 
         ProfileMetadataDto metadata = new(
-            Id: saveAsNew || string.IsNullOrWhiteSpace(_loadedEntryId)
-                ? Guid.NewGuid().ToString("N")
-                : _loadedEntryId!,
+            Id: saveAsNew || string.IsNullOrWhiteSpace(_loadedEntryId) ? Guid.NewGuid().ToString("N") : _loadedEntryId!,
             Name: profileName,
             Description: NormalizeDescription(Description),
             CreatedAtUtc: saveAsNew ? null : _loadedCreatedAtUtc,
@@ -750,9 +740,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
         string profileName = NormalizeProfileName(Editor.WorkingProfileName);
 
         ProfileMetadataDto metadata = new(
-            Id: string.IsNullOrWhiteSpace(_loadedEntryId)
-                ? Guid.NewGuid().ToString("N")
-                : _loadedEntryId!,
+            Id: string.IsNullOrWhiteSpace(_loadedEntryId) ? Guid.NewGuid().ToString("N") : _loadedEntryId!,
             Name: profileName,
             Description: NormalizeDescription(Description),
             CreatedAtUtc: _loadedCreatedAtUtc ?? DateTime.UtcNow,
@@ -781,21 +769,30 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
 
     private void ApplyToCurrentSession()
     {
+        if (IsBusy)
+            return;
+
+        if (!CanApply)
+        {
+            if (!Editor.CanUseProfile)
+                SetStatus($"Profile was not applied. {Editor.DraftValidationMessage}", StatusSeverity.Error);
+
+            return;
+        }
+
         WorkspaceProfileDto profile = Editor.CaptureProfile();
 
-        string? appliedEntryId =
-            !IsDirty && !string.IsNullOrWhiteSpace(_loadedEntryId)
-                ? _loadedEntryId
-                : null;
+        string? appliedEntryId = !IsDirty && !string.IsNullOrWhiteSpace(_loadedEntryId) ? _loadedEntryId : null;
 
-        _currentSessionProfileHost.ApplyProfileToCurrentSession(
-            Editor.WorkingProfileName,
-            profile,
-            appliedEntryId);
+        _currentSessionProfileHost.ApplyProfileToCurrentSession(Editor.WorkingProfileName, profile, appliedEntryId);
 
         RefreshCurrentSessionMarkers();
 
-        SetStatus("Profile applied to current session.", StatusSeverity.Success);
+        string statusMessage = _context == ProfileManagerContext.WorkspaceConfiguration
+            ? "Profile selected for workspace configuration. Confirm with OK to apply it."
+            : "Profile applied to current session.";
+
+        SetStatus(statusMessage, StatusSeverity.Success);
     }
 
     private async Task DeleteAsync()
@@ -805,7 +802,9 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
 
         if (!_userPromptService.Confirm(
                 "Delete profile",
-                $"Delete profile '{SelectedProfile.DisplayName}'?"))
+                $"Delete profile '{SelectedProfile.DisplayName}'?",
+                confirmButtonText: "Delete",
+                cancelButtonText: "Cancel"))
         {
             return;
         }
@@ -849,8 +848,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
             _profileLibraryService.GetPrimaryProfilesDirectory(),
             "ImportedProfile.filemerger.profile.json");
 
-        IReadOnlyList<string> filePaths =
-            _openFileDialogService.SelectFiles(initialPath, ProfileLibraryFileFilter);
+        IReadOnlyList<string> filePaths = _openFileDialogService.SelectFiles(initialPath, ProfileLibraryFileFilter);
 
         if (filePaths.Count == 0)
             return;
@@ -860,8 +858,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
             IsBusy = true;
             SetStatus("Importing profiles.", StatusSeverity.Info);
 
-            IReadOnlyCollection<ProfileLibraryEntry> imported =
-                await _profileLibraryService.ImportAsync(filePaths);
+            IReadOnlyCollection<ProfileLibraryEntry> imported = await _profileLibraryService.ImportAsync(filePaths);
 
             ProfileLibraryEntry? lastImported = imported.LastOrDefault();
 
@@ -880,9 +877,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
             }
 
             SetStatus(
-                imported.Count == 0
-                    ? "No valid profiles were imported."
-                    : $"Imported {imported.Count} profile(s).",
+                imported.Count == 0 ? "No valid profiles were imported." : $"Imported {imported.Count} profile(s).",
                 imported.Count == 0 ? StatusSeverity.Warning : StatusSeverity.Success);
         }
         catch (Exception ex)
@@ -952,19 +947,21 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
 
     private async Task ReloadProfilesAsync(string? preferredSelectedId)
     {
-        IReadOnlyCollection<ProfileLibraryEntry> entries =
-            await _profileLibraryService.GetAllAsync();
+        IReadOnlyCollection<ProfileLibraryEntry> entries = await _profileLibraryService.GetAllAsync();
 
         RefreshProfileTemplates(entries);
 
         Profiles.Clear();
 
         foreach (ProfileLibraryEntry entry in entries)
-            Profiles.Add(new ProfileLibraryListItemViewModel(entry));
+            Profiles.Add(new ProfileLibraryListItemViewModel(entry, UsedProfileLabel));
 
         if (!string.IsNullOrWhiteSpace(preferredSelectedId))
         {
-            ProfileLibraryListItemViewModel? preferred = Profiles.FirstOrDefault(x => string.Equals(x.Id, preferredSelectedId, StringComparison.OrdinalIgnoreCase));
+            ProfileLibraryListItemViewModel? preferred = Profiles.FirstOrDefault(x => string.Equals(
+                x.Id,
+                preferredSelectedId,
+                StringComparison.OrdinalIgnoreCase));
 
             SetSelectedProfileSilently(preferred);
         }
@@ -1024,9 +1021,8 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
 
         foreach (ProfileLibraryListItemViewModel item in Profiles)
         {
-            bool used =
-                !string.IsNullOrWhiteSpace(currentEntryId) &&
-                string.Equals(item.Id, currentEntryId, StringComparison.OrdinalIgnoreCase);
+            bool used = !string.IsNullOrWhiteSpace(currentEntryId) &&
+                        string.Equals(item.Id, currentEntryId, StringComparison.OrdinalIgnoreCase);
 
             item.SetUsedByCurrentSession(used);
         }
@@ -1039,10 +1035,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
     {
         foreach (ProfileLibraryListItemViewModel item in Profiles)
         {
-            bool isDirtyProfile =
-                !IsCreatingProfileDraft &&
-                IsDirty &&
-                ReferenceEquals(item, SelectedProfile);
+            bool isDirtyProfile = !IsCreatingProfileDraft && IsDirty && ReferenceEquals(item, SelectedProfile);
 
             item.SetDirty(isDirtyProfile);
         }
@@ -1066,38 +1059,40 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
 
     private static bool IsEditorPresentationProperty(string? propertyName)
     {
-        return propertyName is
-            nameof(ProfileEditorViewModel.SelectedSection) or
-            nameof(ProfileEditorViewModel.IsGeneralSectionSelected) or
-            nameof(ProfileEditorViewModel.IsFormattingSectionSelected) or
-            nameof(ProfileEditorViewModel.IsOutputMetadataSectionSelected) or
-            nameof(ProfileEditorViewModel.IsInputEncodingSectionSelected) or
-            nameof(ProfileEditorViewModel.IsUnsupportedTextFallbackSectionSelected) or
-            nameof(ProfileEditorViewModel.IsFileTypesSectionSelected) or
-            nameof(ProfileEditorViewModel.IsCSharpTransformationsSectionSelected) or
-            nameof(ProfileEditorViewModel.IsFilterRulesSectionSelected) or
+        return propertyName is nameof(ProfileEditorViewModel.SelectedSection)
+            or nameof(ProfileEditorViewModel.IsGeneralSectionSelected)
+            or nameof(ProfileEditorViewModel.IsFormattingSectionSelected)
+            or nameof(ProfileEditorViewModel.IsOutputMetadataSectionSelected)
+            or nameof(ProfileEditorViewModel.IsInputEncodingSectionSelected)
+            or nameof(ProfileEditorViewModel.IsUnsupportedTextFallbackSectionSelected)
+            or nameof(ProfileEditorViewModel.IsFileTypesSectionSelected)
+            or nameof(ProfileEditorViewModel.IsFilterRulesSectionSelected)
+            or nameof(ProfileEditorViewModel.DraftValidationMessage)
+            or
 
             // File type search/filter UI state.
-            nameof(ProfileEditorViewModel.FileTypeFilters) or
-            nameof(ProfileEditorViewModel.FileTypeGroups) or
-            nameof(ProfileEditorViewModel.HasVisibleFileTypeGroups) or
-            nameof(ProfileEditorViewModel.HasFileTypeFilterEmptyState) or
-            nameof(ProfileEditorViewModel.FileTypeFilterSummary) or
+            nameof(ProfileEditorViewModel.FileTypeFilters)
+            or nameof(ProfileEditorViewModel.FileTypeGroups)
+            or nameof(ProfileEditorViewModel.HasVisibleFileTypeGroups)
+            or nameof(ProfileEditorViewModel.HasFileTypeFilterEmptyState)
+            or nameof(ProfileEditorViewModel.FileTypeFilterSummary)
+            or
 
             // Filter rule search/filter UI state.
-            nameof(ProfileEditorViewModel.FilterRuleFilters) or
-            nameof(ProfileEditorViewModel.VisibleFilterRules) or
-            nameof(ProfileEditorViewModel.HasVisibleFilterRules) or
-            nameof(ProfileEditorViewModel.HasFilterRuleFilterEmptyState) or
-            nameof(ProfileEditorViewModel.FilterRuleFilterSummary) or
+            nameof(ProfileEditorViewModel.FilterRuleFilters)
+            or nameof(ProfileEditorViewModel.VisibleFilterRules)
+            or nameof(ProfileEditorViewModel.HasVisibleFilterRules)
+            or nameof(ProfileEditorViewModel.HasFilterRuleFilterEmptyState)
+            or nameof(ProfileEditorViewModel.FilterRuleFilterSummary)
+            or
 
             // Selection and command-state changes do not modify profile data.
-            nameof(ProfileEditorViewModel.SelectedFilterRule) or
-            nameof(ProfileEditorViewModel.HasSelectedFilterRule) or
-            nameof(ProfileEditorViewModel.CanDuplicateFilterRule) or
-            nameof(ProfileEditorViewModel.CanRemoveFilterRule) or
-            nameof(ProfileEditorViewModel.CanMoveFilterRuleUp) or
-            nameof(ProfileEditorViewModel.CanMoveFilterRuleDown);
+            nameof(ProfileEditorViewModel.SelectedFilterRule)
+            or nameof(ProfileEditorViewModel.HasSelectedFilterRule)
+            or nameof(ProfileEditorViewModel.CanDuplicateFilterRule)
+            or nameof(ProfileEditorViewModel.CanRemoveFilterRule)
+            or nameof(ProfileEditorViewModel.CanMoveFilterRuleUp)
+            or nameof(ProfileEditorViewModel.CanMoveFilterRuleDown);
     }
 
     private void Profiles_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -1136,8 +1131,7 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
 
     private bool FilterProfile(object obj)
     {
-        return obj is ProfileLibraryListItemViewModel item &&
-               Filters.Matches(item);
+        return obj is ProfileLibraryListItemViewModel item && Filters.Matches(item);
     }
 
     private void RefreshProfilesView()
@@ -1251,38 +1245,28 @@ public sealed class ProfileManagerViewModel : ViewModelBase, IAsyncCloseGuard
 
     private static string BuildDuplicateName(string displayName)
     {
-        string baseName = string.IsNullOrWhiteSpace(displayName)
-            ? "New Profile"
-            : displayName.Trim();
+        string baseName = string.IsNullOrWhiteSpace(displayName) ? "New Profile" : displayName.Trim();
 
         return $"{baseName} Copy";
     }
 
     private static string NormalizeProfileName(string? value)
     {
-        return string.IsNullOrWhiteSpace(value)
-            ? "Profile"
-            : value.Trim();
+        return string.IsNullOrWhiteSpace(value) ? "Profile" : value.Trim();
     }
 
     private static string? NormalizeDescription(string? value)
     {
-        return string.IsNullOrWhiteSpace(value)
-            ? null
-            : value.Trim();
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private static string MakeSafeFileName(string? value, string fallback)
     {
-        string candidate = string.IsNullOrWhiteSpace(value)
-            ? fallback
-            : value.Trim();
+        string candidate = string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
         foreach (char invalidChar in Path.GetInvalidFileNameChars())
             candidate = candidate.Replace(invalidChar, '_');
 
-        return string.IsNullOrWhiteSpace(candidate)
-            ? fallback
-            : candidate;
+        return string.IsNullOrWhiteSpace(candidate) ? fallback : candidate;
     }
 }

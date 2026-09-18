@@ -8,7 +8,6 @@ public sealed class ProfileSignature(
     bool includeFileSeparators,
     bool includeRelativePathInSeparator,
     bool trimTrailingEmptyLines,
-    bool removeUsingDirectives,
     LineEndingMode lineEndingMode,
     SortMode sortMode,
     InputEncodingMode inputEncodingMode,
@@ -21,7 +20,6 @@ public sealed class ProfileSignature(
     public bool IncludeFileSeparators { get; } = includeFileSeparators;
     public bool IncludeRelativePathInSeparator { get; } = includeRelativePathInSeparator;
     public bool TrimTrailingEmptyLines { get; } = trimTrailingEmptyLines;
-    public bool RemoveUsingDirectives { get; } = removeUsingDirectives;
     public LineEndingMode LineEndingMode { get; } = lineEndingMode;
     public SortMode SortMode { get; } = sortMode;
     public InputEncodingMode InputEncodingMode { get; } = inputEncodingMode;
@@ -34,22 +32,41 @@ public sealed class ProfileSignature(
     public IReadOnlyCollection<ProfileFilterRuleSignature> FilterRules { get; } =
         filterRules ?? throw new ArgumentNullException(nameof(filterRules));
 
+    public bool Equals(ProfileSignature? other)
+    {
+        if (ReferenceEquals(this, other))
+            return true;
+
+        if (other is null)
+            return false;
+
+        return IncludeHeaderComment == other.IncludeHeaderComment &&
+               IncludeFileSeparators == other.IncludeFileSeparators &&
+               IncludeRelativePathInSeparator == other.IncludeRelativePathInSeparator &&
+               TrimTrailingEmptyLines == other.TrimTrailingEmptyLines &&
+               LineEndingMode == other.LineEndingMode &&
+               SortMode == other.SortMode &&
+               InputEncodingMode == other.InputEncodingMode &&
+               string.Equals(PreferredInputEncodingName, other.PreferredInputEncodingName, StringComparison.Ordinal) &&
+               string.Equals(FallbackInputEncodingName, other.FallbackInputEncodingName, StringComparison.Ordinal) &&
+               FileTypes.SequenceEqual(other.FileTypes) &&
+               FilterRules.SequenceEqual(other.FilterRules);
+    }
+
     public static ProfileSignature From(WorkspaceProfileDto dto)
     {
         ArgumentNullException.ThrowIfNull(dto);
 
         ProfileFileTypeSignature[] fileTypes =
         [
-            .. dto.FileTypes
-                .OrderBy(x => x.Extension, StringComparer.OrdinalIgnoreCase)
+            .. dto.FileTypes.OrderBy(x => x.Extension, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(x => x.DisplayName, StringComparer.Ordinal)
                 .Select(ProfileFileTypeSignature.From)
         ];
 
         ProfileFilterRuleSignature[] filterRules =
         [
-            .. (dto.FilterRules ?? [])
-            .Where(x => !string.IsNullOrWhiteSpace(x.Pattern))
+            .. (dto.FilterRules ?? []).Where(x => !string.IsNullOrWhiteSpace(x.Pattern))
             .OrderBy(x => x.Mode)
             .ThenBy(x => x.Target)
             .ThenBy(x => x.PatternType)
@@ -65,7 +82,6 @@ public sealed class ProfileSignature(
             dto.IncludeFileSeparators,
             dto.IncludeRelativePathInSeparator,
             dto.TrimTrailingEmptyLines,
-            dto.RemoveUsingDirectives,
             dto.LineEndingMode,
             dto.SortMode,
             dto.InputEncodingMode,
@@ -73,28 +89,6 @@ public sealed class ProfileSignature(
             dto.FallbackInputEncodingName,
             fileTypes,
             filterRules);
-    }
-
-    public bool Equals(ProfileSignature? other)
-    {
-        if (ReferenceEquals(this, other))
-            return true;
-
-        if (other is null)
-            return false;
-
-        return IncludeHeaderComment == other.IncludeHeaderComment &&
-               IncludeFileSeparators == other.IncludeFileSeparators &&
-               IncludeRelativePathInSeparator == other.IncludeRelativePathInSeparator &&
-               TrimTrailingEmptyLines == other.TrimTrailingEmptyLines &&
-               RemoveUsingDirectives == other.RemoveUsingDirectives &&
-               LineEndingMode == other.LineEndingMode &&
-               SortMode == other.SortMode &&
-               InputEncodingMode == other.InputEncodingMode &&
-               string.Equals(PreferredInputEncodingName, other.PreferredInputEncodingName, StringComparison.Ordinal) &&
-               string.Equals(FallbackInputEncodingName, other.FallbackInputEncodingName, StringComparison.Ordinal) &&
-               FileTypes.SequenceEqual(other.FileTypes) &&
-               FilterRules.SequenceEqual(other.FilterRules);
     }
 
     public override bool Equals(object? obj)
@@ -110,7 +104,6 @@ public sealed class ProfileSignature(
         hash.Add(IncludeFileSeparators);
         hash.Add(IncludeRelativePathInSeparator);
         hash.Add(TrimTrailingEmptyLines);
-        hash.Add(RemoveUsingDirectives);
         hash.Add(LineEndingMode);
         hash.Add(SortMode);
         hash.Add(InputEncodingMode);

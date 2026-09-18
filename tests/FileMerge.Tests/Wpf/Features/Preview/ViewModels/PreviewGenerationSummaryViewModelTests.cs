@@ -48,9 +48,7 @@ public sealed class PreviewGenerationSummaryViewModelTests
             extension: ".json",
             kind: FileKind.Json,
             isIncluded: false,
-            skipReason: new SkipReason(
-                "discovery.file-type-disabled",
-                "File type is disabled."),
+            skipReason: new SkipReason("discovery.file-type-disabled", "File type is disabled."),
             isMergeCandidate: false);
 
         InputFile unsupported = CreateFile(
@@ -58,24 +56,18 @@ public sealed class PreviewGenerationSummaryViewModelTests
             extension: ".bin",
             kind: FileKind.Unknown,
             isIncluded: false,
-            skipReason: new SkipReason(
-                "discovery.unsupported-file-type",
-                "File type is unsupported."),
+            skipReason: new SkipReason("discovery.unsupported-file-type", "File type is unsupported."),
             isMergeCandidate: false);
 
         InputFile profileExcluded = CreateFile(
             "ProfileExcluded.cs",
             isIncluded: false,
-            skipReason: new SkipReason(
-                "filter.rule.exclude",
-                "Excluded by profile filter."));
+            skipReason: new SkipReason("filter.rule.exclude", "Excluded by profile filter."));
 
         InputFile automaticallyExcludedButManuallyIncluded = CreateFile(
             "ManualInclude.cs",
             isIncluded: false,
-            skipReason: new SkipReason(
-                "filter.rule.exclude",
-                "Excluded by profile filter."));
+            skipReason: new SkipReason("filter.rule.exclude", "Excluded by profile filter."));
 
         InputFile automaticallyIncludedButManuallyExcluded = CreateFile(
             "ManualExclude.custom",
@@ -88,9 +80,7 @@ public sealed class PreviewGenerationSummaryViewModelTests
             extension: ".dat",
             kind: FileKind.Unknown,
             isIncluded: false,
-            skipReason: new SkipReason(
-                "custom.exclude",
-                "Excluded for another reason."),
+            skipReason: new SkipReason("custom.exclude", "Excluded for another reason."),
             isMergeCandidate: false);
 
         InputFile[] automaticFiles =
@@ -111,17 +101,14 @@ public sealed class PreviewGenerationSummaryViewModelTests
             fallbackIncluded,
             profileExcluded,
             automaticallyExcludedButManuallyIncluded.Include(),
-            automaticallyIncludedButManuallyExcluded.Exclude(new SkipReason(
-                "manual.exclude",
-                "Excluded manually by user."))
+            automaticallyIncludedButManuallyExcluded.Exclude(
+                new SkipReason("manual.exclude", "Excluded manually by user."))
         ];
 
         InputFile sourceExcluded = CreateFile(
             "Generated.cs",
             isIncluded: false,
-            skipReason: new SkipReason(
-                "source.exclude",
-                "Excluded by a source-specific exclusion."),
+            skipReason: new SkipReason("source.exclude", "Excluded by a source-specific exclusion."),
             isMergeCandidate: false);
 
         PreviewTextFormatResult previewText = new(
@@ -153,11 +140,11 @@ public sealed class PreviewGenerationSummaryViewModelTests
         Assert.Equal(summary.FilesDiscovered, summary.FilesIncluded + summary.FilesNotIncluded);
         Assert.Equal(
             summary.FilesNotIncluded,
-            summary.DisabledFileTypeFiles
-            + summary.UnsupportedFiles
-            + summary.ProfileExcludedFiles
-            + summary.ManuallyExcludedFiles
-            + summary.OtherNotIncludedFiles);
+            summary.DisabledFileTypeFiles +
+            summary.UnsupportedFiles +
+            summary.ProfileExcludedFiles +
+            summary.ManuallyExcludedFiles +
+            summary.OtherNotIncludedFiles);
         Assert.Equal(1200, summary.TotalCharacters);
         Assert.Equal(1200, summary.DisplayedCharacters);
         Assert.False(summary.HasTruncationNotice);
@@ -172,9 +159,7 @@ public sealed class PreviewGenerationSummaryViewModelTests
         InputFile automaticFile = CreateFile(
             "Filtered.cs",
             isIncluded: false,
-            skipReason: new SkipReason(
-                "filter.rule.exclude",
-                "Excluded by profile filter."));
+            skipReason: new SkipReason("filter.rule.exclude", "Excluded by profile filter."));
 
         InputFile currentFile = automaticFile.Include();
 
@@ -213,12 +198,7 @@ public sealed class PreviewGenerationSummaryViewModelTests
             WasTruncated: true,
             OmittedCharacters: 100000);
 
-        var summary = PreviewGenerationSummaryViewModel.From(
-            output,
-            [],
-            [],
-            [],
-            previewText);
+        var summary = PreviewGenerationSummaryViewModel.From(output, [], [], [], previewText);
 
         Assert.True(summary.WasTruncated);
         Assert.True(summary.HasTruncationNotice);
@@ -244,8 +224,7 @@ public sealed class PreviewGenerationSummaryViewModelTests
         Assert.Throws<ArgumentNullException>(() =>
             PreviewGenerationSummaryViewModel.From(output, [], [], null!, previewText));
 
-        Assert.Throws<ArgumentNullException>(() =>
-            PreviewGenerationSummaryViewModel.From(output, [], [], [], null!));
+        Assert.Throws<ArgumentNullException>(() => PreviewGenerationSummaryViewModel.From(output, [], [], [], null!));
     }
 
     private static InputFile CreateFile(

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using FileMerger.Application.Abstractions.Services;
 using FileMerger.Domain.Entities;
@@ -23,14 +24,21 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         Directory.CreateDirectory(_tempRoot);
     }
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempRoot))
+        {
+            Directory.Delete(_tempRoot, recursive: true);
+        }
+    }
+
     [Fact]
     public void DiscoverFiles_Should_Throw_When_Sources_Are_Null()
     {
         var service = new FileDiscoveryService();
         MergeProfile profile = CreateProfile();
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            service.DiscoverFiles(null!, profile));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => service.DiscoverFiles(null!, profile));
 
         Assert.Equal("sources", ex.ParamName);
     }
@@ -40,10 +48,70 @@ public sealed class FileDiscoveryServiceTests : IDisposable
     {
         var service = new FileDiscoveryService();
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            service.DiscoverFiles([], null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => service.DiscoverFiles([], null!));
 
         Assert.Equal("profile", ex.ParamName);
+    }
+
+    [Fact]
+    public void DiscoverFiles_Should_Throw_When_Cancellation_Is_Already_Requested()
+    {
+        string root = CreateDirectory("project");
+        CreateFile(root, "A.cs", "class A {}");
+
+        FileDiscoveryService service = new();
+        MergeProfile profile = CreateProfile(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+        MergeSource source = new(root, MergeSourceType.Directory);
+
+        using var cancellationTokenSource = new CancellationTokenSource();
+        cancellationTokenSource.Cancel();
+
+        Assert.ThrowsAny<OperationCanceledException>(() => service.DiscoverFiles(
+            [source],
+            profile,
+            cancellationToken: cancellationTokenSource.Token));
+    }
+
+    [Fact]
+    public void DiscoverFiles_Should_Stop_When_Cancellation_Is_Requested_During_Unsupported_Text_Probe()
+    {
+        string root = CreateDirectory("project");
+        string nested = Path.Combine(root, "Nested");
+        Directory.CreateDirectory(nested);
+
+        CreateFile(root, "First.foo", "first");
+        CreateFile(nested, "Second.foo", "second");
+
+        int detectorCalls = 0;
+        var detector = new DelegatingUnsupportedTextFileDetector((_, _) =>
+        {
+            detectorCalls++;
+            return true;
+        });
+
+        FileDiscoveryService service = new(detector);
+        MergeProfile profile = CreateProfileWithFallback(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+        MergeSource source = new(root, MergeSourceType.Directory);
+
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var progressEvents = new List<FileDiscoveryProgress>();
+        var progress = new CapturingProgress<FileDiscoveryProgress>(value =>
+        {
+            progressEvents.Add(value);
+            // ReSharper disable once AccessToDisposedClosure
+            cancellationTokenSource.Cancel();
+        });
+
+        Assert.ThrowsAny<OperationCanceledException>(() => service.DiscoverFiles(
+            [source],
+            profile,
+            progress,
+            cancellationTokenSource.Token));
+
+        Assert.Single(progressEvents);
+        Assert.Equal(1, progressEvents[0].ProbedFiles);
+        Assert.Equal("First.foo", progressEvents[0].RelativePath);
+        Assert.Equal(0, detectorCalls);
     }
 
     [Fact]
@@ -94,6 +162,102 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         Assert.Equal(2, result.Length);
         Assert.Contains(result, x => x.RelativePath == "Root.cs");
         Assert.Contains(result, x => x.RelativePath == Path.Combine("Sub", "Nested.cs"));
+    }
+
+    [Fact]
+    public void DiscoverFiles_Should_Traverse_Explicit_Root_Directory_Link()
+    {
+        string target = CreateDirectory("linked-root-target");
+        string nested = Directory.CreateDirectory(Path.Combine(target, "Nested")).FullName;
+        CreateFile(target, "Root.cs", "class Root {}");
+        CreateFile(nested, "Nested.cs", "class Nested {}");
+
+        string linkPath = Path.Combine(_tempRoot, "linked-root");
+        CreateDirectoryJunction(linkPath, target);
+
+        try
+        {
+            FileDiscoveryService service = new();
+            MergeProfile profile = CreateProfile(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+            MergeSource source = new(linkPath, MergeSourceType.Directory, isRecursive: true);
+
+            FileDiscoveryResult result = service.DiscoverFiles([source], profile);
+
+            Assert.Equal(2, result.InventoryFiles.Count);
+            Assert.Contains(result.InventoryFiles, x => x.RelativePath == "Root.cs");
+            Assert.Contains(result.InventoryFiles, x => x.RelativePath == Path.Combine("Nested", "Nested.cs"));
+        }
+        finally
+        {
+            Directory.Delete(linkPath);
+        }
+    }
+
+    [Fact]
+    public void DiscoverFiles_Should_Not_Traverse_Directory_Link_Back_To_Root()
+    {
+        string root = CreateDirectory("project");
+        string nested = Directory.CreateDirectory(Path.Combine(root, "Nested")).FullName;
+        CreateFile(root, "Root.cs", "class Root {}");
+        CreateFile(nested, "Nested.cs", "class Nested {}");
+
+        string linkPath = Path.Combine(nested, "BackToRoot");
+        CreateDirectoryJunction(linkPath, root);
+
+        try
+        {
+            FileDiscoveryService service = new();
+            MergeProfile profile = CreateProfile(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+            MergeSource source = new(root, MergeSourceType.Directory, isRecursive: true);
+
+            using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+            FileDiscoveryResult result = service.DiscoverFiles(
+                [source],
+                profile,
+                cancellationToken: cancellationTokenSource.Token);
+
+            Assert.Equal(2, result.InventoryFiles.Count);
+            Assert.Contains(result.InventoryFiles, x => x.RelativePath == "Root.cs");
+            Assert.Contains(result.InventoryFiles, x => x.RelativePath == Path.Combine("Nested", "Nested.cs"));
+            Assert.DoesNotContain(
+                result.InventoryFiles,
+                x => x.RelativePath.Contains("BackToRoot", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Directory.Delete(linkPath);
+        }
+    }
+
+    [Fact]
+    public void DiscoverFiles_Should_Not_Traverse_Directory_Link_Alias_To_Existing_Subtree()
+    {
+        string root = CreateDirectory("project");
+        string shared = Directory.CreateDirectory(Path.Combine(root, "Shared")).FullName;
+        CreateFile(shared, "Shared.cs", "class Shared {}");
+
+        string linkPath = Path.Combine(root, "SharedAlias");
+        CreateDirectoryJunction(linkPath, shared);
+
+        try
+        {
+            FileDiscoveryService service = new();
+            MergeProfile profile = CreateProfile(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+            MergeSource source = new(root, MergeSourceType.Directory, isRecursive: true);
+
+            FileDiscoveryResult result = service.DiscoverFiles([source], profile);
+
+            InputFile file = Assert.Single(result.InventoryFiles);
+            Assert.Equal(Path.Combine("Shared", "Shared.cs"), file.RelativePath);
+            Assert.DoesNotContain(
+                result.InventoryFiles,
+                x => x.RelativePath.Contains("SharedAlias", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Directory.Delete(linkPath);
+        }
     }
 
     [Fact]
@@ -275,22 +439,19 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         InputFile[] result =
         [
             .. service.DiscoverFiles(
-                [
-                    new MergeSource(firstRoot, MergeSourceType.Directory),
-                    new MergeSource(secondRoot, MergeSourceType.Directory)
-                ],
-                profile).InventoryFiles
+                    [
+                        new MergeSource(firstRoot, MergeSourceType.Directory),
+                        new MergeSource(secondRoot, MergeSourceType.Directory)
+                    ],
+                    profile)
+                .InventoryFiles
         ];
 
         Assert.Equal(2, result.Length);
 
-        Assert.Contains(result, x =>
-            x.FullPath == firstFile &&
-            x.RelativePath == Path.Combine("Sub", "File.cs"));
+        Assert.Contains(result, x => x.FullPath == firstFile && x.RelativePath == Path.Combine("Sub", "File.cs"));
 
-        Assert.Contains(result, x =>
-            x.FullPath == secondFile &&
-            x.RelativePath == Path.Combine("Sub", "File.cs"));
+        Assert.Contains(result, x => x.FullPath == secondFile && x.RelativePath == Path.Combine("Sub", "File.cs"));
     }
 
     [Fact]
@@ -372,9 +533,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
             isRecursive: true,
             exclusions:
             [
-                new MergeSourceExclusion(
-                    Path.Combine("Src", "Generated"),
-                    MergeSourceExclusionType.Directory)
+                new MergeSourceExclusion(Path.Combine("Src", "Generated"), MergeSourceExclusionType.Directory)
             ]);
 
         InputFile[] result = [.. service.DiscoverFiles([source], profile).InventoryFiles];
@@ -597,9 +756,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         CreateFile(root, "Directory.Build.targets", "<Project />");
 
         var service = new FileDiscoveryService();
-        MergeProfile profile = CreateProfile(
-            KnownFileTypes.Props,
-            KnownFileTypes.Targets);
+        MergeProfile profile = CreateProfile(KnownFileTypes.Props, KnownFileTypes.Targets);
 
         var source = new MergeSource(root, MergeSourceType.Directory);
 
@@ -607,20 +764,23 @@ public sealed class FileDiscoveryServiceTests : IDisposable
 
         Assert.Equal(3, result.Length);
 
-        Assert.Contains(result, x =>
-            x.RelativePath == "Directory.Build.props" &&
-            x.Extension == KnownFileTypes.Props.Extension &&
-            x.Kind == FileKind.Xml);
+        Assert.Contains(
+            result,
+            x => x.RelativePath == "Directory.Build.props" &&
+                 x.Extension == KnownFileTypes.Props.Extension &&
+                 x.Kind == FileKind.Xml);
 
-        Assert.Contains(result, x =>
-            x.RelativePath == "Directory.Packages.props" &&
-            x.Extension == KnownFileTypes.Props.Extension &&
-            x.Kind == FileKind.Xml);
+        Assert.Contains(
+            result,
+            x => x.RelativePath == "Directory.Packages.props" &&
+                 x.Extension == KnownFileTypes.Props.Extension &&
+                 x.Kind == FileKind.Xml);
 
-        Assert.Contains(result, x =>
-            x.RelativePath == "Directory.Build.targets" &&
-            x.Extension == KnownFileTypes.Targets.Extension &&
-            x.Kind == FileKind.Xml);
+        Assert.Contains(
+            result,
+            x => x.RelativePath == "Directory.Build.targets" &&
+                 x.Extension == KnownFileTypes.Targets.Extension &&
+                 x.Kind == FileKind.Xml);
     }
 
     [Fact]
@@ -666,8 +826,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         CreateFile(root, "notes.foo", "hello");
 
         FileDiscoveryService service = new();
-        MergeProfile profile = CreateProfile(
-            new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+        MergeProfile profile = CreateProfile(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
 
         MergeSource source = new(root, MergeSourceType.Directory);
 
@@ -690,8 +849,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         CreateFile(root, "notes.foo", "hello");
 
         FileDiscoveryService service = new();
-        MergeProfile profile = CreateProfileWithFallback(
-            new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+        MergeProfile profile = CreateProfileWithFallback(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
 
         MergeSource source = new(root, MergeSourceType.Directory);
 
@@ -714,8 +872,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         string path = CreateFile(root, "notes.foo", "hello");
 
         FileDiscoveryService service = new();
-        MergeProfile profile = CreateProfileWithFallback(
-            new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+        MergeProfile profile = CreateProfileWithFallback(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
 
         MergeSource source = new(path, MergeSourceType.File);
 
@@ -738,8 +895,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         File.WriteAllBytes(path, "H\0e"u8);
 
         FileDiscoveryService service = new();
-        MergeProfile profile = CreateProfileWithFallback(
-            new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+        MergeProfile profile = CreateProfileWithFallback(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
 
         MergeSource source = new(root, MergeSourceType.Directory);
 
@@ -835,8 +991,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         CreateFile(root, "notes.CUSTOM", "hello");
 
         FileDiscoveryService service = new();
-        MergeProfile profile = CreateProfileWithFallback(
-            new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+        MergeProfile profile = CreateProfileWithFallback(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
 
         MergeSource source = new(root, MergeSourceType.Directory);
 
@@ -857,8 +1012,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         CreateFile(root, "LICENSE", "license text");
 
         FileDiscoveryService service = new();
-        MergeProfile profile = CreateProfileWithFallback(
-            new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+        MergeProfile profile = CreateProfileWithFallback(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
 
         MergeSource source = new(root, MergeSourceType.Directory);
 
@@ -951,8 +1105,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         });
 
         FileDiscoveryService service = new(detector);
-        MergeProfile profile = CreateProfileWithFallback(
-            new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+        MergeProfile profile = CreateProfileWithFallback(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
 
         MergeSource source = new(root, MergeSourceType.Directory);
         var progress = new CapturingProgress<FileDiscoveryProgress>(progressEvents.Add);
@@ -976,8 +1129,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         CreateFile(root, "Notes.foo", "notes");
 
         FileDiscoveryService service = new(new ThrowingUnsupportedTextFileDetector());
-        MergeProfile profile = CreateProfile(
-            new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+        MergeProfile profile = CreateProfile(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
 
         MergeSource source = new(root, MergeSourceType.Directory);
         var progressEvents = new List<FileDiscoveryProgress>();
@@ -1014,13 +1166,9 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         Assert.Empty(progressEvents);
         Assert.Equal(3, result.InventoryFiles.Count);
         Assert.Single(result.MergeCandidates);
-        Assert.Contains(
-            result.InventoryFiles,
-            x => x is { RelativePath: "Disabled.json", IsMergeCandidate: false });
+        Assert.Contains(result.InventoryFiles, x => x is { RelativePath: "Disabled.json", IsMergeCandidate: false });
 
-        Assert.Contains(
-            result.InventoryFiles,
-            x => x is { RelativePath: "LICENSE", IsMergeCandidate: false });
+        Assert.Contains(result.InventoryFiles, x => x is { RelativePath: "LICENSE", IsMergeCandidate: false });
     }
 
     private string CreateDirectory(string name)
@@ -1037,6 +1185,43 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         return path;
     }
 
+    private static void CreateDirectoryJunction(string linkPath, string targetPath)
+    {
+        ProcessStartInfo startInfo = new("cmd.exe")
+        {
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+
+        startInfo.ArgumentList.Add("/d");
+        startInfo.ArgumentList.Add("/c");
+        startInfo.ArgumentList.Add("mklink");
+        startInfo.ArgumentList.Add("/J");
+        startInfo.ArgumentList.Add(linkPath);
+        startInfo.ArgumentList.Add(targetPath);
+
+        using Process process = Process.Start(startInfo) ??
+                                throw new InvalidOperationException(
+                                    "Failed to start cmd.exe to create a directory junction.");
+
+        string standardOutput = process.StandardOutput.ReadToEnd();
+        string standardError = process.StandardError.ReadToEnd();
+
+        process.WaitForExit();
+
+        if (process.ExitCode == 0)
+            return;
+
+        string details = string.IsNullOrWhiteSpace(standardError) ? standardOutput.Trim() : standardError.Trim();
+
+        throw new IOException(
+            string.IsNullOrWhiteSpace(details)
+                ? $"Failed to create directory junction '{linkPath}' -> '{targetPath}'."
+                : $"Failed to create directory junction '{linkPath}' -> '{targetPath}': {details}");
+    }
+
     private static MergeProfile CreateProfile(
         IReadOnlyCollection<FileTypeDefinition> fileTypes,
         bool includeSourceExcludedFiles,
@@ -1050,7 +1235,6 @@ public sealed class FileDiscoveryServiceTests : IDisposable
                     SkippedFilesMetadataMode: skippedFilesMetadataMode,
                     IncludeSourceExcludedFiles: includeSourceExcludedFiles,
                     SkippedFileCategories: skippedFileCategories)),
-            csOptions: new CsMergeOptions(),
             fileTypes: fileTypes);
     }
 
@@ -1066,7 +1250,6 @@ public sealed class FileDiscoveryServiceTests : IDisposable
                 outputMetadataOptions: new OutputMetadataOptions(
                     SkippedFilesMetadataMode: skippedFilesMetadataMode,
                     IncludeSourceExcludedFiles: includeSourceExcludedFiles)),
-            csOptions: new CsMergeOptions(),
             fileTypes: fileTypes);
     }
 
@@ -1077,9 +1260,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
             fileTypes: fileTypes);
     }
 
-    private static MergeProfile CreateProfileWithFallback(
-        long maxFileSizeBytes,
-        params FileTypeDefinition[] fileTypes)
+    private static MergeProfile CreateProfileWithFallback(long maxFileSizeBytes, params FileTypeDefinition[] fileTypes)
     {
         return new MergeProfile(
             name: "Test profile",
@@ -1087,21 +1268,14 @@ public sealed class FileDiscoveryServiceTests : IDisposable
                 unsupportedTextFallbackOptions: new UnsupportedTextFallbackOptions(
                     isEnabled: true,
                     maxFileSizeBytes: maxFileSizeBytes)),
-            csOptions: new CsMergeOptions(),
-            fileTypes: fileTypes.Length > 0
-                ? fileTypes
-                : KnownFileTypes.Default,
+            fileTypes: fileTypes.Length > 0 ? fileTypes : KnownFileTypes.Default,
             filterRules: [],
             transformations: []);
     }
 
     private static MergeProfile CreateProfile(params FileTypeDefinition[] fileTypes)
     {
-        return new MergeProfile(
-            name: "Test profile",
-            generalOptions: new GeneralMergeOptions(),
-            csOptions: new CsMergeOptions(),
-            fileTypes: fileTypes);
+        return new MergeProfile(name: "Test profile", generalOptions: new GeneralMergeOptions(), fileTypes: fileTypes);
     }
 
     private static MergeProfile CreateProfileWithRules(
@@ -1111,44 +1285,11 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         return new MergeProfile(
             name: "Test profile",
             generalOptions: new GeneralMergeOptions(),
-            csOptions: new CsMergeOptions(),
             fileTypes: fileTypes,
             filterRules: filterRules);
     }
 
-    private sealed class CapturingProgress<T>(Action<T> handler) : IProgress<T>
-    {
-        private readonly Action<T> _handler =
-            handler ?? throw new ArgumentNullException(nameof(handler));
-
-        public void Report(T value)
-        {
-            _handler(value);
-        }
-    }
-
-    private sealed class DelegatingUnsupportedTextFileDetector(
-        Func<string, UnsupportedTextFallbackOptions, bool> isTextCandidate) : IUnsupportedTextFileDetector
-    {
-        private readonly Func<string, UnsupportedTextFallbackOptions, bool> _isTextCandidate =
-            isTextCandidate ?? throw new ArgumentNullException(nameof(isTextCandidate));
-
-        public bool IsTextCandidate(string filePath, UnsupportedTextFallbackOptions options)
-        {
-            return _isTextCandidate(filePath, options);
-        }
-    }
-
-    private sealed class ThrowingUnsupportedTextFileDetector : IUnsupportedTextFileDetector
-    {
-        public bool IsTextCandidate(string filePath, UnsupportedTextFallbackOptions options)
-        {
-            throw new InvalidOperationException("Disabled known file types must not be probed as fallback text.");
-        }
-    }
-
-    private static SkippedFileCategorySelection CreateSkippedFileCategorySelection(
-        bool includeSourceExclusions)
+    private static SkippedFileCategorySelection CreateSkippedFileCategorySelection(bool includeSourceExclusions)
     {
         return new SkippedFileCategorySelection(
             IncludeDisabledFileTypes: true,
@@ -1176,8 +1317,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
             ]);
 
         FileDiscoveryService service = new();
-        MergeProfile profile = CreateProfile(
-            new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
+        MergeProfile profile = CreateProfile(new FileTypeDefinition(".cs", "C# source", FileKind.CSharp));
 
         FileDiscoveryResult result = service.DiscoverFiles([source], profile);
 
@@ -1230,8 +1370,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
             [new FileTypeDefinition(".cs", "C# source", FileKind.CSharp)],
             includeSourceExcludedFiles: false,
             skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed,
-            skippedFileCategories: CreateSkippedFileCategorySelection(
-                includeSourceExclusions: true));
+            skippedFileCategories: CreateSkippedFileCategorySelection(includeSourceExclusions: true));
 
         FileDiscoveryResult result = service.DiscoverFiles([source], profile);
 
@@ -1259,8 +1398,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
             [new FileTypeDefinition(".cs", "C# source", FileKind.CSharp)],
             includeSourceExcludedFiles: true,
             skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed,
-            skippedFileCategories: CreateSkippedFileCategorySelection(
-                includeSourceExclusions: false));
+            skippedFileCategories: CreateSkippedFileCategorySelection(includeSourceExclusions: false));
 
         FileDiscoveryResult result = service.DiscoverFiles([source], profile);
 
@@ -1268,7 +1406,8 @@ public sealed class FileDiscoveryServiceTests : IDisposable
     }
 
     [Fact]
-    public void DiscoverFiles_Should_Not_Report_Source_Excluded_Files_When_Mode_Is_None_Even_If_Explicit_Category_Selection_Includes_Them()
+    public void
+        DiscoverFiles_Should_Not_Report_Source_Excluded_Files_When_Mode_Is_None_Even_If_Explicit_Category_Selection_Includes_Them()
     {
         string root = CreateDirectory("project");
         CreateFile(root, "Excluded.cs", "class Excluded {}");
@@ -1286,8 +1425,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
             [new FileTypeDefinition(".cs", "C# source", FileKind.CSharp)],
             includeSourceExcludedFiles: false,
             skippedFilesMetadataMode: SkippedFilesMetadataMode.None,
-            skippedFileCategories: CreateSkippedFileCategorySelection(
-                includeSourceExclusions: true));
+            skippedFileCategories: CreateSkippedFileCategorySelection(includeSourceExclusions: true));
 
         FileDiscoveryResult result = service.DiscoverFiles([source], profile);
 
@@ -1362,7 +1500,184 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         Assert.Single(result.InventoryFiles);
         Assert.Equal(2, result.SourceExcludedFiles.Count);
         Assert.Contains(result.SourceExcludedFiles, x => x.RelativePath == Path.Combine("Generated", "A.cs"));
-        Assert.Contains(result.SourceExcludedFiles, x => x.RelativePath == Path.Combine("Generated", "Nested", "B.txt"));
+        Assert.Contains(
+            result.SourceExcludedFiles,
+            x => x.RelativePath == Path.Combine("Generated", "Nested", "B.txt"));
+    }
+
+    [Fact]
+    public void DiscoverFiles_Should_Not_Traverse_Directory_Link_During_Source_Exclusion_Audit()
+    {
+        string root = CreateDirectory("project");
+        string generated = Directory.CreateDirectory(Path.Combine(root, "Generated")).FullName;
+        string nested = Directory.CreateDirectory(Path.Combine(generated, "Nested")).FullName;
+        CreateFile(root, "Included.cs", "class Included {}");
+        CreateFile(generated, "Generated.cs", "class Generated {}");
+        CreateFile(nested, "Nested.cs", "class Nested {}");
+
+        string linkPath = Path.Combine(nested, "BackToGenerated");
+        CreateDirectoryJunction(linkPath, generated);
+
+        try
+        {
+            MergeSource source = new(
+                root,
+                MergeSourceType.Directory,
+                isRecursive: true,
+                exclusions:
+                [
+                    new MergeSourceExclusion("Generated", MergeSourceExclusionType.Directory)
+                ]);
+
+            FileDiscoveryService service = new();
+            MergeProfile profile = CreateProfile(
+                [new FileTypeDefinition(".cs", "C# source", FileKind.CSharp)],
+                includeSourceExcludedFiles: true,
+                skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple);
+
+            using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+            FileDiscoveryResult result = service.DiscoverFiles(
+                [source],
+                profile,
+                cancellationToken: cancellationTokenSource.Token);
+
+            Assert.Single(result.InventoryFiles);
+            Assert.Equal(2, result.SourceExcludedFiles.Count);
+            Assert.Contains(
+                result.SourceExcludedFiles,
+                x => x.RelativePath == Path.Combine("Generated", "Generated.cs"));
+            Assert.Contains(
+                result.SourceExcludedFiles,
+                x => x.RelativePath == Path.Combine("Generated", "Nested", "Nested.cs"));
+            Assert.DoesNotContain(
+                result.SourceExcludedFiles,
+                x => x.RelativePath.Contains("BackToGenerated", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Directory.Delete(linkPath);
+        }
+    }
+
+    [Fact]
+    public void DiscoverFiles_Should_Not_Traverse_Source_Excluded_Directory_When_Exclusion_Root_Is_A_Link()
+    {
+        string root = CreateDirectory("project");
+        string target = CreateDirectory("generated-target");
+        CreateFile(root, "Included.cs", "class Included {}");
+        CreateFile(target, "Target.cs", "class Target {}");
+
+        string linkPath = Path.Combine(root, "Generated");
+        CreateDirectoryJunction(linkPath, target);
+
+        try
+        {
+            MergeSource source = new(
+                root,
+                MergeSourceType.Directory,
+                isRecursive: true,
+                exclusions:
+                [
+                    new MergeSourceExclusion("Generated", MergeSourceExclusionType.Directory)
+                ]);
+
+            FileDiscoveryService service = new();
+            MergeProfile profile = CreateProfile(
+                [new FileTypeDefinition(".cs", "C# source", FileKind.CSharp)],
+                includeSourceExcludedFiles: true,
+                skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple);
+
+            FileDiscoveryResult result = service.DiscoverFiles([source], profile);
+
+            Assert.Single(result.InventoryFiles);
+            Assert.Empty(result.SourceExcludedFiles);
+        }
+        finally
+        {
+            Directory.Delete(linkPath);
+        }
+    }
+
+    [Fact]
+    public void DiscoverFiles_Should_Not_Traverse_Source_Excluded_Directory_Through_Intermediate_Link()
+    {
+        string root = CreateDirectory("project");
+        string target = CreateDirectory("linked-target");
+        string generated = Directory.CreateDirectory(Path.Combine(target, "Generated")).FullName;
+        CreateFile(root, "Included.cs", "class Included {}");
+        CreateFile(generated, "Generated.cs", "class Generated {}");
+
+        string linkPath = Path.Combine(root, "Linked");
+        CreateDirectoryJunction(linkPath, target);
+
+        try
+        {
+            MergeSource source = new(
+                root,
+                MergeSourceType.Directory,
+                isRecursive: true,
+                exclusions:
+                [
+                    new MergeSourceExclusion(Path.Combine("Linked", "Generated"), MergeSourceExclusionType.Directory)
+                ]);
+
+            FileDiscoveryService service = new();
+            MergeProfile profile = CreateProfile(
+                [new FileTypeDefinition(".cs", "C# source", FileKind.CSharp)],
+                includeSourceExcludedFiles: true,
+                skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple);
+
+            FileDiscoveryResult result = service.DiscoverFiles([source], profile);
+
+            InputFile included = Assert.Single(result.InventoryFiles);
+            Assert.Equal("Included.cs", included.RelativePath);
+            Assert.Empty(result.SourceExcludedFiles);
+        }
+        finally
+        {
+            Directory.Delete(linkPath);
+        }
+    }
+
+    [Fact]
+    public void DiscoverFiles_Should_Not_Report_Source_Excluded_File_Through_Intermediate_Link()
+    {
+        string root = CreateDirectory("project");
+        string target = CreateDirectory("linked-target");
+        CreateFile(root, "Included.cs", "class Included {}");
+        CreateFile(target, "Excluded.cs", "class Excluded {}");
+
+        string linkPath = Path.Combine(root, "Linked");
+        CreateDirectoryJunction(linkPath, target);
+
+        try
+        {
+            MergeSource source = new(
+                root,
+                MergeSourceType.Directory,
+                isRecursive: true,
+                exclusions:
+                [
+                    new MergeSourceExclusion(Path.Combine("Linked", "Excluded.cs"), MergeSourceExclusionType.File)
+                ]);
+
+            FileDiscoveryService service = new();
+            MergeProfile profile = CreateProfile(
+                [new FileTypeDefinition(".cs", "C# source", FileKind.CSharp)],
+                includeSourceExcludedFiles: true,
+                skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple);
+
+            FileDiscoveryResult result = service.DiscoverFiles([source], profile);
+
+            InputFile included = Assert.Single(result.InventoryFiles);
+            Assert.Equal("Included.cs", included.RelativePath);
+            Assert.Empty(result.SourceExcludedFiles);
+        }
+        finally
+        {
+            Directory.Delete(linkPath);
+        }
     }
 
     [Fact]
@@ -1376,10 +1691,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
             MergeSourceType.Directory,
             exclusions:
             [
-                new MergeSourceExclusion(
-                    "Excluded.cs",
-                    MergeSourceExclusionType.File,
-                    isEnabled: false)
+                new MergeSourceExclusion("Excluded.cs", MergeSourceExclusionType.File, isEnabled: false)
             ]);
 
         FileDiscoveryService service = new();
@@ -1477,9 +1789,7 @@ public sealed class FileDiscoveryServiceTests : IDisposable
             includeSourceExcludedFiles: true,
             skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple);
 
-        FileDiscoveryResult result = service.DiscoverFiles(
-            [excludingSource, includingSource],
-            profile);
+        FileDiscoveryResult result = service.DiscoverFiles([excludingSource, includingSource], profile);
 
         Assert.Single(result.InventoryFiles);
         Assert.Single(result.MergeCandidates);
@@ -1512,11 +1822,33 @@ public sealed class FileDiscoveryServiceTests : IDisposable
         Assert.Single(result.SourceExcludedFiles);
     }
 
-    public void Dispose()
+    private sealed class CapturingProgress<T>(Action<T> handler) : IProgress<T>
     {
-        if (Directory.Exists(_tempRoot))
+        private readonly Action<T> _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+
+        public void Report(T value)
         {
-            Directory.Delete(_tempRoot, recursive: true);
+            _handler(value);
+        }
+    }
+
+    private sealed class DelegatingUnsupportedTextFileDetector(
+        Func<string, UnsupportedTextFallbackOptions, bool> isTextCandidate) : IUnsupportedTextFileDetector
+    {
+        private readonly Func<string, UnsupportedTextFallbackOptions, bool> _isTextCandidate =
+            isTextCandidate ?? throw new ArgumentNullException(nameof(isTextCandidate));
+
+        public bool IsTextCandidate(string filePath, UnsupportedTextFallbackOptions options)
+        {
+            return _isTextCandidate(filePath, options);
+        }
+    }
+
+    private sealed class ThrowingUnsupportedTextFileDetector : IUnsupportedTextFileDetector
+    {
+        public bool IsTextCandidate(string filePath, UnsupportedTextFallbackOptions options)
+        {
+            throw new InvalidOperationException("Disabled known file types must not be probed as fallback text.");
         }
     }
 }

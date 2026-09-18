@@ -8,6 +8,5 @@ public enum ProfileEditorSection
     InputEncoding,
     UnsupportedTextFallback,
     FileTypes,
-    CSharpTransformations,
     FilterRules
 }

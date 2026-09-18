@@ -19,6 +19,9 @@ public sealed class BuiltInFileTypeCatalog : IFileTypeCatalog
         if (string.IsNullOrWhiteSpace(extension))
             return null;
 
-        return KnownFileTypes.All.FirstOrDefault(x => string.Equals(x.Extension, extension, StringComparison.OrdinalIgnoreCase));
+        return KnownFileTypes.All.FirstOrDefault(x => string.Equals(
+            x.Extension,
+            extension,
+            StringComparison.OrdinalIgnoreCase));
     }
 }

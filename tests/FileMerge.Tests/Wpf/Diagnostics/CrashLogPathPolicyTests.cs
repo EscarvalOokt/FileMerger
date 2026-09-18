@@ -18,6 +18,12 @@ public sealed class CrashLogPathPolicyTests : IDisposable
         Directory.CreateDirectory(_tempRoot);
     }
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempRoot))
+            Directory.Delete(_tempRoot, recursive: true);
+    }
+
     [Fact]
     public void GetCrashLogDirectory_Should_Use_FileMerger_CrashLogs_Subdirectory()
     {
@@ -25,9 +31,7 @@ public sealed class CrashLogPathPolicyTests : IDisposable
 
         string result = policy.GetCrashLogDirectory();
 
-        Assert.Equal(
-            Path.Combine(_tempRoot, "FileMerger", "CrashLogs"),
-            result);
+        Assert.Equal(Path.Combine(_tempRoot, "FileMerger", "CrashLogs"), result);
     }
 
     [Fact]
@@ -39,11 +43,7 @@ public sealed class CrashLogPathPolicyTests : IDisposable
 
         string result = policy.CreateCrashLogPath(occurredAtUtc);
 
-        string expectedPrefix = Path.Combine(
-            _tempRoot,
-            "FileMerger",
-            "CrashLogs",
-            "crash-20260623-184211-123-");
+        string expectedPrefix = Path.Combine(_tempRoot, "FileMerger", "CrashLogs", "crash-20260623-184211-123-");
 
         Assert.StartsWith(expectedPrefix, result);
         Assert.EndsWith(".log", result);
@@ -78,11 +78,5 @@ public sealed class CrashLogPathPolicyTests : IDisposable
                 fileName.Any(x => x == invalidChar),
                 $"File name contains invalid character U+{(int)invalidChar:X4}: {fileName}");
         }
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_tempRoot))
-            Directory.Delete(_tempRoot, recursive: true);
     }
 }

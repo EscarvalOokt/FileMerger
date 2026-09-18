@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using FileMerger.Wpf.Features.Profile.Models;
+using FileMerger.Wpf.Shared.Persistence;
 
 namespace FileMerger.Wpf.Features.Profile.Services;
 
@@ -8,7 +9,7 @@ public sealed class ProfileLibraryService : IProfileLibraryService
 {
     private const int CurrentSchemaVersion = 1;
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -16,8 +17,7 @@ public sealed class ProfileLibraryService : IProfileLibraryService
 
     private readonly IBuiltInProfilePresetProvider _builtInProfilePresetProvider;
 
-    public ProfileLibraryService(
-        IBuiltInProfilePresetProvider builtInProfilePresetProvider)
+    public ProfileLibraryService(IBuiltInProfilePresetProvider builtInProfilePresetProvider)
     {
         ArgumentNullException.ThrowIfNull(builtInProfilePresetProvider);
         _builtInProfilePresetProvider = builtInProfilePresetProvider;
@@ -42,15 +42,13 @@ public sealed class ProfileLibraryService : IProfileLibraryService
             .. _builtInProfilePresetProvider.GetAll()
         ];
 
-        IReadOnlyCollection<ProfileLibraryEntry> userEntries =
-            await LoadUserEntriesAsync(directory, cancellationToken);
+        IReadOnlyCollection<ProfileLibraryEntry> userEntries = await LoadUserEntriesAsync(directory, cancellationToken);
 
         result.AddRange(userEntries);
 
         return
         [
-            .. result
-                .GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
+            .. result.GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
                 .Select(x => x.First())
                 .OrderBy(x => x.IsBuiltIn ? 0 : 1)
                 .ThenBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
@@ -58,19 +56,15 @@ public sealed class ProfileLibraryService : IProfileLibraryService
         ];
     }
 
-    public async Task<ProfileLibraryEntry> LoadAsync(
-        string id,
-        CancellationToken cancellationToken = default)
+    public async Task<ProfileLibraryEntry> LoadAsync(string id, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(id))
             throw new ArgumentException("Profile id cannot be empty.", nameof(id));
 
-        IReadOnlyCollection<ProfileLibraryEntry> entries =
-            await GetAllAsync(cancellationToken);
+        IReadOnlyCollection<ProfileLibraryEntry> entries = await GetAllAsync(cancellationToken);
 
-        return entries.FirstOrDefault(x =>
-                   string.Equals(x.Id, id, StringComparison.OrdinalIgnoreCase))
-               ?? throw new InvalidOperationException($"Profile '{id}' was not found.");
+        return entries.FirstOrDefault(x => string.Equals(x.Id, id, StringComparison.OrdinalIgnoreCase)) ??
+               throw new InvalidOperationException($"Profile '{id}' was not found.");
     }
 
     public async Task<ProfileLibraryEntry> SaveAsync(
@@ -83,12 +77,11 @@ public sealed class ProfileLibraryService : IProfileLibraryService
         string directory = GetPrimaryProfilesDirectory();
         Directory.CreateDirectory(directory);
 
-        bool createNew =
-            saveAsNew ||
-            entry.IsBuiltIn ||
-            entry.IsReadOnly ||
-            string.IsNullOrWhiteSpace(entry.FilePath) ||
-            !File.Exists(entry.FilePath);
+        bool createNew = saveAsNew ||
+                         entry.IsBuiltIn ||
+                         entry.IsReadOnly ||
+                         string.IsNullOrWhiteSpace(entry.FilePath) ||
+                         !File.Exists(entry.FilePath);
 
         DateTime utcNow = DateTime.UtcNow;
 
@@ -101,9 +94,7 @@ public sealed class ProfileLibraryService : IProfileLibraryService
             IsBuiltIn: false,
             IsReadOnly: false);
 
-        string filePath = createNew
-            ? BuildUserProfilePath(directory, metadata)
-            : entry.FilePath!;
+        string filePath = createNew ? BuildUserProfilePath(directory, metadata) : entry.FilePath!;
 
         ProfileLibraryDocumentDto document = new(
             SchemaVersion: CurrentSchemaVersion,
@@ -119,9 +110,7 @@ public sealed class ProfileLibraryService : IProfileLibraryService
             Kind: ProfileEntryKind.User);
     }
 
-    public async Task DeleteAsync(
-        string id,
-        CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -143,12 +132,9 @@ public sealed class ProfileLibraryService : IProfileLibraryService
     {
         ArgumentNullException.ThrowIfNull(filePaths);
 
-        IReadOnlyCollection<ProfileLibraryEntry> existingEntries =
-            await GetAllAsync(cancellationToken);
+        IReadOnlyCollection<ProfileLibraryEntry> existingEntries = await GetAllAsync(cancellationToken);
 
-        var usedNames = existingEntries
-            .Select(x => x.DisplayName)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var usedNames = existingEntries.Select(x => x.DisplayName).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         HashSet<string> processedPaths = new(StringComparer.OrdinalIgnoreCase);
         List<ProfileLibraryEntry> importedEntries = [];
@@ -173,15 +159,12 @@ public sealed class ProfileLibraryService : IProfileLibraryService
             if (!processedPaths.Add(fullPath))
                 continue;
 
-            ProfileLibraryDocumentDto? document =
-                await TryReadProfileDocumentAsync(fullPath, cancellationToken);
+            ProfileLibraryDocumentDto? document = await TryReadProfileDocumentAsync(fullPath, cancellationToken);
 
             if (document is null)
                 continue;
 
-            string importedName = EnsureUniqueName(
-                NormalizeProfileName(document.Metadata.Name),
-                usedNames);
+            string importedName = EnsureUniqueName(NormalizeProfileName(document.Metadata.Name), usedNames);
 
             DateTime utcNow = DateTime.UtcNow;
 
@@ -198,8 +181,7 @@ public sealed class ProfileLibraryService : IProfileLibraryService
                 FilePath: null,
                 Kind: ProfileEntryKind.User);
 
-            ProfileLibraryEntry savedEntry =
-                await SaveAsync(importedEntry, saveAsNew: true, cancellationToken);
+            ProfileLibraryEntry savedEntry = await SaveAsync(importedEntry, saveAsNew: true, cancellationToken);
 
             importedEntries.Add(savedEntry);
         }
@@ -249,8 +231,7 @@ public sealed class ProfileLibraryService : IProfileLibraryService
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            ProfileLibraryEntry? entry =
-                await TryReadUserEntryAsync(filePath, cancellationToken);
+            ProfileLibraryEntry? entry = await TryReadUserEntryAsync(filePath, cancellationToken);
 
             if (entry is not null)
                 result.Add(entry);
@@ -263,8 +244,7 @@ public sealed class ProfileLibraryService : IProfileLibraryService
         string filePath,
         CancellationToken cancellationToken)
     {
-        ProfileLibraryDocumentDto? document =
-            await TryReadProfileDocumentAsync(filePath, cancellationToken);
+        ProfileLibraryDocumentDto? document = await TryReadProfileDocumentAsync(filePath, cancellationToken);
 
         if (document is null)
             return null;
@@ -299,7 +279,7 @@ public sealed class ProfileLibraryService : IProfileLibraryService
             ProfileLibraryDocumentDto? document =
                 await JsonSerializer.DeserializeAsync<ProfileLibraryDocumentDto>(
                     stream,
-                    JsonOptions,
+                    _jsonOptions,
                     cancellationToken);
 
             if (document is null)
@@ -308,8 +288,10 @@ public sealed class ProfileLibraryService : IProfileLibraryService
             if (document.SchemaVersion != CurrentSchemaVersion)
                 return null;
 
+            // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (document.Metadata is null || document.Profile is null)
                 return null;
+            // ReSharper restore ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
             return document;
         }
@@ -324,17 +306,13 @@ public sealed class ProfileLibraryService : IProfileLibraryService
         ProfileLibraryDocumentDto document,
         CancellationToken cancellationToken)
     {
-        string? directory = Path.GetDirectoryName(filePath);
-        if (!string.IsNullOrWhiteSpace(directory))
-            Directory.CreateDirectory(directory);
-
-        string json = JsonSerializer.Serialize(document, JsonOptions);
-        await File.WriteAllTextAsync(filePath, json, cancellationToken);
+        await AtomicFileWriter.WriteAsync(
+            filePath,
+            (stream, token) => JsonSerializer.SerializeAsync(stream, document, _jsonOptions, token),
+            cancellationToken);
     }
 
-    private static string EnsureUniqueName(
-        string baseName,
-        HashSet<string> usedNames)
+    private static string EnsureUniqueName(string baseName, HashSet<string> usedNames)
     {
         if (usedNames.Add(baseName))
             return baseName;
@@ -354,14 +332,10 @@ public sealed class ProfileLibraryService : IProfileLibraryService
         }
     }
 
-    private static string BuildUserProfilePath(
-        string directory,
-        ProfileMetadataDto metadata)
+    private static string BuildUserProfilePath(string directory, ProfileMetadataDto metadata)
     {
         string safeName = MakeSafeFileName(metadata.Name, "Profile");
-        string shortId = metadata.Id.Length > 8
-            ? metadata.Id[..8]
-            : metadata.Id;
+        string shortId = metadata.Id.Length > 8 ? metadata.Id[..8] : metadata.Id;
 
         string fileName = $"{safeName}.{shortId}.filemerger.profile.json";
         return Path.Combine(directory, fileName);
@@ -369,37 +343,27 @@ public sealed class ProfileLibraryService : IProfileLibraryService
 
     private static string NormalizeProfileId(string? id)
     {
-        return string.IsNullOrWhiteSpace(id)
-            ? CreateNewProfileId()
-            : id.Trim();
+        return string.IsNullOrWhiteSpace(id) ? CreateNewProfileId() : id.Trim();
     }
 
     private static string NormalizeProfileName(string? value)
     {
-        return string.IsNullOrWhiteSpace(value)
-            ? "Profile"
-            : value.Trim();
+        return string.IsNullOrWhiteSpace(value) ? "Profile" : value.Trim();
     }
 
     private static string? NormalizeDescription(string? value)
     {
-        return string.IsNullOrWhiteSpace(value)
-            ? null
-            : value.Trim();
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private static string MakeSafeFileName(string? value, string fallback)
     {
-        string candidate = string.IsNullOrWhiteSpace(value)
-            ? fallback
-            : value.Trim();
+        string candidate = string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
         foreach (char invalidChar in Path.GetInvalidFileNameChars())
             candidate = candidate.Replace(invalidChar, '_');
 
-        return string.IsNullOrWhiteSpace(candidate)
-            ? fallback
-            : candidate;
+        return string.IsNullOrWhiteSpace(candidate) ? fallback : candidate;
     }
 
     private static string CreateNewProfileId()

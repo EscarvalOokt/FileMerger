@@ -6,8 +6,8 @@ namespace FileMerger.Wpf.Features.Session.ViewModels;
 
 public sealed class SessionSettingsViewModel : ViewModelBase
 {
-    private string _sessionName = "Default Session";
     private string _outputPath = string.Empty;
+    private string _sessionName = "Default Session";
 
     public string SessionName
     {
@@ -34,8 +34,6 @@ public sealed class SessionSettingsViewModel : ViewModelBase
 
     public PreviewSessionStateSnapshot BuildPreviewSessionSnapshot()
     {
-        return new PreviewSessionStateSnapshot(
-            SessionName,
-            OutputPath);
+        return new PreviewSessionStateSnapshot(SessionName, OutputPath);
     }
 }

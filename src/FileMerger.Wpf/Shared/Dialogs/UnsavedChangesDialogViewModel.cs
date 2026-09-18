@@ -6,9 +6,7 @@ public sealed class UnsavedChangesDialogViewModel : ViewModelBase
 {
     private UnsavedChangesDecision _decision = UnsavedChangesDecision.Cancel;
 
-    public UnsavedChangesDialogViewModel(
-        string title,
-        string message)
+    public UnsavedChangesDialogViewModel(string title, string message)
     {
         ArgumentNullException.ThrowIfNull(title);
         ArgumentNullException.ThrowIfNull(message);

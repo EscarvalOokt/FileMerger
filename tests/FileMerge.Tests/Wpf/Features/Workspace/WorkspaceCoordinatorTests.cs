@@ -19,10 +19,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedPath = @"D:\Workspaces\test.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            saveDialog,
-            new FakeOpenFileDialogService());
+        var coordinator = new WorkspaceCoordinator(persistence, saveDialog, new FakeOpenFileDialogService());
 
         WorkspaceDocumentViewModel document = CreateDocument();
 
@@ -55,11 +52,13 @@ public sealed class WorkspaceCoordinatorTests
         Assert.NotNull(source.Exclusions);
         Assert.Equal(2, source.Exclusions!.Count);
 
-        Assert.Contains(source.Exclusions, x =>
-            x is { RelativePath: "bin", Type: MergeSourceExclusionType.Directory, IsEnabled: true });
+        Assert.Contains(
+            source.Exclusions,
+            x => x is { RelativePath: "bin", Type: MergeSourceExclusionType.Directory, IsEnabled: true });
 
-        Assert.Contains(source.Exclusions, x =>
-            x is { RelativePath: @"Secrets\ApiKeys.cs", Type: MergeSourceExclusionType.File, IsEnabled: false });
+        Assert.Contains(
+            source.Exclusions,
+            x => x is { RelativePath: @"Secrets\ApiKeys.cs", Type: MergeSourceExclusionType.File, IsEnabled: false });
     }
 
     [Fact]
@@ -71,10 +70,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedPath = @"D:\Workspaces\test.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            saveDialog,
-            new FakeOpenFileDialogService());
+        var coordinator = new WorkspaceCoordinator(persistence, saveDialog, new FakeOpenFileDialogService());
 
         WorkspaceDocumentViewModel document = CreateDocument();
 
@@ -92,16 +88,12 @@ public sealed class WorkspaceCoordinatorTests
             SelectedPath = @"D:\Workspaces\test.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            saveDialog,
-            new FakeOpenFileDialogService());
+        var coordinator = new WorkspaceCoordinator(persistence, saveDialog, new FakeOpenFileDialogService());
 
         WorkspaceDocumentViewModel document = CreateDocument();
         SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
 
-        document.ProfileEditor.ApplyProfile(
-            CreateProfile(skippedFileCategories: selection));
+        document.ProfileEditor.ApplyProfile(CreateProfile(skippedFileCategories: selection));
         document.ProfileEditor.WorkingProfileName = "Unity Repository";
         document.CurrentProfileEntryId = "profile-unity";
         document.ProfileOriginEntryId = "profile-origin";
@@ -127,10 +119,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedPath = @"D:\Workspaces\unexpected.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            saveDialog,
-            new FakeOpenFileDialogService());
+        var coordinator = new WorkspaceCoordinator(persistence, saveDialog, new FakeOpenFileDialogService());
 
         WorkspaceDocumentViewModel document = CreateDocument();
         document.WorkspaceFilePath = @"D:\Workspaces\existing.filemerger.workspace.json";
@@ -152,10 +141,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedPath = @"D:\Workspaces\saved-as.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            saveDialog,
-            new FakeOpenFileDialogService());
+        var coordinator = new WorkspaceCoordinator(persistence, saveDialog, new FakeOpenFileDialogService());
 
         WorkspaceDocumentViewModel document = CreateDocument();
         document.WorkspaceFilePath = @"D:\Workspaces\existing.filemerger.workspace.json";
@@ -178,10 +164,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedPath = null
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            saveDialog,
-            new FakeOpenFileDialogService());
+        var coordinator = new WorkspaceCoordinator(persistence, saveDialog, new FakeOpenFileDialogService());
 
         WorkspaceDocumentViewModel document = CreateDocument();
         document.WorkspaceFilePath = @"D:\Workspaces\existing.filemerger.workspace.json";
@@ -221,21 +204,16 @@ public sealed class WorkspaceCoordinatorTests
             SelectedFile = @"D:\Workspaces\selected.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            new FakeSaveFileDialogService(),
-            openDialog);
+        var coordinator = new WorkspaceCoordinator(persistence, new FakeSaveFileDialogService(), openDialog);
 
         WorkspaceDocumentViewModel document = CreateDocument();
-        string previousPath =
-            @"D:\SomeOtherFolder\existing.filemerger.workspace.json";
+        string previousPath = @"D:\SomeOtherFolder\existing.filemerger.workspace.json";
         document.WorkspaceFilePath = previousPath;
 
         bool result = await coordinator.LoadWorkspaceAsync(document);
 
         string expectedDirectory = Path.Combine(
-            Environment.GetFolderPath(
-                Environment.SpecialFolder.LocalApplicationData),
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "FileMerger",
             "Workspaces");
 
@@ -281,10 +259,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedFile = @"D:\Workspaces\test.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            new FakeSaveFileDialogService(),
-            openDialog);
+        var coordinator = new WorkspaceCoordinator(persistence, new FakeSaveFileDialogService(), openDialog);
 
         WorkspaceDocumentViewModel document = CreateDocument();
 
@@ -293,11 +268,13 @@ public sealed class WorkspaceCoordinatorTests
         MergeSourceItemViewModel source = Assert.Single(document.SourcesPane.Sources);
         Assert.Equal(2, source.Exclusions.Count);
 
-        Assert.Contains(source.Exclusions, x =>
-            x is { RelativePath: "bin", Type: MergeSourceExclusionType.Directory, IsEnabled: true });
+        Assert.Contains(
+            source.Exclusions,
+            x => x is { RelativePath: "bin", Type: MergeSourceExclusionType.Directory, IsEnabled: true });
 
-        Assert.Contains(source.Exclusions, x =>
-            x is { RelativePath: @"Secrets\ApiKeys.cs", Type: MergeSourceExclusionType.File, IsEnabled: false });
+        Assert.Contains(
+            source.Exclusions,
+            x => x is { RelativePath: @"Secrets\ApiKeys.cs", Type: MergeSourceExclusionType.File, IsEnabled: false });
     }
 
     [Fact]
@@ -322,10 +299,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedFile = @"D:\Workspaces\old.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            new FakeSaveFileDialogService(),
-            openDialog);
+        var coordinator = new WorkspaceCoordinator(persistence, new FakeSaveFileDialogService(), openDialog);
 
         WorkspaceDocumentViewModel document = CreateDocument();
 
@@ -363,10 +337,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedFile = @"D:\Workspaces\invalid.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            new FakeSaveFileDialogService(),
-            openDialog);
+        var coordinator = new WorkspaceCoordinator(persistence, new FakeSaveFileDialogService(), openDialog);
 
         WorkspaceDocumentViewModel document = CreateDocument();
 
@@ -398,10 +369,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedFile = @"D:\Workspaces\test.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            new FakeSaveFileDialogService(),
-            openDialog);
+        var coordinator = new WorkspaceCoordinator(persistence, new FakeSaveFileDialogService(), openDialog);
 
         WorkspaceDocumentViewModel document = CreateDocument();
 
@@ -427,10 +395,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedFile = @"D:\Workspaces\loaded.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            new FakeSaveFileDialogService(),
-            openDialog);
+        var coordinator = new WorkspaceCoordinator(persistence, new FakeSaveFileDialogService(), openDialog);
 
         WorkspaceDocumentViewModel document = CreateDocument();
 
@@ -446,8 +411,7 @@ public sealed class WorkspaceCoordinatorTests
         {
             WorkspaceToLoad = CreateWorkspace(
                 sources: [],
-                profile: CreateProfile(
-                    skippedFileCategories: CreateSkippedFileCategorySelection()),
+                profile: CreateProfile(skippedFileCategories: CreateSkippedFileCategorySelection()),
                 profileDisplayName: "Saved Workspace Profile",
                 profileEntryId: "profile-saved",
                 profileOriginEntryId: "profile-origin",
@@ -459,10 +423,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedFile = @"D:\Workspaces\loaded.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            new FakeSaveFileDialogService(),
-            openDialog);
+        var coordinator = new WorkspaceCoordinator(persistence, new FakeSaveFileDialogService(), openDialog);
 
         WorkspaceDocumentViewModel document = CreateDocument();
 
@@ -491,9 +452,7 @@ public sealed class WorkspaceCoordinatorTests
         {
             WorkspaceToLoad = CreateWorkspace(
                 sources: [],
-                profile: CreateProfile(
-                    includeSourceExcludedFiles: true,
-                    skippedFileCategories: null),
+                profile: CreateProfile(includeSourceExcludedFiles: true, skippedFileCategories: null),
                 profileDisplayName: "Legacy Profile",
                 profileEntryId: "legacy-profile")
         };
@@ -503,10 +462,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedFile = @"D:\Workspaces\legacy.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            new FakeSaveFileDialogService(),
-            openDialog);
+        var coordinator = new WorkspaceCoordinator(persistence, new FakeSaveFileDialogService(), openDialog);
 
         WorkspaceDocumentViewModel document = CreateDocument();
 
@@ -526,10 +482,7 @@ public sealed class WorkspaceCoordinatorTests
     {
         var persistence = new FakeWorkspacePersistenceService
         {
-            WorkspaceToLoad = CreateWorkspace(
-                sources: [],
-                profileDisplayName: "Custom Profile",
-                profileEntryId: null)
+            WorkspaceToLoad = CreateWorkspace(sources: [], profileDisplayName: "Custom Profile", profileEntryId: null)
         };
 
         var openDialog = new FakeOpenFileDialogService
@@ -537,10 +490,7 @@ public sealed class WorkspaceCoordinatorTests
             SelectedFile = @"D:\Workspaces\custom.filemerger.workspace.json"
         };
 
-        var coordinator = new WorkspaceCoordinator(
-            persistence,
-            new FakeSaveFileDialogService(),
-            openDialog);
+        var coordinator = new WorkspaceCoordinator(persistence, new FakeSaveFileDialogService(), openDialog);
 
         WorkspaceDocumentViewModel document = CreateDocument();
 
@@ -580,12 +530,9 @@ public sealed class WorkspaceCoordinatorTests
         Assert.Equal("document", ex.ParamName);
     }
 
-    private static WorkspaceDocumentViewModel CreateDocument(
-        string sessionName = "Test Session")
+    private static WorkspaceDocumentViewModel CreateDocument(string sessionName = "Test Session")
     {
-        return WorkspaceDocumentTestFactory.CreateSavedDocument(
-            sessionName: sessionName,
-            outputPath: string.Empty);
+        return WorkspaceDocumentTestFactory.CreateSavedDocument(sessionName: sessionName, outputPath: string.Empty);
     }
 
     private static WorkspaceDto CreateWorkspace(
@@ -619,7 +566,6 @@ public sealed class WorkspaceCoordinatorTests
             IncludeFileSeparators: true,
             IncludeRelativePathInSeparator: true,
             TrimTrailingEmptyLines: true,
-            RemoveUsingDirectives: false,
             FileTypes:
             [
                 new WorkspaceFileTypeDto(
@@ -667,9 +613,7 @@ public sealed class WorkspaceCoordinatorTests
             return Task.CompletedTask;
         }
 
-        public Task<WorkspaceDto> LoadWorkspaceAsync(
-            string filePath,
-            CancellationToken cancellationToken = default)
+        public Task<WorkspaceDto> LoadWorkspaceAsync(string filePath, CancellationToken cancellationToken = default)
         {
             if (WorkspaceToLoad is null)
                 throw new InvalidOperationException("WorkspaceToLoad is not configured.");

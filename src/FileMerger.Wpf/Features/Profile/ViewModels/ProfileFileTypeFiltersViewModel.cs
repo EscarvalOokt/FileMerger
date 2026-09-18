@@ -4,8 +4,8 @@ namespace FileMerger.Wpf.Features.Profile.ViewModels;
 
 public sealed class ProfileFileTypeFiltersViewModel : ViewModelBase
 {
-    private string _searchText = string.Empty;
     private ProfileFileTypeFilterMode _mode = ProfileFileTypeFilterMode.All;
+    private string _searchText = string.Empty;
 
     public string SearchText
     {
@@ -27,9 +27,7 @@ public sealed class ProfileFileTypeFiltersViewModel : ViewModelBase
         }
     }
 
-    public bool HasActiveFilters =>
-        !string.IsNullOrWhiteSpace(SearchText) ||
-        Mode != ProfileFileTypeFilterMode.All;
+    public bool HasActiveFilters => !string.IsNullOrWhiteSpace(SearchText) || Mode != ProfileFileTypeFilterMode.All;
 
     public void Reset()
     {
@@ -37,9 +35,7 @@ public sealed class ProfileFileTypeFiltersViewModel : ViewModelBase
         Mode = ProfileFileTypeFilterMode.All;
     }
 
-    public bool Matches(
-        FileTypeOptionViewModel fileType,
-        ProfileFileTypeGroupViewModel group)
+    public bool Matches(FileTypeOptionViewModel fileType, ProfileFileTypeGroupViewModel group)
     {
         ArgumentNullException.ThrowIfNull(fileType);
         ArgumentNullException.ThrowIfNull(group);
@@ -52,8 +48,7 @@ public sealed class ProfileFileTypeFiltersViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(searchText))
             return true;
 
-        if (Contains(group.Title, searchText) ||
-            Contains(group.Description, searchText))
+        if (Contains(group.Title, searchText) || Contains(group.Description, searchText))
         {
             return true;
         }
@@ -77,7 +72,6 @@ public sealed class ProfileFileTypeFiltersViewModel : ViewModelBase
 
     private static bool Contains(string? value, string searchText)
     {
-        return !string.IsNullOrWhiteSpace(value) &&
-               value.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+        return !string.IsNullOrWhiteSpace(value) && value.Contains(searchText, StringComparison.OrdinalIgnoreCase);
     }
 }

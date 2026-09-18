@@ -142,14 +142,15 @@
                           Style="{StaticResource ValidationDetailsToggleButtonStyle}" />
 
             <DataGrid Grid.Row="1"
-                      MinHeight="120"
-                      MaxHeight="220"
+                      MinHeight="56"
+                      MaxHeight="72"
                       Margin="0,8,0,0"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
                       CanUserDeleteRows="False"
                       HeadersVisibility="Column"
                       ItemsSource="{Binding Issues}"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                       SelectionMode="Single"
                       SelectionUnit="FullRow"
                       Visibility="{Binding HasVisibleDetails, Converter={StaticResource BooleanToVisibilityConverter}}">

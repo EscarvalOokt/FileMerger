@@ -7,8 +7,7 @@ public sealed class FileSystemLauncher : IFileSystemLauncher
 {
     public bool CanOpenDirectory(string? directoryPath)
     {
-        return !string.IsNullOrWhiteSpace(directoryPath) &&
-               Directory.Exists(directoryPath);
+        return !string.IsNullOrWhiteSpace(directoryPath) && Directory.Exists(directoryPath);
     }
 
     public void OpenDirectory(string directoryPath)
@@ -18,10 +17,11 @@ public sealed class FileSystemLauncher : IFileSystemLauncher
         if (!Directory.Exists(directoryPath))
             throw new DirectoryNotFoundException($"Directory does not exist: {directoryPath}");
 
-        Process.Start(new ProcessStartInfo
-        {
-            FileName = directoryPath,
-            UseShellExecute = true
-        });
+        Process.Start(
+            new ProcessStartInfo
+            {
+                FileName = directoryPath,
+                UseShellExecute = true
+            });
     }
 }

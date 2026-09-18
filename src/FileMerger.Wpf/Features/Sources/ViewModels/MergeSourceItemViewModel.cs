@@ -9,9 +9,9 @@ namespace FileMerger.Wpf.Features.Sources.ViewModels;
 
 public sealed class MergeSourceItemViewModel : ViewModelBase
 {
-    private string _path = string.Empty;
-    private bool _isRecursive = true;
     private bool _isEnabled = true;
+    private bool _isRecursive = true;
+    private string _path = string.Empty;
 
     public MergeSourceItemViewModel()
     {
@@ -84,9 +84,7 @@ public sealed class MergeSourceItemViewModel : ViewModelBase
                 return "No exclusions";
 
             if (ExclusionCount == 1)
-                return DisabledExclusionCount == 1
-                    ? "1 exclusion · disabled"
-                    : "1 exclusion";
+                return DisabledExclusionCount == 1 ? "1 exclusion · disabled" : "1 exclusion";
 
             if (DisabledExclusionCount == 0)
                 return $"{ExclusionCount} exclusions";
@@ -105,9 +103,7 @@ public sealed class MergeSourceItemViewModel : ViewModelBase
             type: Type,
             isRecursive: CanEditRecursive && IsRecursive,
             isEnabled: IsEnabled,
-            exclusions: Type == MergeSourceType.Directory
-                ? [.. Exclusions.Select(x => x.ToModel())]
-                : []);
+            exclusions: Type == MergeSourceType.Directory ? [.. Exclusions.Select(x => x.ToModel())] : []);
     }
 
     private void Exclusions_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -129,9 +125,9 @@ public sealed class MergeSourceItemViewModel : ViewModelBase
 
     private void Exclusion_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MergeSourceExclusionItemViewModel.RelativePath) or
-            nameof(MergeSourceExclusionItemViewModel.Type) or
-            nameof(MergeSourceExclusionItemViewModel.IsEnabled))
+        if (e.PropertyName is nameof(MergeSourceExclusionItemViewModel.RelativePath)
+            or nameof(MergeSourceExclusionItemViewModel.Type)
+            or nameof(MergeSourceExclusionItemViewModel.IsEnabled))
         {
             RaiseExclusionSummaryPropertiesChanged();
         }

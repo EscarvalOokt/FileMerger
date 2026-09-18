@@ -7,15 +7,11 @@ namespace FileMerger.Wpf.Features.Files.ViewModels;
 
 public sealed class InputFileItemViewModel : ViewModelBase
 {
-    private bool _isIncluded;
     private bool _hasManualOverride;
     private bool _isAppliedInPreview;
+    private bool _isIncluded;
 
-    public InputFileItemViewModel(
-        InputFile model,
-        bool automaticIncluded,
-        bool currentIncluded,
-        bool appliedIncluded)
+    public InputFileItemViewModel(InputFile model, bool automaticIncluded, bool currentIncluded, bool appliedIncluded)
     {
         ArgumentNullException.ThrowIfNull(model);
 
@@ -23,12 +19,9 @@ public sealed class InputFileItemViewModel : ViewModelBase
         AutomaticIncluded = model.IsMergeCandidate && automaticIncluded;
         AppliedIncluded = appliedIncluded;
 
-        _isIncluded = model.IsMergeCandidate
-            ? currentIncluded
-            : AutomaticIncluded;
+        _isIncluded = model.IsMergeCandidate ? currentIncluded : AutomaticIncluded;
 
-        _hasManualOverride = model.IsMergeCandidate &&
-                             _isIncluded != AutomaticIncluded;
+        _hasManualOverride = model.IsMergeCandidate && _isIncluded != AutomaticIncluded;
 
         _isAppliedInPreview = _isIncluded == appliedIncluded;
     }
@@ -117,24 +110,17 @@ public sealed class InputFileItemViewModel : ViewModelBase
 
     public string SkipReasonCode => Model.SkipReason?.Code ?? string.Empty;
 
-    public string InclusionBadgeTooltip =>
-        IsIncluded
-            ? "Included in output."
-            : "Not included in output.";
+    public string InclusionBadgeTooltip => IsIncluded ? "Included in output." : "Not included in output.";
 
-    public static string OverrideBadgeTooltip =>
-        "Manual inclusion override.";
+    public static string OverrideBadgeTooltip => "Manual inclusion override.";
 
     public static string PendingBadgeTooltip =>
         "Current file state is not applied to preview yet. Rebuild preview to apply it.";
 
-    public static string FallbackBadgeTooltip =>
-        "Unsupported extension included as text fallback.";
+    public static string FallbackBadgeTooltip => "Unsupported extension included as text fallback.";
 
     public string SkippedBadgeTooltip =>
-        string.IsNullOrWhiteSpace(SkipReason)
-            ? "Skipped with reason."
-            : $"Skipped with reason: {SkipReason}";
+        string.IsNullOrWhiteSpace(SkipReason) ? "Skipped with reason." : $"Skipped with reason: {SkipReason}";
 
     public string SkipReasonTooltip => BuildSkipReasonTooltip();
 
@@ -157,8 +143,7 @@ public sealed class InputFileItemViewModel : ViewModelBase
     {
         if (!CanOverrideInclusion)
         {
-            throw new InvalidOperationException(
-                "File is not eligible for manual inclusion override.");
+            throw new InvalidOperationException("File is not eligible for manual inclusion override.");
         }
 
         return new FileInclusionOverride(FullPath, IsIncluded);
@@ -168,9 +153,7 @@ public sealed class InputFileItemViewModel : ViewModelBase
     {
         List<string> lines =
         [
-            IsIncluded
-                ? "Included in output."
-                : "Not included in output."
+            IsIncluded ? "Included in output." : "Not included in output."
         ];
 
         if (HasManualOverride)
@@ -183,9 +166,8 @@ public sealed class InputFileItemViewModel : ViewModelBase
             lines.Add("Unsupported extension included as text fallback.");
 
         if (HasSkippedStatus)
-            lines.Add(string.IsNullOrWhiteSpace(SkipReason)
-                ? "Skipped with reason."
-                : $"Skipped with reason: {SkipReason}");
+            lines.Add(
+                string.IsNullOrWhiteSpace(SkipReason) ? "Skipped with reason." : $"Skipped with reason: {SkipReason}");
 
         return string.Join(Environment.NewLine, lines);
     }

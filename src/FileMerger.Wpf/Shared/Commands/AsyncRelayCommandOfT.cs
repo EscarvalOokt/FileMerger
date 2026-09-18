@@ -4,14 +4,12 @@ namespace FileMerger.Wpf.Shared.Commands;
 
 public sealed class AsyncRelayCommand<T> : ICommand
 {
-    private readonly Func<T?, Task> _execute;
     private readonly Predicate<T?>? _canExecute;
+    private readonly Func<T?, Task> _execute;
 
     private bool _isExecuting;
 
-    public AsyncRelayCommand(
-        Func<T?, Task> execute,
-        Predicate<T?>? canExecute = null)
+    public AsyncRelayCommand(Func<T?, Task> execute, Predicate<T?>? canExecute = null)
     {
         ArgumentNullException.ThrowIfNull(execute);
 

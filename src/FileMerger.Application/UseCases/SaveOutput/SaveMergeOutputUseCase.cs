@@ -22,24 +22,17 @@ public sealed class SaveMergeOutputUseCase
 
         if (string.IsNullOrWhiteSpace(request.Target.Path))
         {
-            issues.Add(new ValidationIssue(
-                ValidationSeverity.Error,
-                "output.path.empty",
-                "Output path cannot be empty."));
+            issues.Add(
+                new ValidationIssue(ValidationSeverity.Error, "output.path.empty", "Output path cannot be empty."));
         }
 
         if (issues.Count > 0)
         {
-            return new SaveMergeOutputResult(
-                isSuccessful: false,
-                target: request.Target,
-                validationIssues: issues);
+            return new SaveMergeOutputResult(isSuccessful: false, target: request.Target, validationIssues: issues);
         }
 
         _mergeWriter.Write(request.Output, request.Target);
 
-        return new SaveMergeOutputResult(
-            isSuccessful: true,
-            target: request.Target);
+        return new SaveMergeOutputResult(isSuccessful: true, target: request.Target);
     }
 }

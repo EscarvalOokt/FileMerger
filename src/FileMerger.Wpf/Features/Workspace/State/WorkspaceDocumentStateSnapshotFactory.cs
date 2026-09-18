@@ -19,11 +19,9 @@ public static class WorkspaceDocumentStateSnapshotFactory
                 .ThenBy(x => x.IsEnabled)
         ];
 
-        PreviewSessionStateSnapshot session =
-            document.SessionSettings.BuildPreviewSessionSnapshot();
+        PreviewSessionStateSnapshot session = document.SessionSettings.BuildPreviewSessionSnapshot();
 
-        PreviewProfileStateSnapshot profile =
-            document.ProfileEditor.BuildPreviewProfileSnapshot();
+        PreviewProfileStateSnapshot profile = document.ProfileEditor.BuildPreviewProfileSnapshot();
 
         var overrides = document.FilesPane.BuildOverrides()
             .GroupBy(x => PathUtility.NormalizeForComparison(x.FullPath), StringComparer.OrdinalIgnoreCase)
@@ -35,10 +33,6 @@ public static class WorkspaceDocumentStateSnapshotFactory
             ProfileEntryId: document.CurrentProfileEntryId,
             ProfileOriginEntryId: document.ProfileOriginEntryId,
             ProfileOriginDisplayName: document.ProfileOriginDisplayName,
-            PreviewState: new PreviewStateSnapshot(
-                sources,
-                session,
-                profile,
-                overrides));
+            PreviewState: new PreviewStateSnapshot(sources, session, profile, overrides));
     }
 }

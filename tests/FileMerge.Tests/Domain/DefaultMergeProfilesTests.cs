@@ -28,25 +28,15 @@ public sealed class DefaultMergeProfilesTests
     }
 
     [Fact]
-    public void CreateDefault_Should_Return_Profile_With_Expected_Cs_Options()
-    {
-        MergeProfile result = DefaultMergeProfiles.CreateDefault();
-
-        Assert.False(result.CsOptions.RemoveUsingDirectives);
-    }
-
-    [Fact]
     public void CreateDefault_Should_Return_Default_Known_File_Types()
     {
         MergeProfile result = DefaultMergeProfiles.CreateDefault();
 
-        string[] expectedExtensions = KnownFileTypes.Default
-            .Select(x => x.Extension)
+        string[] expectedExtensions = KnownFileTypes.Default.Select(x => x.Extension)
             .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        string[] actualExtensions = result.FileTypes
-            .Select(x => x.Extension)
+        string[] actualExtensions = result.FileTypes.Select(x => x.Extension)
             .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
@@ -60,29 +50,37 @@ public sealed class DefaultMergeProfilesTests
 
         Assert.Equal(4, result.FilterRules.Count);
 
-        Assert.Contains(result.FilterRules, x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.DirectorySegment &&
-            x.PatternType == RulePatternType.Exact &&
-            x.Pattern == "bin");
+        Assert.Contains(
+            result.FilterRules,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.DirectorySegment, PatternType: RulePatternType.Exact,
+                Pattern: "bin"
+            });
 
-        Assert.Contains(result.FilterRules, x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.DirectorySegment &&
-            x.PatternType == RulePatternType.Exact &&
-            x.Pattern == "obj");
+        Assert.Contains(
+            result.FilterRules,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.DirectorySegment, PatternType: RulePatternType.Exact,
+                Pattern: "obj"
+            });
 
-        Assert.Contains(result.FilterRules, x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.FileName &&
-            x.PatternType == RulePatternType.Wildcard &&
-            x.Pattern == "*.Designer.cs");
+        Assert.Contains(
+            result.FilterRules,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.FileName, PatternType: RulePatternType.Wildcard,
+                Pattern: "*.Designer.cs"
+            });
 
-        Assert.Contains(result.FilterRules, x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.FileName &&
-            x.PatternType == RulePatternType.Exact &&
-            x.Pattern == "AssemblyInfo.cs");
+        Assert.Contains(
+            result.FilterRules,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.FileName, PatternType: RulePatternType.Exact,
+                Pattern: "AssemblyInfo.cs"
+            });
     }
 
     [Fact]
@@ -90,22 +88,17 @@ public sealed class DefaultMergeProfilesTests
     {
         MergeProfile result = DefaultMergeProfiles.CreateDefault();
 
-        Assert.Equal(3, result.Transformations.Count);
+        Assert.Equal(2, result.Transformations.Count);
 
         ContentTransformationRule[] ordered = result.Transformations.OrderBy(x => x.Order).ToArray();
 
-        Assert.Equal(TransformationKind.RemoveUsingDirectives, ordered[0].Kind);
-        Assert.Equal(0, ordered[0].Order);
-        Assert.False(ordered[0].IsEnabled);
-        Assert.Contains(FileKind.CSharp, ordered[0].AppliesTo);
+        Assert.Equal(TransformationKind.TrimTrailingEmptyLines, ordered[0].Kind);
+        Assert.Equal(1, ordered[0].Order);
+        Assert.True(ordered[0].IsEnabled);
 
-        Assert.Equal(TransformationKind.TrimTrailingEmptyLines, ordered[1].Kind);
-        Assert.Equal(1, ordered[1].Order);
-        Assert.True(ordered[1].IsEnabled);
-
-        Assert.Equal(TransformationKind.NormalizeLineEndings, ordered[2].Kind);
-        Assert.Equal(2, ordered[2].Order);
-        Assert.False(ordered[2].IsEnabled);
+        Assert.Equal(TransformationKind.NormalizeLineEndings, ordered[1].Kind);
+        Assert.Equal(2, ordered[1].Order);
+        Assert.False(ordered[1].IsEnabled);
     }
 
     [Fact]
@@ -113,28 +106,36 @@ public sealed class DefaultMergeProfilesTests
     {
         MergeProfile result = DefaultMergeProfiles.CreateDefault();
 
-        Assert.Contains(result.FilterRules, x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.DirectorySegment &&
-            x.PatternType == RulePatternType.Exact &&
-            x.Pattern == "bin");
+        Assert.Contains(
+            result.FilterRules,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.DirectorySegment, PatternType: RulePatternType.Exact,
+                Pattern: "bin"
+            });
 
-        Assert.Contains(result.FilterRules, x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.DirectorySegment &&
-            x.PatternType == RulePatternType.Exact &&
-            x.Pattern == "obj");
+        Assert.Contains(
+            result.FilterRules,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.DirectorySegment, PatternType: RulePatternType.Exact,
+                Pattern: "obj"
+            });
 
-        Assert.Contains(result.FilterRules, x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.FileName &&
-            x.PatternType == RulePatternType.Wildcard &&
-            x.Pattern == "*.Designer.cs");
+        Assert.Contains(
+            result.FilterRules,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.FileName, PatternType: RulePatternType.Wildcard,
+                Pattern: "*.Designer.cs"
+            });
 
-        Assert.Contains(result.FilterRules, x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.FileName &&
-            x.PatternType == RulePatternType.Exact &&
-            x.Pattern == "AssemblyInfo.cs");
+        Assert.Contains(
+            result.FilterRules,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.FileName, PatternType: RulePatternType.Exact,
+                Pattern: "AssemblyInfo.cs"
+            });
     }
 }

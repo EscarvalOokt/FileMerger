@@ -23,9 +23,7 @@ public sealed class InputFileItemViewModelTests
     [Fact]
     public void StateProperties_Should_Describe_NotIncluded_File()
     {
-        InputFileItemViewModel item = CreateItem(
-            "Excluded.cs",
-            currentIncluded: false);
+        InputFileItemViewModel item = CreateItem("Excluded.cs", currentIncluded: false);
 
         Assert.False(item.IsIncluded);
         Assert.True(item.IsNotIncluded);
@@ -36,10 +34,7 @@ public sealed class InputFileItemViewModelTests
     [Fact]
     public void OverrideProperties_Should_Be_Visible_When_File_Has_ManualOverride()
     {
-        InputFileItemViewModel item = CreateItem(
-            "Override.cs",
-            automaticIncluded: true,
-            currentIncluded: false);
+        InputFileItemViewModel item = CreateItem("Override.cs", automaticIncluded: true, currentIncluded: false);
 
         Assert.True(item.HasManualOverride);
         Assert.True(item.HasOverrideStatus);
@@ -50,14 +45,14 @@ public sealed class InputFileItemViewModelTests
     [Fact]
     public void PendingProperties_Should_Be_Visible_When_File_Is_NotAppliedInPreview()
     {
-        InputFileItemViewModel item = CreateItem(
-            "Pending.cs",
-            currentIncluded: false,
-            appliedIncluded: true);
+        InputFileItemViewModel item = CreateItem("Pending.cs", currentIncluded: false, appliedIncluded: true);
 
         Assert.False(item.IsAppliedInPreview);
         Assert.True(item.HasPendingPreviewState);
-        Assert.Contains("not applied to preview", InputFileItemViewModel.PendingBadgeTooltip, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "not applied to preview",
+            InputFileItemViewModel.PendingBadgeTooltip,
+            StringComparison.OrdinalIgnoreCase);
         Assert.Contains("not applied to preview", item.FileStateSummaryTooltip, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -79,9 +74,7 @@ public sealed class InputFileItemViewModelTests
     [Fact]
     public void SkipProperties_Should_Use_SkipReason_Code_And_Description()
     {
-        var reason = new SkipReason(
-            "filter.rule.exclude",
-            "Excluded by rule.");
+        var reason = new SkipReason("filter.rule.exclude", "Excluded by rule.");
 
         InputFileItemViewModel item = CreateItem(
             "Generated.g.cs",
@@ -280,9 +273,7 @@ public sealed class InputFileItemViewModelTests
             automaticIncluded: false,
             currentIncluded: false,
             appliedIncluded: false,
-            skipReason: new SkipReason(
-                "discovery.file-type-disabled",
-                "File type is disabled in the current profile."),
+            skipReason: new SkipReason("discovery.file-type-disabled", "File type is disabled in the current profile."),
             isMergeCandidate: false);
 
         InvalidOperationException ex = Assert.Throws<InvalidOperationException>(item.ToOverride);

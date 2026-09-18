@@ -6,12 +6,6 @@ public sealed record UnsupportedTextFallbackOptions
     public const int DefaultProbeSizeBytes = 16_384;
     public const double DefaultMaxControlCharacterRatio = 0.10d;
 
-    public static UnsupportedTextFallbackOptions Disabled { get; } = new(
-        isEnabled: false);
-
-    public static UnsupportedTextFallbackOptions Enabled { get; } = new(
-        isEnabled: true);
-
     public UnsupportedTextFallbackOptions(
         bool isEnabled = false,
         long maxFileSizeBytes = DefaultMaxFileSizeBytes,
@@ -33,6 +27,10 @@ public sealed record UnsupportedTextFallbackOptions
         ProbeSizeBytes = probeSizeBytes;
         MaxControlCharacterRatio = maxControlCharacterRatio;
     }
+
+    public static UnsupportedTextFallbackOptions Disabled { get; } = new(isEnabled: false);
+
+    public static UnsupportedTextFallbackOptions Enabled { get; } = new(isEnabled: true);
 
     public bool IsEnabled { get; }
     public long MaxFileSizeBytes { get; }

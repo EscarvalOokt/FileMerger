@@ -7,9 +7,7 @@ public sealed class FileListFilterOptionViewModel : ViewModelBase
     private int _count;
     private bool _isSelected;
 
-    public FileListFilterOptionViewModel(
-        FileListFacet facet,
-        string label)
+    public FileListFilterOptionViewModel(FileListFacet facet, string label)
     {
         if (string.IsNullOrWhiteSpace(label))
             throw new ArgumentException("Label cannot be empty.", nameof(label));

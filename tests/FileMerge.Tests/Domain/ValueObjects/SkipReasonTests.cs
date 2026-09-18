@@ -43,9 +43,7 @@ public sealed class SkipReasonTests
     [InlineData("source.exclude", SkippedFileCategory.SourceExclusion)]
     [InlineData("file.read.failed", SkippedFileCategory.ProcessingFailure)]
     [InlineData("custom.exclude", SkippedFileCategory.Other)]
-    public void Category_Should_Map_Reason_Code_To_Semantic_Category(
-        string code,
-        SkippedFileCategory expectedCategory)
+    public void Category_Should_Map_Reason_Code_To_Semantic_Category(string code, SkippedFileCategory expectedCategory)
     {
         SkipReason result = new(code, "Description");
 
@@ -55,9 +53,7 @@ public sealed class SkipReasonTests
     [Fact]
     public void Constructor_Should_Allow_Null_RuleDetails()
     {
-        SkipReason result = new(
-            code: "manual.exclude",
-            description: "Excluded manually by user.");
+        SkipReason result = new(code: "manual.exclude", description: "Excluded manually by user.");
 
         Assert.Equal("manual.exclude", result.Code);
         Assert.Equal("Excluded manually by user.", result.Description);
@@ -70,8 +66,7 @@ public sealed class SkipReasonTests
     [InlineData(" ")]
     public void Constructor_Should_Throw_When_Code_Is_Invalid(string? code)
     {
-        ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-            new SkipReason(code!, "description"));
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => new SkipReason(code!, "description"));
 
         Assert.Equal("code", ex.ParamName);
     }
@@ -82,8 +77,7 @@ public sealed class SkipReasonTests
     [InlineData(" ")]
     public void Constructor_Should_Throw_When_Description_Is_Invalid(string? description)
     {
-        ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-            new SkipReason("code", description!));
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => new SkipReason("code", description!));
 
         Assert.Equal("description", ex.ParamName);
     }

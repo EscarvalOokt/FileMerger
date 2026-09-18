@@ -7,8 +7,7 @@ public sealed class PreviewTextFormatterTests
     [Fact]
     public void Format_Should_Throw_When_Content_Is_Null()
     {
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            PreviewTextFormatter.Format(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => PreviewTextFormatter.Format(null!));
 
         Assert.Equal("fullContent", ex.ParamName);
     }
@@ -89,8 +88,7 @@ public sealed class PreviewTextFormatterTests
         const int customLimit = 10;
         string content = "0123456789abc";
 
-        PreviewTextFormatResult result =
-            PreviewTextFormatter.Format(content, customLimit);
+        PreviewTextFormatResult result = PreviewTextFormatter.Format(content, customLimit);
 
         Assert.Equal(customLimit, result.DisplayedCharacters);
         Assert.Equal(content.Length - customLimit, result.OmittedCharacters);
@@ -103,8 +101,7 @@ public sealed class PreviewTextFormatterTests
         const int customLimit = 10;
         string content = new('x', customLimit);
 
-        PreviewTextFormatResult result =
-            PreviewTextFormatter.Format(content, customLimit);
+        PreviewTextFormatResult result = PreviewTextFormatter.Format(content, customLimit);
 
         Assert.Equal(content, result.Text);
         Assert.Equal(customLimit, result.DisplayedCharacters);
@@ -117,8 +114,7 @@ public sealed class PreviewTextFormatterTests
         const int customLimit = 10;
         string content = new('x', customLimit + 5);
 
-        PreviewTextFormatResult result =
-            PreviewTextFormatter.Format(content, customLimit);
+        PreviewTextFormatResult result = PreviewTextFormatter.Format(content, customLimit);
 
         Assert.True(result.WasTruncated);
         Assert.Equal(customLimit, result.DisplayedCharacters);
@@ -130,14 +126,12 @@ public sealed class PreviewTextFormatterTests
     [Fact]
     public void Format_Should_Throw_When_Custom_Limit_Is_Zero()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            PreviewTextFormatter.Format("content", 0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => PreviewTextFormatter.Format("content", 0));
     }
 
     [Fact]
     public void Format_Should_Throw_When_Custom_Limit_Is_Negative()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            PreviewTextFormatter.Format("content", -1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => PreviewTextFormatter.Format("content", -1));
     }
 }

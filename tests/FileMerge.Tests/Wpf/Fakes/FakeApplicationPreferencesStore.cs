@@ -4,12 +4,11 @@ namespace FileMerger.Tests.Wpf.Fakes;
 
 public sealed class FakeApplicationPreferencesStore : IApplicationPreferencesStore
 {
-    public ApplicationPreferences Current { get; private set; } =
-        ApplicationPreferences.Default;
-
     public List<ApplicationPreferences> SavedPreferences { get; } = [];
 
     public Exception? UpdateException { get; set; }
+
+    public ApplicationPreferences Current { get; private set; } = ApplicationPreferences.Default;
 
     public Task InitializeAsync(CancellationToken cancellationToken = default)
     {

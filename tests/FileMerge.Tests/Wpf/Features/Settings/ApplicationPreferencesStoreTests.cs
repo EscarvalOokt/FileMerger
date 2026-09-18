@@ -7,8 +7,7 @@ public sealed class ApplicationPreferencesStoreTests
     [Fact]
     public void Current_Should_Start_With_Default()
     {
-        ApplicationPreferencesStore store = new(
-            new FakeApplicationPreferencesService());
+        ApplicationPreferencesStore store = new(new FakeApplicationPreferencesService());
 
         Assert.Equal(ApplicationPreferences.Default, store.Current);
     }
@@ -60,32 +59,25 @@ public sealed class ApplicationPreferencesStoreTests
     [Fact]
     public async Task UpdateAsync_Should_Throw_When_Update_Is_Null()
     {
-        ApplicationPreferencesStore store = new(
-            new FakeApplicationPreferencesService());
+        ApplicationPreferencesStore store = new(new FakeApplicationPreferencesService());
 
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            store.UpdateAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => store.UpdateAsync(null!));
     }
 
-    private sealed class FakeApplicationPreferencesService :
-        IApplicationPreferencesService
+    private sealed class FakeApplicationPreferencesService : IApplicationPreferencesService
     {
-        public ApplicationPreferences PreferencesToLoad { get; set; } =
-            ApplicationPreferences.Default;
+        public ApplicationPreferences PreferencesToLoad { get; set; } = ApplicationPreferences.Default;
 
         public Exception? SaveException { get; set; }
 
         public List<ApplicationPreferences> SavedPreferences { get; } = [];
 
-        public Task<ApplicationPreferences> LoadAsync(
-            CancellationToken cancellationToken = default)
+        public Task<ApplicationPreferences> LoadAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(PreferencesToLoad);
         }
 
-        public Task SaveAsync(
-            ApplicationPreferences preferences,
-            CancellationToken cancellationToken = default)
+        public Task SaveAsync(ApplicationPreferences preferences, CancellationToken cancellationToken = default)
         {
             if (SaveException is not null)
                 return Task.FromException(SaveException);

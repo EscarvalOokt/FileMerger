@@ -28,20 +28,15 @@ public sealed class ContentReader : IContentReader
                 InputEncodingMode.Utf8 => ReadAsUtf8(bytes, file),
                 InputEncodingMode.Specific => ReadAsSpecific(bytes, file, options),
                 InputEncodingMode.Auto => ReadAuto(bytes, file, options),
-                _ => ContentReadResult.Failure(CreateFailure(
-                    file,
-                    "Unsupported input encoding mode."))
+                _ => ContentReadResult.Failure(CreateFailure(file, "Unsupported input encoding mode."))
             };
         }
-        catch (Exception ex) when (
-            ex is IOException ||
-            ex is UnauthorizedAccessException ||
-            ex is NotSupportedException ||
-            ex is SecurityException)
+        catch (Exception ex) when (ex is IOException ||
+                                   ex is UnauthorizedAccessException ||
+                                   ex is NotSupportedException ||
+                                   ex is SecurityException)
         {
-            return ContentReadResult.Failure(CreateFailure(
-                file,
-                ex.Message));
+            return ContentReadResult.Failure(CreateFailure(file, ex.Message));
         }
     }
 
@@ -62,9 +57,7 @@ public sealed class ContentReader : IContentReader
     {
         if (string.IsNullOrWhiteSpace(options.PreferredEncodingName))
         {
-            return ContentReadResult.Failure(CreateFailure(
-                file,
-                "Preferred input encoding name is not specified."));
+            return ContentReadResult.Failure(CreateFailure(file, "Preferred input encoding name is not specified."));
         }
 
         Encoding encoding;
@@ -74,9 +67,8 @@ public sealed class ContentReader : IContentReader
         }
         catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException)
         {
-            return ContentReadResult.Failure(CreateFailure(
-                file,
-                $"Unknown input encoding '{options.PreferredEncodingName}': {ex.Message}"));
+            return ContentReadResult.Failure(
+                CreateFailure(file, $"Unknown input encoding '{options.PreferredEncodingName}': {ex.Message}"));
         }
 
         try
@@ -123,9 +115,8 @@ public sealed class ContentReader : IContentReader
         }
         catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException)
         {
-            return ContentReadResult.Failure(CreateFailure(
-                file,
-                $"Unknown fallback input encoding '{options.FallbackEncodingName}': {ex.Message}"));
+            return ContentReadResult.Failure(
+                CreateFailure(file, $"Unknown fallback input encoding '{options.FallbackEncodingName}': {ex.Message}"));
         }
 
         try
@@ -153,45 +144,31 @@ public sealed class ContentReader : IContentReader
 
         if (bytes is [0xEF, 0xBB, 0xBF, ..])
         {
-            encoding = new UTF8Encoding(
-                encoderShouldEmitUTF8Identifier: true,
-                throwOnInvalidBytes: true);
-            return true;
-        }
-
-        if (bytes is [0xFF, 0xFE, ..])
-        {
-            encoding = new UnicodeEncoding(
-                bigEndian: false,
-                byteOrderMark: true,
-                throwOnInvalidBytes: true);
-            return true;
-        }
-
-        if (bytes is [0xFE, 0xFF, ..])
-        {
-            encoding = new UnicodeEncoding(
-                bigEndian: true,
-                byteOrderMark: true,
-                throwOnInvalidBytes: true);
+            encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true, throwOnInvalidBytes: true);
             return true;
         }
 
         if (bytes is [0xFF, 0xFE, 0x00, 0x00, ..])
         {
-            encoding = new UTF32Encoding(
-                bigEndian: false,
-                byteOrderMark: true,
-                throwOnInvalidCharacters: true);
+            encoding = new UTF32Encoding(bigEndian: false, byteOrderMark: true, throwOnInvalidCharacters: true);
             return true;
         }
 
         if (bytes is [0x00, 0x00, 0xFE, 0xFF, ..])
         {
-            encoding = new UTF32Encoding(
-                bigEndian: true,
-                byteOrderMark: true,
-                throwOnInvalidCharacters: true);
+            encoding = new UTF32Encoding(bigEndian: true, byteOrderMark: true, throwOnInvalidCharacters: true);
+            return true;
+        }
+
+        if (bytes is [0xFF, 0xFE, ..])
+        {
+            encoding = new UnicodeEncoding(bigEndian: false, byteOrderMark: true, throwOnInvalidBytes: true);
+            return true;
+        }
+
+        if (bytes is [0xFE, 0xFF, ..])
+        {
+            encoding = new UnicodeEncoding(bigEndian: true, byteOrderMark: true, throwOnInvalidBytes: true);
             return true;
         }
 
@@ -202,9 +179,7 @@ public sealed class ContentReader : IContentReader
     {
         ArgumentNullException.ThrowIfNull(content);
 
-        return content.Length > 0 && content[0] == '\uFEFF'
-            ? content[1..]
-            : content;
+        return content.Length > 0 && content[0] == '\uFEFF' ? content[1..] : content;
     }
 
     private static ValidationIssue CreateFailure(InputFile file, string details)

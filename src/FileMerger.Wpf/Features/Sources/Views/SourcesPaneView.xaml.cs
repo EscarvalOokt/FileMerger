@@ -18,8 +18,7 @@ public partial class SourcesPaneView : UserControl
         if (ViewModel is null)
             return;
 
-        ViewModel.ReplaceSelectedSources(
-            SourcesDataGrid.SelectedItems.OfType<MergeSourceItemViewModel>());
+        ViewModel.ReplaceSelectedSources(SourcesDataGrid.SelectedItems.OfType<MergeSourceItemViewModel>());
     }
 
     private void SourcesDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)

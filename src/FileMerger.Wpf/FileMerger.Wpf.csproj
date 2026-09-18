@@ -1,13 +1,20 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Resources\FileMerger_Icon.ico</ApplicationIcon>
+    <Version>0.2.0-alpha</Version>
+    <InformationalVersion>0.2.0-alpha</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <Resource Include="Resources\FileMerger_Icon.ico"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UpdateManifestUri)' != ''">
+    <AssemblyMetadata Include="FileMerger.UpdateManifestUri" Value="$(UpdateManifestUri)"/>
   </ItemGroup>
 
   <ItemGroup>
@@ -19,6 +26,35 @@
     <ProjectReference Include="..\FileMerger.Application\FileMerger.Application.csproj"/>
     <ProjectReference Include="..\FileMerger.Domain\FileMerger.Domain.csproj"/>
     <ProjectReference Include="..\FileMerger.Infrastructure\FileMerger.Infrastructure.csproj"/>
+    <ProjectReference Include="..\FileMerger.Updater\FileMerger.Updater.csproj" ReferenceOutputAssembly="false"/>
   </ItemGroup>
+
+  <Target Name="CopyUpdaterArtifactsToOutput" AfterTargets="Build">
+    <ItemGroup>
+      <_UpdaterArtifact Include="$(MSBuildProjectDirectory)\..\FileMerger.Updater\bin\$(Configuration)\$(TargetFramework)\FileMerger.Updater.exe"/>
+      <_UpdaterArtifact Include="$(MSBuildProjectDirectory)\..\FileMerger.Updater\bin\$(Configuration)\$(TargetFramework)\FileMerger.Updater.dll"/>
+      <_UpdaterArtifact Include="$(MSBuildProjectDirectory)\..\FileMerger.Updater\bin\$(Configuration)\$(TargetFramework)\FileMerger.Updater.deps.json"/>
+      <_UpdaterArtifact Include="$(MSBuildProjectDirectory)\..\FileMerger.Updater\bin\$(Configuration)\$(TargetFramework)\FileMerger.Updater.runtimeconfig.json"/>
+      <_UpdaterArtifact Include="$(MSBuildProjectDirectory)\..\FileMerger.Updater\bin\$(Configuration)\$(TargetFramework)\FileMerger.UpdateProtocol.dll"/>
+    </ItemGroup>
+
+    <Copy SourceFiles="@(_UpdaterArtifact)"
+          DestinationFolder="$(OutDir)"
+          SkipUnchangedFiles="true"/>
+  </Target>
+
+  <Target Name="CopyUpdaterArtifactsToPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <_UpdaterPublishArtifact Include="$(MSBuildProjectDirectory)\..\FileMerger.Updater\bin\$(Configuration)\$(TargetFramework)\FileMerger.Updater.exe"/>
+      <_UpdaterPublishArtifact Include="$(MSBuildProjectDirectory)\..\FileMerger.Updater\bin\$(Configuration)\$(TargetFramework)\FileMerger.Updater.dll"/>
+      <_UpdaterPublishArtifact Include="$(MSBuildProjectDirectory)\..\FileMerger.Updater\bin\$(Configuration)\$(TargetFramework)\FileMerger.Updater.deps.json"/>
+      <_UpdaterPublishArtifact Include="$(MSBuildProjectDirectory)\..\FileMerger.Updater\bin\$(Configuration)\$(TargetFramework)\FileMerger.Updater.runtimeconfig.json"/>
+      <_UpdaterPublishArtifact Include="$(MSBuildProjectDirectory)\..\FileMerger.Updater\bin\$(Configuration)\$(TargetFramework)\FileMerger.UpdateProtocol.dll"/>
+    </ItemGroup>
+
+    <Copy SourceFiles="@(_UpdaterPublishArtifact)"
+          DestinationFolder="$(PublishDir)"
+          SkipUnchangedFiles="true"/>
+  </Target>
 
 </Project>

@@ -142,11 +142,7 @@ public sealed class WorkspaceDocumentViewModelEmptyStateTests
         WorkspaceDocumentViewModel document = CreateDocument();
         document.SourcesPane.LoadSources(
         [
-            new MergeSource(
-                @"D:\Project",
-                MergeSourceType.Directory,
-                isRecursive: true,
-                isEnabled: true)
+            new MergeSource(@"D:\Project", MergeSourceType.Directory, isRecursive: true, isEnabled: true)
         ]);
 
         return document;
@@ -156,10 +152,7 @@ public sealed class WorkspaceDocumentViewModelEmptyStateTests
     {
         document.ValidationPane.Load(
         [
-            new ValidationIssue(
-                ValidationSeverity.Error,
-                "test.error",
-                "Test validation error.")
+            new ValidationIssue(ValidationSeverity.Error, "test.error", "Test validation error.")
         ]);
     }
 

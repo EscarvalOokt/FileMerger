@@ -8,10 +8,7 @@ namespace FileMerger.Infrastructure.Services.Content;
 
 public sealed class ContentTransformationService : IContentTransformationService
 {
-    public string Transform(
-        string content,
-        InputFile file,
-        MergeProfile profile)
+    public string Transform(string content, InputFile file, MergeProfile profile)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(file);
@@ -28,7 +25,7 @@ public sealed class ContentTransformationService : IContentTransformationService
             if (!AppliesToFile(rule, file))
                 continue;
 
-            result = ApplyTransformation(result, rule, profile, file);
+            result = ApplyTransformation(result, rule, profile);
         }
 
         if (profile.GeneralOptions.TrimTrailingEmptyLines)
@@ -44,72 +41,20 @@ public sealed class ContentTransformationService : IContentTransformationService
         return rule.AppliesTo.Count == 0 || rule.AppliesTo.Contains(file.Kind);
     }
 
-    private static string ApplyTransformation(
-        string content,
-        ContentTransformationRule rule,
-        MergeProfile profile,
-        InputFile file)
+    private static string ApplyTransformation(string content, ContentTransformationRule rule, MergeProfile profile)
     {
         return rule.Kind switch
         {
-            TransformationKind.RemoveUsingDirectives when file.Kind == FileKind.CSharp && profile.CsOptions.RemoveUsingDirectives
-                => RemoveUsingDirectives(content),
+            TransformationKind.NormalizeLineEndings => NormalizeLineEndings(
+                content,
+                profile.GeneralOptions.LineEndingMode),
 
-            TransformationKind.NormalizeLineEndings
-                => NormalizeLineEndings(content, profile.GeneralOptions.LineEndingMode),
+            TransformationKind.TrimTrailingEmptyLines => content.TrimEnd('\r', '\n'),
 
-            TransformationKind.TrimTrailingEmptyLines
-                => content.TrimEnd('\r', '\n'),
-
-            TransformationKind.CollapseMultipleEmptyLines
-                => CollapseMultipleEmptyLines(content),
+            TransformationKind.CollapseMultipleEmptyLines => CollapseMultipleEmptyLines(content),
 
             _ => content
         };
-    }
-
-    private static string RemoveUsingDirectives(string content)
-    {
-        string normalized = content.Replace("\r\n", "\n").Replace('\r', '\n');
-        string[] lines = normalized.Split('\n');
-
-        StringBuilder builder = new();
-        bool insideBlockComment = false;
-
-        foreach (string line in lines)
-        {
-            string trimmed = line.Trim();
-
-            if (insideBlockComment)
-            {
-                builder.AppendLine(line);
-
-                if (trimmed.Contains("*/", StringComparison.Ordinal))
-                    insideBlockComment = false;
-
-                continue;
-            }
-
-            if (trimmed.StartsWith("/*", StringComparison.Ordinal))
-            {
-                builder.AppendLine(line);
-
-                if (!trimmed.Contains("*/", StringComparison.Ordinal))
-                    insideBlockComment = true;
-
-                continue;
-            }
-
-            if (trimmed.StartsWith("using ", StringComparison.Ordinal) &&
-                trimmed.EndsWith(';'))
-            {
-                continue;
-            }
-
-            builder.AppendLine(line);
-        }
-
-        return builder.ToString().TrimEnd('\r', '\n');
     }
 
     private static string NormalizeLineEndings(string content, LineEndingMode mode)

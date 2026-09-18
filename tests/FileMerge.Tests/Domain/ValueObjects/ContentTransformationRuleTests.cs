@@ -9,12 +9,12 @@ public sealed class ContentTransformationRuleTests
     public void Constructor_Should_Set_Properties()
     {
         var result = new ContentTransformationRule(
-            kind: TransformationKind.RemoveUsingDirectives,
+            kind: TransformationKind.NormalizeLineEndings,
             order: 3,
             isEnabled: false,
             appliesTo: [FileKind.CSharp, FileKind.Xaml]);
 
-        Assert.Equal(TransformationKind.RemoveUsingDirectives, result.Kind);
+        Assert.Equal(TransformationKind.NormalizeLineEndings, result.Kind);
         Assert.Equal(3, result.Order);
         Assert.False(result.IsEnabled);
         Assert.Equal(2, result.AppliesTo.Count);
@@ -38,9 +38,7 @@ public sealed class ContentTransformationRuleTests
     public void Constructor_Should_Throw_When_Order_Is_Negative()
     {
         ArgumentOutOfRangeException ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            new ContentTransformationRule(
-                kind: TransformationKind.NormalizeLineEndings,
-                order: -1));
+            new ContentTransformationRule(kind: TransformationKind.NormalizeLineEndings, order: -1));
 
         Assert.Equal("order", ex.ParamName);
     }

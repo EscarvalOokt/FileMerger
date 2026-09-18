@@ -37,8 +37,11 @@ public sealed class InputFileTests
     [InlineData(" ")]
     public void Constructor_Should_Throw_When_FullPath_Is_Invalid(string? fullPath)
     {
-        ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-            new InputFile(fullPath!, "Test.cs", ".cs", FileKind.CSharp));
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => new InputFile(
+            fullPath!,
+            "Test.cs",
+            ".cs",
+            FileKind.CSharp));
 
         Assert.Equal("fullPath", ex.ParamName);
     }
@@ -49,8 +52,11 @@ public sealed class InputFileTests
     [InlineData(" ")]
     public void Constructor_Should_Throw_When_RelativePath_Is_Invalid(string? relativePath)
     {
-        ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-            new InputFile(@"D:\C# Repository\Tests\FileMerger\Test.cs", relativePath!, ".cs", FileKind.CSharp));
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => new InputFile(
+            @"D:\C# Repository\Tests\FileMerger\Test.cs",
+            relativePath!,
+            ".cs",
+            FileKind.CSharp));
 
         Assert.Equal("relativePath", ex.ParamName);
     }
@@ -60,8 +66,11 @@ public sealed class InputFileTests
     [InlineData(" ")]
     public void Constructor_Should_Throw_When_Extension_Is_Invalid(string? extension)
     {
-        ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-            new InputFile(@"D:\C# Repository\Tests\FileMerger\Test.cs", "Test.cs", extension!, FileKind.CSharp));
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => new InputFile(
+            @"D:\C# Repository\Tests\FileMerger\Test.cs",
+            "Test.cs",
+            extension!,
+            FileKind.CSharp));
 
         Assert.Equal("extension", ex.ParamName);
     }

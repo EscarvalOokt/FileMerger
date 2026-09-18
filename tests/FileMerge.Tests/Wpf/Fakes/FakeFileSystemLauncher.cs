@@ -14,8 +14,7 @@ public sealed class FakeFileSystemLauncher : IFileSystemLauncher
 
     public bool CanOpenDirectory(string? directoryPath)
     {
-        return !string.IsNullOrWhiteSpace(directoryPath) &&
-               ExistingDirectories.Contains(directoryPath);
+        return !string.IsNullOrWhiteSpace(directoryPath) && ExistingDirectories.Contains(directoryPath);
     }
 
     public void OpenDirectory(string directoryPath)

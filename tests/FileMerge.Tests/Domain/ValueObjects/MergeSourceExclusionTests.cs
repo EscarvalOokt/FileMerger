@@ -59,13 +59,9 @@ public sealed class MergeSourceExclusionTests
     [InlineData(@"bin\", "bin")]
     [InlineData(@" bin\Debug ", @"bin\Debug")]
     [InlineData(@"bin/Debug/", @"bin\Debug")]
-    public void Constructor_Should_Normalize_RelativePath(
-        string relativePath,
-        string expectedRelativePath)
+    public void Constructor_Should_Normalize_RelativePath(string relativePath, string expectedRelativePath)
     {
-        var result = new MergeSourceExclusion(
-            relativePath,
-            MergeSourceExclusionType.Directory);
+        var result = new MergeSourceExclusion(relativePath, MergeSourceExclusionType.Directory);
 
         Assert.Equal(expectedRelativePath, result.RelativePath);
     }
@@ -73,9 +69,7 @@ public sealed class MergeSourceExclusionTests
     [Fact]
     public void Constructor_Should_Default_IsEnabled_To_True()
     {
-        var result = new MergeSourceExclusion(
-            relativePath: "bin",
-            type: MergeSourceExclusionType.Directory);
+        var result = new MergeSourceExclusion(relativePath: "bin", type: MergeSourceExclusionType.Directory);
 
         Assert.True(result.IsEnabled);
     }

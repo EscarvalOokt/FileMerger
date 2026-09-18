@@ -1,9 +1,6 @@
 namespace FileMerger.Wpf.Diagnostics;
 
-public sealed record CrashLogWriteResult(
-    bool IsSuccessful,
-    string? Path,
-    Exception? Error)
+public sealed record CrashLogWriteResult(bool IsSuccessful, string? Path, Exception? Error)
 {
     public static CrashLogWriteResult Success(string path)
     {

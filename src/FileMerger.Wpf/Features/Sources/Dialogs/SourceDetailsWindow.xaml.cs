@@ -20,8 +20,7 @@ public partial class SourceDetailsWindow : GuardedWindow
         if (sender is not DataGrid dataGrid)
             return;
 
-        viewModel.ReplaceSelectedExclusions(
-            dataGrid.SelectedItems.OfType<MergeSourceExclusionItemViewModel>());
+        viewModel.ReplaceSelectedExclusions(dataGrid.SelectedItems.OfType<MergeSourceExclusionItemViewModel>());
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)

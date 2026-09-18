@@ -13,8 +13,7 @@ public sealed class FileInclusionOverrideServiceTests
     {
         var service = new FileInclusionOverrideService();
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            service.ApplyOverrides(null!, []));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => service.ApplyOverrides(null!, []));
 
         Assert.Equal("files", ex.ParamName);
     }
@@ -24,8 +23,7 @@ public sealed class FileInclusionOverrideServiceTests
     {
         var service = new FileInclusionOverrideService();
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            service.ApplyOverrides([], null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => service.ApplyOverrides([], null!));
 
         Assert.Equal("overrides", ex.ParamName);
     }
@@ -51,10 +49,7 @@ public sealed class FileInclusionOverrideServiceTests
 
         InputFile file = CreateFile(@"D:\Project\Test.cs", isIncluded: true);
 
-        InputFile result = service.ApplyOverrides(
-                [file],
-                [new FileInclusionOverride(file.FullPath, false)])
-            .Single();
+        InputFile result = service.ApplyOverrides([file], [new FileInclusionOverride(file.FullPath, false)]).Single();
 
         Assert.False(result.IsIncluded);
         Assert.NotNull(result.SkipReason);
@@ -68,10 +63,7 @@ public sealed class FileInclusionOverrideServiceTests
 
         InputFile file = CreateFile(@"D:\Project\Test.cs", isIncluded: false);
 
-        InputFile result = service.ApplyOverrides(
-                [file],
-                [new FileInclusionOverride(file.FullPath, true)])
-            .Single();
+        InputFile result = service.ApplyOverrides([file], [new FileInclusionOverride(file.FullPath, true)]).Single();
 
         Assert.True(result.IsIncluded);
         Assert.Null(result.SkipReason);
@@ -103,9 +95,7 @@ public sealed class FileInclusionOverrideServiceTests
 
         InputFile file = CreateFile(@"D:\Project\Test.cs", isIncluded: true);
 
-        InputFile result = service.ApplyOverrides(
-                [file],
-                [new FileInclusionOverride(@"D:\Project\Unknown.cs", false)])
+        InputFile result = service.ApplyOverrides([file], [new FileInclusionOverride(@"D:\Project\Unknown.cs", false)])
             .Single();
 
         Assert.True(result.IsIncluded);

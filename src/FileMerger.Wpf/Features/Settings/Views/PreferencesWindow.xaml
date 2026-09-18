@@ -40,7 +40,7 @@
 
                                 <TextBlock Margin="24,0,0,0"
                                            Style="{StaticResource DialogHintTextStyle}"
-                                           Text="Applies to new workspace tabs. The current preview can still be changed from the preview toolbar." />
+                                           Text="Sets the default for new workspace tabs. Changing Wrap preview lines in the preview toolbar affects the current preview and also saves that choice as the new default." />
 
                                 <TextBlock Margin="0,14,0,4"
                                            FontWeight="SemiBold"
@@ -49,6 +49,12 @@
                                 <TextBox MinHeight="30"
                                          Style="{StaticResource CompactTextBoxStyle}"
                                          Text="{Binding PreviewDisplayCharacterLimitText, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock Margin="0,5,0,0"
+                                           Foreground="{StaticResource Brush.Error}"
+                                           Style="{StaticResource DialogHintTextStyle}"
+                                           Text="{Binding PreviewDisplayCharacterLimitValidationMessage}"
+                                           Visibility="{Binding HasPreviewDisplayCharacterLimitValidationError, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
                                 <TextBlock Margin="0,5,0,0"
                                            Style="{StaticResource DialogHintTextStyle}"
@@ -125,7 +131,6 @@
                                 <TextBlock Margin="0,6,0,0"
                                            Style="{StaticResource DialogHintTextStyle}"
                                            Text="{Binding CrashLogMaintenanceStatusText}"
-                                           TextWrapping="Wrap"
                                            Visibility="{Binding HasCrashLogMaintenanceStatus, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             </StackPanel>
                         </Border>

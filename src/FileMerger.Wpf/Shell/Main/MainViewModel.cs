@@ -11,6 +11,7 @@ using FileMerger.Wpf.Features.Session.ViewModels;
 using FileMerger.Wpf.Features.Settings;
 using FileMerger.Wpf.Features.Settings.Dialogs;
 using FileMerger.Wpf.Features.Sources.ViewModels;
+using FileMerger.Wpf.Features.Updates.Dialogs;
 using FileMerger.Wpf.Features.Validation.ViewModels;
 using FileMerger.Wpf.Features.Workspace;
 using FileMerger.Wpf.Features.Workspace.Configuration.Dialogs;
@@ -27,21 +28,22 @@ using FileMerger.Wpf.Shell.Help;
 
 namespace FileMerger.Wpf.Shell.Main;
 
-public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
+public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost, IAsyncCloseGuard
 {
-    private readonly IWorkspaceDocumentPreviewService _workspaceDocumentPreviewService;
-    private readonly IWorkspaceDocumentOutputService _workspaceDocumentOutputService;
-    private readonly IWorkspaceDocumentLifecycleService _workspaceDocumentLifecycleService;
-    private readonly IWorkspaceDocumentDirtyStateService _workspaceDocumentDirtyStateService;
-    private readonly IProfileManagerWindowService _profileManagerWindowService;
-    private readonly IPreferencesDialogService _preferencesDialogService;
-    private readonly IWorkspaceConfigurationDialogService _workspaceConfigurationDialogService;
-    private readonly IWorkspaceTabRenameDialogService _workspaceTabRenameDialogService;
+    private readonly IApplicationPreferencesStore _applicationPreferencesStore;
     private readonly IClipboardService _clipboardService;
     private readonly IKeyboardShortcutsDialogService _keyboardShortcutsDialogService;
-    private readonly IUserPromptService _userPromptService;
+    private readonly IPreferencesDialogService _preferencesDialogService;
+    private readonly IProfileManagerWindowService _profileManagerWindowService;
     private readonly IRecentWorkspacesService _recentWorkspacesService;
-    private readonly IApplicationPreferencesStore _applicationPreferencesStore;
+    private readonly IUpdateCheckDialogService _updateCheckDialogService;
+    private readonly IUserPromptService _userPromptService;
+    private readonly IWorkspaceConfigurationDialogService _workspaceConfigurationDialogService;
+    private readonly IWorkspaceDocumentDirtyStateService _workspaceDocumentDirtyStateService;
+    private readonly IWorkspaceDocumentLifecycleService _workspaceDocumentLifecycleService;
+    private readonly IWorkspaceDocumentOutputService _workspaceDocumentOutputService;
+    private readonly IWorkspaceDocumentPreviewService _workspaceDocumentPreviewService;
+    private readonly IWorkspaceTabRenameDialogService _workspaceTabRenameDialogService;
 
     private WorkspaceDocumentViewModel? _subscribedDocument;
 
@@ -56,6 +58,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
         IWorkspaceTabRenameDialogService workspaceTabRenameDialogService,
         IClipboardService clipboardService,
         IKeyboardShortcutsDialogService keyboardShortcutsDialogService,
+        IUpdateCheckDialogService updateCheckDialogService,
         IUserPromptService userPromptService,
         IRecentWorkspacesService recentWorkspacesService,
         IApplicationPreferencesStore applicationPreferencesStore,
@@ -71,6 +74,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
         ArgumentNullException.ThrowIfNull(workspaceTabRenameDialogService);
         ArgumentNullException.ThrowIfNull(clipboardService);
         ArgumentNullException.ThrowIfNull(keyboardShortcutsDialogService);
+        ArgumentNullException.ThrowIfNull(updateCheckDialogService);
         ArgumentNullException.ThrowIfNull(userPromptService);
         ArgumentNullException.ThrowIfNull(recentWorkspacesService);
         ArgumentNullException.ThrowIfNull(applicationPreferencesStore);
@@ -86,6 +90,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
         _workspaceTabRenameDialogService = workspaceTabRenameDialogService;
         _clipboardService = clipboardService;
         _keyboardShortcutsDialogService = keyboardShortcutsDialogService;
+        _updateCheckDialogService = updateCheckDialogService;
         _userPromptService = userPromptService;
         _recentWorkspacesService = recentWorkspacesService;
         _applicationPreferencesStore = applicationPreferencesStore;
@@ -159,15 +164,11 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
             OpenPreferencesAsync,
             () => !CurrentDocument.OperationStatus.IsBusy);
         OpenKeyboardShortcutsCommand = new RelayCommand(OpenKeyboardShortcuts);
+        OpenUpdateCheckCommand = new RelayCommand(OpenUpdateCheck);
 
         CurrentProfileCard = new CurrentProfileCardViewModel();
         RefreshCurrentProfileCard();
         RefreshFooterState();
-    }
-
-    public Task InitializeAsync()
-    {
-        return RefreshRecentWorkspacesAsync();
     }
 
     // ReSharper disable once MemberCanBePrivate.Global
@@ -221,6 +222,13 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
 
     public bool IsPreviewSummaryCollapsed => CurrentDocument.IsPreviewSummaryCollapsed;
 
+    public string SaveOutputActionText => HasStaleBuiltOutput ? "Save Last Build" : "Save";
+
+    public string SaveOutputActionTooltip =>
+        HasStaleBuiltOutput
+            ? "Save the last successfully built output. Changes made since that build are not included in its content; run Build Preview to rebuild it first."
+            : "Save the latest built output.";
+
     public bool ShowDiscoveredFilesEmptyState => CurrentDocument.ShowDiscoveredFilesEmptyState;
     public string DiscoveredFilesEmptyTitle => CurrentDocument.DiscoveredFilesEmptyTitle;
     public string DiscoveredFilesEmptyDescription => CurrentDocument.DiscoveredFilesEmptyDescription;
@@ -232,8 +240,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
 
     public bool ShowFirstWorkspaceGuide => CurrentDocument.IsEmptyWorkspace;
 
-    public bool ShowRegularPreviewEmptyState =>
-        ShowPreviewEmptyState && !ShowFirstWorkspaceGuide;
+    public bool ShowRegularPreviewEmptyState => ShowPreviewEmptyState && !ShowFirstWorkspaceGuide;
 
     public static string FirstWorkspaceGuideTitle => "Start your first workspace";
 
@@ -245,15 +252,12 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
             ? "Current profile: Default"
             : $"Current profile: {CurrentProfileName}";
 
-    public RecentWorkspaceMenuItemViewModel? FirstRecentWorkspace =>
-        RecentWorkspaces.FirstOrDefault(x => x.Exists);
+    public RecentWorkspaceMenuItemViewModel? FirstRecentWorkspace => RecentWorkspaces.FirstOrDefault(x => x.Exists);
 
     public bool HasFirstRecentWorkspace => FirstRecentWorkspace is not null;
 
     public string FirstRecentWorkspaceText =>
-        FirstRecentWorkspace is null
-            ? string.Empty
-            : $"Open recent: {FirstRecentWorkspace.DisplayName}";
+        FirstRecentWorkspace is null ? string.Empty : $"Open recent: {FirstRecentWorkspace.DisplayName}";
 
     public bool IsPreviewLineWrapEnabled
     {
@@ -267,10 +271,6 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
             _ = PersistPreviewLineWrapPreferenceAsync(value);
         }
     }
-
-    public string CurrentProfileName => CurrentDocument.CurrentProfileName;
-
-    public string? CurrentProfileEntryId => CurrentDocument.CurrentProfileEntryId;
 
     public StatusSeverity FooterSeverity
     {
@@ -322,6 +322,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
     public AsyncRelayCommand OpenWorkspaceConfigurationCommand { get; }
     public AsyncRelayCommand OpenPreferencesCommand { get; }
     public RelayCommand OpenKeyboardShortcutsCommand { get; }
+    public RelayCommand OpenUpdateCheckCommand { get; }
     public AsyncRelayCommand RefreshRecentWorkspacesCommand { get; }
 
     // ReSharper disable once MemberCanBePrivate.Global
@@ -329,19 +330,18 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
     public AsyncRelayCommand<RecentWorkspaceMenuItemViewModel> RemoveMissingRecentWorkspaceCommand { get; }
     public AsyncRelayCommand ClearRecentWorkspacesCommand { get; }
 
-    public void ReplaceSelectedFiles(IEnumerable<InputFileItemViewModel> selectedItems)
-    {
-        WorkspaceDocumentViewModel document = GetCommandTargetDocument();
+    private bool HasStaleBuiltOutput =>
+        CurrentDocument.LastOutput is not null &&
+        CurrentDocument.PreviewDirtyTracker is { HasAppliedPreview: true, IsPreviewDirty: true };
 
-        document.FilesPane.ReplaceSelectedFiles(selectedItems);
+    public Task<bool> CanCloseAsync()
+    {
+        return WorkspaceTabs.TryPrepareForApplicationShutdownAsync();
     }
 
-    public void ReplaceSelectedSources(IEnumerable<MergeSourceItemViewModel> selectedItems)
-    {
-        WorkspaceDocumentViewModel document = GetCommandTargetDocument();
+    public string CurrentProfileName => CurrentDocument.CurrentProfileName;
 
-        document.SourcesPane.ReplaceSelectedSources(selectedItems);
-    }
+    public string? CurrentProfileEntryId => CurrentDocument.CurrentProfileEntryId;
 
     public WorkspaceProfileDto CaptureCurrentProfile()
     {
@@ -350,10 +350,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
         return document.ProfileEditor.CaptureProfile();
     }
 
-    public void ApplyProfileToCurrentSession(
-        string profileName,
-        WorkspaceProfileDto profile,
-        string? profileEntryId)
+    public void ApplyProfileToCurrentSession(string profileName, WorkspaceProfileDto profile, string? profileEntryId)
     {
         ArgumentNullException.ThrowIfNull(profile);
 
@@ -384,13 +381,30 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
         RefreshAfterDocumentCommand(document);
     }
 
+    public Task InitializeAsync()
+    {
+        return RefreshRecentWorkspacesAsync();
+    }
+
+    public void ReplaceSelectedFiles(IEnumerable<InputFileItemViewModel> selectedItems)
+    {
+        WorkspaceDocumentViewModel document = GetCommandTargetDocument();
+
+        document.FilesPane.ReplaceSelectedFiles(selectedItems);
+    }
+
+    public void ReplaceSelectedSources(IEnumerable<MergeSourceItemViewModel> selectedItems)
+    {
+        WorkspaceDocumentViewModel document = GetCommandTargetDocument();
+
+        document.SourcesPane.ReplaceSelectedSources(selectedItems);
+    }
+
     private async Task BuildPreviewAsync()
     {
         WorkspaceDocumentViewModel document = GetCommandTargetDocument();
 
-        await _workspaceDocumentPreviewService.BuildPreviewAsync(
-            document,
-            RaiseTopLevelCommandsCanExecuteChanged);
+        await _workspaceDocumentPreviewService.BuildPreviewAsync(document, RaiseTopLevelCommandsCanExecuteChanged);
 
         RefreshAfterDocumentCommand(document);
     }
@@ -399,9 +413,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
     {
         WorkspaceDocumentViewModel document = GetCommandTargetDocument();
 
-        await _workspaceDocumentOutputService.SaveOutputAsync(
-            document,
-            RaiseTopLevelCommandsCanExecuteChanged);
+        await _workspaceDocumentOutputService.SaveOutputAsync(document, RaiseTopLevelCommandsCanExecuteChanged);
 
         RefreshAfterDocumentCommand(document);
     }
@@ -451,23 +463,19 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
 
     private bool CanCopyPreview()
     {
-        return !OperationStatus.IsBusy &&
-               !string.IsNullOrWhiteSpace(CurrentDocument.LastOutput?.Content);
+        return !OperationStatus.IsBusy && !string.IsNullOrWhiteSpace(CurrentDocument.LastOutput?.Content);
     }
 
     private bool CanOpenOutputFolder()
     {
-        return !OperationStatus.IsBusy &&
-               _workspaceDocumentOutputService.CanOpenOutputFolder(CurrentDocument);
+        return !OperationStatus.IsBusy && _workspaceDocumentOutputService.CanOpenOutputFolder(CurrentDocument);
     }
 
     private async Task SaveWorkspaceAsync()
     {
         WorkspaceDocumentViewModel document = GetCommandTargetDocument();
 
-        await _workspaceDocumentLifecycleService.SaveWorkspaceAsync(
-            document,
-            RaiseTopLevelCommandsCanExecuteChanged);
+        await _workspaceDocumentLifecycleService.SaveWorkspaceAsync(document, RaiseTopLevelCommandsCanExecuteChanged);
 
         RefreshAfterDocumentCommand(document);
         await RefreshRecentWorkspacesAsync();
@@ -477,9 +485,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
     {
         WorkspaceDocumentViewModel document = GetCommandTargetDocument();
 
-        await _workspaceDocumentLifecycleService.SaveWorkspaceAsAsync(
-            document,
-            RaiseTopLevelCommandsCanExecuteChanged);
+        await _workspaceDocumentLifecycleService.SaveWorkspaceAsAsync(document, RaiseTopLevelCommandsCanExecuteChanged);
 
         RefreshAfterDocumentCommand(document);
         await RefreshRecentWorkspacesAsync();
@@ -489,8 +495,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
     {
         WorkspaceDocumentViewModel beforeOpenDocument = CurrentDocument;
 
-        await WorkspaceTabs.OpenWorkspaceAsync(
-            RaiseTopLevelCommandsCanExecuteChanged);
+        await WorkspaceTabs.OpenWorkspaceAsync(RaiseTopLevelCommandsCanExecuteChanged);
 
         WorkspaceDocumentViewModel afterOpenDocument = CurrentDocument;
 
@@ -555,9 +560,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
 
         WorkspaceDocumentViewModel beforeOpenDocument = CurrentDocument;
 
-        await WorkspaceTabs.OpenWorkspaceFromPathAsync(
-            item.FilePath,
-            RaiseTopLevelCommandsCanExecuteChanged);
+        await WorkspaceTabs.OpenWorkspaceFromPathAsync(item.FilePath, RaiseTopLevelCommandsCanExecuteChanged);
 
         WorkspaceDocumentViewModel afterOpenDocument = CurrentDocument;
 
@@ -573,26 +576,21 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
     {
         WorkspaceDocumentViewModel document = GetCommandTargetDocument();
 
-        document.OperationStatus.SetStatus(
-            "Recent workspace file was not found.",
-            StatusSeverity.Warning);
+        document.OperationStatus.SetStatus("Recent workspace file was not found.", StatusSeverity.Warning);
 
         bool remove = _userPromptService.Confirm(
             title: "Recent workspace not found",
-            message:
-            $"The recent workspace file was not found:{Environment.NewLine}" +
-            item.FilePath +
-            Environment.NewLine +
-            Environment.NewLine +
-            "Remove it from recent workspaces?");
+            message: $"The recent workspace file was not found:{Environment.NewLine}" +
+                     item.FilePath +
+                     Environment.NewLine +
+                     Environment.NewLine +
+                     "Remove it from recent workspaces?");
 
         if (remove)
         {
             await _recentWorkspacesService.RemoveAsync(item.FilePath);
 
-            document.OperationStatus.SetStatus(
-                "Removed missing recent workspace.",
-                StatusSeverity.Success);
+            document.OperationStatus.SetStatus("Removed missing recent workspace.", StatusSeverity.Success);
         }
 
         RefreshAfterDocumentCommand(document);
@@ -601,9 +599,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
 
     private bool CanRemoveMissingRecentWorkspace(RecentWorkspaceMenuItemViewModel? item)
     {
-        return item is not null &&
-               item.IsMissing &&
-               !OperationStatus.IsBusy;
+        return item is not null && item.IsMissing && !OperationStatus.IsBusy;
     }
 
     private async Task RemoveMissingRecentWorkspaceAsync(RecentWorkspaceMenuItemViewModel? item)
@@ -616,9 +612,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
 
         await _recentWorkspacesService.RemoveAsync(item.FilePath);
 
-        CurrentDocument.OperationStatus.SetStatus(
-            "Removed missing recent workspace.",
-            StatusSeverity.Success);
+        CurrentDocument.OperationStatus.SetStatus("Removed missing recent workspace.", StatusSeverity.Success);
 
         RefreshAfterDocumentCommand(CurrentDocument);
         await RefreshRecentWorkspacesAsync();
@@ -638,9 +632,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
 
         await _recentWorkspacesService.ClearAsync();
 
-        CurrentDocument.OperationStatus.SetStatus(
-            "Recent workspaces cleared.",
-            StatusSeverity.Success);
+        CurrentDocument.OperationStatus.SetStatus("Recent workspaces cleared.", StatusSeverity.Success);
 
         RefreshAfterDocumentCommand(CurrentDocument);
         await RefreshRecentWorkspacesAsync();
@@ -664,15 +656,19 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
         _keyboardShortcutsDialogService.ShowDialog();
     }
 
+    private void OpenUpdateCheck()
+    {
+        _updateCheckDialogService.ShowDialog();
+    }
+
     private async Task PersistPreviewLineWrapPreferenceAsync(bool isEnabled)
     {
         try
         {
-            await _applicationPreferencesStore.UpdateAsync(current =>
-                new ApplicationPreferences(
-                    isPreviewLineWrapEnabledByDefault: isEnabled,
-                    previewDisplayCharacterLimit: current.PreviewDisplayCharacterLimit,
-                    crashLogRetentionLimit: current.CrashLogRetentionLimit));
+            await _applicationPreferencesStore.UpdateAsync(current => new ApplicationPreferences(
+                isPreviewLineWrapEnabledByDefault: isEnabled,
+                previewDisplayCharacterLimit: current.PreviewDisplayCharacterLimit,
+                crashLogRetentionLimit: current.CrashLogRetentionLimit));
         }
         catch (Exception ex)
         {
@@ -724,9 +720,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
 
         if (saved)
         {
-            CurrentDocument.OperationStatus.SetStatus(
-                "Preferences saved.",
-                StatusSeverity.Success);
+            CurrentDocument.OperationStatus.SetStatus("Preferences saved.", StatusSeverity.Success);
         }
 
         RaiseTopLevelCommandsCanExecuteChanged();
@@ -921,6 +915,15 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
         RefreshFooterState();
     }
 
+    private void PreviewDirtyTracker_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(PreviewDirtyStateTracker.IsPreviewDirty)
+            or nameof(PreviewDirtyStateTracker.HasAppliedPreview))
+        {
+            RefreshSaveOutputActionBindings();
+        }
+    }
+
     private void CurrentDocument_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(WorkspaceDocumentViewModel.PreviewContent))
@@ -956,8 +959,8 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
             RefreshCurrentProfileCard();
         }
 
-        if (e.PropertyName is nameof(WorkspaceDocumentViewModel.ProfileOriginEntryId) or
-            nameof(WorkspaceDocumentViewModel.ProfileOriginDisplayName))
+        if (e.PropertyName is nameof(WorkspaceDocumentViewModel.ProfileOriginEntryId)
+            or nameof(WorkspaceDocumentViewModel.ProfileOriginDisplayName))
         {
             RefreshCurrentProfileCard();
         }
@@ -966,15 +969,18 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
             OnPropertyChanged(nameof(WorkspaceDirtyTracker));
 
         if (e.PropertyName == nameof(WorkspaceDocumentViewModel.LastOutput))
+        {
             RaiseTopLevelCommandsCanExecuteChanged();
+            RefreshSaveOutputActionBindings();
+        }
 
-        if (e.PropertyName is nameof(WorkspaceDocumentViewModel.PreviewContent) or
-            nameof(WorkspaceDocumentViewModel.LastOutput) or
-            nameof(WorkspaceDocumentViewModel.PreviewNotice) or
-            nameof(WorkspaceDocumentViewModel.HasPreviewNotice) or
-            nameof(WorkspaceDocumentViewModel.PreviewSummary) or
-            nameof(WorkspaceDocumentViewModel.HasPreviewSummary) or
-            nameof(WorkspaceDocumentViewModel.PreviewCharacterCountText))
+        if (e.PropertyName is nameof(WorkspaceDocumentViewModel.PreviewContent)
+            or nameof(WorkspaceDocumentViewModel.LastOutput)
+            or nameof(WorkspaceDocumentViewModel.PreviewNotice)
+            or nameof(WorkspaceDocumentViewModel.HasPreviewNotice)
+            or nameof(WorkspaceDocumentViewModel.PreviewSummary)
+            or nameof(WorkspaceDocumentViewModel.HasPreviewSummary)
+            or nameof(WorkspaceDocumentViewModel.PreviewCharacterCountText))
         {
             RefreshEmptyStateBindings();
         }
@@ -1111,6 +1117,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
         OnPropertyChanged(nameof(HasPreviewSummary));
         OnPropertyChanged(nameof(IsPreviewSummaryExpanded));
         OnPropertyChanged(nameof(IsPreviewSummaryCollapsed));
+        RefreshSaveOutputActionBindings();
 
         OnPropertyChanged(nameof(CurrentProfileName));
         OnPropertyChanged(nameof(CurrentProfileEntryId));
@@ -1119,6 +1126,12 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
         RefreshCurrentProfileCard();
         RefreshFooterState();
         RaiseTopLevelCommandsCanExecuteChanged();
+    }
+
+    private void RefreshSaveOutputActionBindings()
+    {
+        OnPropertyChanged(nameof(SaveOutputActionText));
+        OnPropertyChanged(nameof(SaveOutputActionTooltip));
     }
 
     private void RefreshEmptyStateBindings()
@@ -1163,6 +1176,7 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
         document.FilesPane.FileOverridesChanged += FilesPane_FileOverridesChanged;
         document.ValidationPane.PropertyChanged += ValidationPane_PropertyChanged;
         document.OperationStatus.PropertyChanged += OperationStatus_PropertyChanged;
+        document.PreviewDirtyTracker.PropertyChanged += PreviewDirtyTracker_PropertyChanged;
 
         _subscribedDocument = document;
     }
@@ -1177,5 +1191,6 @@ public sealed class MainViewModel : ViewModelBase, ICurrentSessionProfileHost
         document.FilesPane.FileOverridesChanged -= FilesPane_FileOverridesChanged;
         document.ValidationPane.PropertyChanged -= ValidationPane_PropertyChanged;
         document.OperationStatus.PropertyChanged -= OperationStatus_PropertyChanged;
+        document.PreviewDirtyTracker.PropertyChanged -= PreviewDirtyTracker_PropertyChanged;
     }
 }

@@ -26,9 +26,7 @@ public static class WorkspaceDocumentMapper
                 ProfileOriginDisplayName: document.ProfileOriginDisplayName));
     }
 
-    public static void Apply(
-        WorkspaceDocumentViewModel document,
-        WorkspaceDto workspace)
+    public static void Apply(WorkspaceDocumentViewModel document, WorkspaceDto workspace)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(workspace);
@@ -74,9 +72,7 @@ public static class WorkspaceDocumentMapper
 
     private static string? NormalizeOptional(string? value)
     {
-        return string.IsNullOrWhiteSpace(value)
-            ? null
-            : value.Trim();
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private static WorkspaceSourceDto ToWorkspaceSourceDto(MergeSourceItemViewModel source)
@@ -128,8 +124,7 @@ public static class WorkspaceDocumentMapper
             exclusions: exclusions);
     }
 
-    private static MergeSourceExclusion ToMergeSourceExclusion(
-        WorkspaceSourceExclusionDto exclusion)
+    private static MergeSourceExclusion ToMergeSourceExclusion(WorkspaceSourceExclusionDto exclusion)
     {
         ArgumentNullException.ThrowIfNull(exclusion);
 

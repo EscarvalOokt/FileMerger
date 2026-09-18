@@ -19,18 +19,10 @@ namespace FileMerger.Domain.Profiles
                     inputEncodingMode: InputEncodingMode.Auto,
                     preferredInputEncodingName: null,
                     fallbackInputEncodingName: "windows-1251"),
-                csOptions: new CsMergeOptions(
-                    RemoveUsingDirectives: false),
                 fileTypes: KnownFileTypes.Default,
                 filterRules: BuildDefaultFilterRules(),
                 transformations:
                 [
-                    new ContentTransformationRule(
-                        kind: TransformationKind.RemoveUsingDirectives,
-                        order: 0,
-                        isEnabled: false,
-                        appliesTo: [FileKind.CSharp]),
-
                     new ContentTransformationRule(
                         kind: TransformationKind.TrimTrailingEmptyLines,
                         order: 1,

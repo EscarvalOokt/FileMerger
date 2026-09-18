@@ -6,9 +6,9 @@ namespace FileMerger.Wpf.Features.Sources.ViewModels;
 
 public sealed class MergeSourceExclusionItemViewModel : ViewModelBase
 {
+    private bool _isEnabled = true;
     private string _relativePath = string.Empty;
     private MergeSourceExclusionType _type;
-    private bool _isEnabled = true;
 
     public MergeSourceExclusionItemViewModel()
     {
@@ -43,9 +43,6 @@ public sealed class MergeSourceExclusionItemViewModel : ViewModelBase
 
     public MergeSourceExclusion ToModel()
     {
-        return new MergeSourceExclusion(
-            relativePath: RelativePath,
-            type: Type,
-            isEnabled: IsEnabled);
+        return new MergeSourceExclusion(relativePath: RelativePath, type: Type, isEnabled: IsEnabled);
     }
 }

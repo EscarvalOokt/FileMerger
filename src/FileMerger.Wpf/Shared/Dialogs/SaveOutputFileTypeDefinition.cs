@@ -2,10 +2,7 @@ namespace FileMerger.Wpf.Shared.Dialogs;
 
 public sealed record SaveOutputFileTypeDefinition
 {
-    public SaveOutputFileTypeDefinition(
-        string extension,
-        string displayName,
-        bool isDefault = false)
+    public SaveOutputFileTypeDefinition(string extension, string displayName, bool isDefault = false)
     {
         if (string.IsNullOrWhiteSpace(extension))
             throw new ArgumentException("Extension cannot be empty.", nameof(extension));

@@ -8,10 +8,10 @@ namespace FileMerger.Wpf.Diagnostics;
 public sealed class CrashLogMaintenanceService : ICrashLogMaintenanceService
 {
     private const string CrashLogSearchPattern = "crash-*.log";
-
-    private readonly CrashLogPathPolicy _pathPolicy;
     private readonly IApplicationPreferencesStore _applicationPreferencesStore;
     private readonly IFileSystemLauncher _fileSystemLauncher;
+
+    private readonly CrashLogPathPolicy _pathPolicy;
 
     public CrashLogMaintenanceService(
         CrashLogPathPolicy pathPolicy,
@@ -56,10 +56,11 @@ public sealed class CrashLogMaintenanceService : ICrashLogMaintenanceService
                     if (!file.Exists)
                         continue;
 
-                    files.Add(new CrashLogFileInfo(
-                        Path: file.FullName,
-                        FileName: file.Name,
-                        LastWriteTimeUtc: file.LastWriteTimeUtc));
+                    files.Add(
+                        new CrashLogFileInfo(
+                            Path: file.FullName,
+                            FileName: file.Name,
+                            LastWriteTimeUtc: file.LastWriteTimeUtc));
                 }
                 catch (FileNotFoundException)
                 {
@@ -73,11 +74,8 @@ public sealed class CrashLogMaintenanceService : ICrashLogMaintenanceService
 
             CrashLogFileInfo[] orderedFiles =
             [
-                .. files
-                    .OrderByDescending(x => x.LastWriteTimeUtc)
-                    .ThenByDescending(
-                        x => x.FileName,
-                        StringComparer.OrdinalIgnoreCase)
+                .. files.OrderByDescending(x => x.LastWriteTimeUtc)
+                    .ThenByDescending(x => x.FileName, StringComparer.OrdinalIgnoreCase)
             ];
 
             return CrashLogFileListResult.Success(orderedFiles);
@@ -115,8 +113,7 @@ public sealed class CrashLogMaintenanceService : ICrashLogMaintenanceService
         if (!filesResult.IsSuccessful)
             return CleanupFailureFrom(filesResult);
 
-        int retentionLimit =
-            _applicationPreferencesStore.Current.CrashLogRetentionLimit;
+        int retentionLimit = _applicationPreferencesStore.Current.CrashLogRetentionLimit;
 
         CrashLogFileInfo[] filesToDelete =
         [
@@ -135,24 +132,19 @@ public sealed class CrashLogMaintenanceService : ICrashLogMaintenanceService
         return DeleteFiles(filesResult.Files);
     }
 
-    private CrashLogCleanupResult CleanupFailureFrom(
-        CrashLogFileListResult filesResult)
+    private CrashLogCleanupResult CleanupFailureFrom(CrashLogFileListResult filesResult)
     {
-        Exception error = filesResult.Error
-                          ?? new IOException("Failed to enumerate crash log files.");
+        Exception error = filesResult.Error ?? new IOException("Failed to enumerate crash log files.");
 
         CrashLogMaintenanceFailure[] failures =
         [
-            new CrashLogMaintenanceFailure(
-                Path: GetCrashLogDirectory(),
-                Error: error)
+            new CrashLogMaintenanceFailure(Path: GetCrashLogDirectory(), Error: error)
         ];
 
         return CrashLogCleanupResult.From([], failures);
     }
 
-    private static CrashLogCleanupResult DeleteFiles(
-        IEnumerable<CrashLogFileInfo> files)
+    private static CrashLogCleanupResult DeleteFiles(IEnumerable<CrashLogFileInfo> files)
     {
         List<string> deletedPaths = [];
         List<CrashLogMaintenanceFailure> failures = [];
@@ -183,9 +175,6 @@ public sealed class CrashLogMaintenanceService : ICrashLogMaintenanceService
 
     private static bool IsExpectedFileSystemException(Exception exception)
     {
-        return exception is IOException or
-            UnauthorizedAccessException or
-            NotSupportedException or
-            SecurityException;
+        return exception is IOException or UnauthorizedAccessException or NotSupportedException or SecurityException;
     }
 }

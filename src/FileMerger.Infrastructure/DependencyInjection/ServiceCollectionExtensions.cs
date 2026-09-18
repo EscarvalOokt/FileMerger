@@ -4,6 +4,8 @@ using FileMerger.Infrastructure.Services.Discovery;
 using FileMerger.Infrastructure.Services.Filtering;
 using FileMerger.Infrastructure.Services.Merge;
 using FileMerger.Infrastructure.Services.Validation;
+using FileMerger.Infrastructure.Updates;
+using FileMerger.UpdateProtocol;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FileMerger.Infrastructure.DependencyInjection;
@@ -23,6 +25,25 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IContentTransformationService, ContentTransformationService>();
         services.AddSingleton<IMergeBuilder, MergeBuilder>();
         services.AddSingleton<IMergeWriter, MergeWriter>();
+
+        services.AddSingleton<IApplicationVersionProvider, EntryAssemblyApplicationVersionProvider>();
+        services.AddSingleton<IUpdaterVersionProvider, UpdateProtocolVersionProvider>();
+        services.AddSingleton<EntryAssemblyUpdateManifestUriProvider>();
+        services.AddSingleton<UpdateHttpOriginPolicy>();
+        services.AddSingleton<UpdateStagingPathPolicy>();
+        services.AddSingleton<ApplicationInstallationPathProvider>();
+        services.AddSingleton<UpdateProtocolFileStore>();
+        services.AddSingleton(_ => new HttpClient(
+            new HttpClientHandler
+            {
+                AllowAutoRedirect = false
+            }));
+        services.AddSingleton<IReleaseManifestSource, HttpReleaseManifestSource>();
+        services.AddSingleton<IUpdatePackageDownloader, HttpUpdatePackageDownloader>();
+        services.AddSingleton<IUpdatePackageValidator, ZipUpdatePackageValidator>();
+        services.AddSingleton<IUpdateInstallationPreflightService, UpdateInstallationPreflightService>();
+        services.AddSingleton<IUpdateInstallerLauncher, UpdateInstallerLauncher>();
+        services.AddSingleton<IUpdateRestartVerificationService, UpdateRestartVerificationService>();
 
         return services;
     }

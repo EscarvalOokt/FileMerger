@@ -7,9 +7,9 @@ namespace FileMerger.Wpf.Features.Sources.Dialogs;
 
 public sealed class SourceDetailsDialogService : ISourceDetailsDialogService
 {
-    private readonly IWindowOwnerResolver _ownerResolver;
     private readonly IFolderBrowserService _folderBrowserService;
     private readonly IOpenFileDialogService _openFileDialogService;
+    private readonly IWindowOwnerResolver _ownerResolver;
 
     public SourceDetailsDialogService(
         IWindowOwnerResolver ownerResolver,
@@ -29,10 +29,7 @@ public sealed class SourceDetailsDialogService : ISourceDetailsDialogService
     {
         ArgumentNullException.ThrowIfNull(source);
 
-        SourceDetailsDialogViewModel viewModel = new(
-            source,
-            _folderBrowserService,
-            _openFileDialogService);
+        SourceDetailsDialogViewModel viewModel = new(source, _folderBrowserService, _openFileDialogService);
 
         SourceDetailsWindow window = new()
         {

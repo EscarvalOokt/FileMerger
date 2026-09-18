@@ -20,6 +20,12 @@ public sealed class UnsupportedTextFileDetectorTests : IDisposable
         Directory.CreateDirectory(_tempRoot);
     }
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempRoot))
+            Directory.Delete(_tempRoot, recursive: true);
+    }
+
     [Fact]
     public void IsTextCandidate_Should_Return_False_When_Fallback_Is_Disabled()
     {
@@ -27,9 +33,7 @@ public sealed class UnsupportedTextFileDetectorTests : IDisposable
 
         UnsupportedTextFileDetector detector = new();
 
-        bool result = detector.IsTextCandidate(
-            path,
-            UnsupportedTextFallbackOptions.Disabled);
+        bool result = detector.IsTextCandidate(path, UnsupportedTextFallbackOptions.Disabled);
 
         Assert.False(result);
     }
@@ -41,9 +45,7 @@ public sealed class UnsupportedTextFileDetectorTests : IDisposable
 
         UnsupportedTextFileDetector detector = new();
 
-        bool result = detector.IsTextCandidate(
-            path,
-            UnsupportedTextFallbackOptions.Enabled);
+        bool result = detector.IsTextCandidate(path, UnsupportedTextFallbackOptions.Enabled);
 
         Assert.True(result);
     }
@@ -55,9 +57,7 @@ public sealed class UnsupportedTextFileDetectorTests : IDisposable
 
         UnsupportedTextFileDetector detector = new();
 
-        bool result = detector.IsTextCandidate(
-            path,
-            UnsupportedTextFallbackOptions.Enabled);
+        bool result = detector.IsTextCandidate(path, UnsupportedTextFallbackOptions.Enabled);
 
         Assert.True(result);
     }
@@ -70,9 +70,7 @@ public sealed class UnsupportedTextFileDetectorTests : IDisposable
 
         UnsupportedTextFileDetector detector = new();
 
-        bool result = detector.IsTextCandidate(
-            path,
-            UnsupportedTextFallbackOptions.Enabled);
+        bool result = detector.IsTextCandidate(path, UnsupportedTextFallbackOptions.Enabled);
 
         Assert.False(result);
     }
@@ -87,9 +85,7 @@ public sealed class UnsupportedTextFileDetectorTests : IDisposable
 
         bool result = detector.IsTextCandidate(
             path,
-            new UnsupportedTextFallbackOptions(
-                isEnabled: true,
-                maxControlCharacterRatio: 0.10));
+            new UnsupportedTextFallbackOptions(isEnabled: true, maxControlCharacterRatio: 0.10));
 
         Assert.False(result);
     }
@@ -103,9 +99,7 @@ public sealed class UnsupportedTextFileDetectorTests : IDisposable
 
         bool result = detector.IsTextCandidate(
             path,
-            new UnsupportedTextFallbackOptions(
-                isEnabled: true,
-                maxFileSizeBytes: 5));
+            new UnsupportedTextFallbackOptions(isEnabled: true, maxFileSizeBytes: 5));
 
         Assert.False(result);
     }
@@ -139,9 +133,7 @@ public sealed class UnsupportedTextFileDetectorTests : IDisposable
 
         UnsupportedTextFileDetector detector = new();
 
-        bool result = detector.IsTextCandidate(
-            path,
-            UnsupportedTextFallbackOptions.Enabled);
+        bool result = detector.IsTextCandidate(path, UnsupportedTextFallbackOptions.Enabled);
 
         Assert.False(result);
     }
@@ -151,11 +143,5 @@ public sealed class UnsupportedTextFileDetectorTests : IDisposable
         string path = Path.Combine(_tempRoot, relativePath);
         File.WriteAllText(path, content);
         return path;
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_tempRoot))
-            Directory.Delete(_tempRoot, recursive: true);
     }
 }

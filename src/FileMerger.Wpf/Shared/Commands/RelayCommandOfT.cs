@@ -4,12 +4,10 @@ namespace FileMerger.Wpf.Shared.Commands;
 
 public sealed class RelayCommand<T> : ICommand
 {
-    private readonly Action<T?> _execute;
     private readonly Predicate<T?>? _canExecute;
+    private readonly Action<T?> _execute;
 
-    public RelayCommand(
-        Action<T?> execute,
-        Predicate<T?>? canExecute = null)
+    public RelayCommand(Action<T?> execute, Predicate<T?>? canExecute = null)
     {
         ArgumentNullException.ThrowIfNull(execute);
 

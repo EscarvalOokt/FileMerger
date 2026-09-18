@@ -13,16 +13,16 @@ namespace FileMerger.Wpf.Features.Files.ViewModels;
 
 public sealed class FilesPaneViewModel : ViewModelBase
 {
-    private readonly FileListFiltersViewModel _filters = new();
     private readonly IClipboardService _clipboardService;
+    private readonly FileListFiltersViewModel _filters = new();
 
-    private readonly Dictionary<string, bool> _manualInclusionOverrides =
-        new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, bool> _manualInclusionOverrides = new(StringComparer.OrdinalIgnoreCase);
 
-    private bool _isUpdatingFileInclusion;
-    private bool _isLoadingFiles;
     private InputFileItemViewModel? _contextFile;
     private string _filterSummary = "0 of 0 files shown";
+    private bool _isLoadingFiles;
+
+    private bool _isUpdatingFileInclusion;
 
     public FilesPaneViewModel(IClipboardService clipboardService)
     {
@@ -39,9 +39,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
         _filters.PropertyChanged += Filters_PropertyChanged;
         Files.CollectionChanged += Files_CollectionChanged;
 
-        ClearFileFiltersCommand = new RelayCommand(
-            ClearFileFilters,
-            CanClearFileFilters);
+        ClearFileFiltersCommand = new RelayCommand(ClearFileFilters, CanClearFileFilters);
 
         ResetAllFileOverridesCommand = new RelayCommand(
             ResetAllFileOverrides,
@@ -59,16 +57,10 @@ public sealed class FilesPaneViewModel : ViewModelBase
             ResetSelectedFileOverrides,
             () => SelectedFiles.Any(x => x.HasManualOverride));
 
-        CopyRelativePathCommand = new RelayCommand(
-            CopyRelativePath,
-            CanCopyRelativePath);
+        CopyRelativePathCommand = new RelayCommand(CopyRelativePath, CanCopyRelativePath);
 
-        CopyFullPathCommand = new RelayCommand(
-            CopyFullPath,
-            CanCopyFullPath);
+        CopyFullPathCommand = new RelayCommand(CopyFullPath, CanCopyFullPath);
     }
-
-    public event EventHandler? FileOverridesChanged;
 
     public ObservableCollection<InputFileItemViewModel> Files { get; }
     public ObservableCollection<InputFileItemViewModel> SelectedFiles { get; }
@@ -116,6 +108,8 @@ public sealed class FilesPaneViewModel : ViewModelBase
     public RelayCommand CopyRelativePathCommand { get; }
     public RelayCommand CopyFullPathCommand { get; }
 
+    public event EventHandler? FileOverridesChanged;
+
     public void ReplaceSelectedFiles(IEnumerable<InputFileItemViewModel> selectedItems)
     {
         ArgumentNullException.ThrowIfNull(selectedItems);
@@ -136,26 +130,22 @@ public sealed class FilesPaneViewModel : ViewModelBase
         ArgumentNullException.ThrowIfNull(automaticFiles);
         ArgumentNullException.ThrowIfNull(currentFiles);
 
-        var automaticMap = automaticFiles
-            .GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
+        var automaticMap = automaticFiles.GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(x => x.Key, x => x.First(), StringComparer.OrdinalIgnoreCase);
 
-        var currentMap = currentFiles
-            .GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
+        var currentMap = currentFiles.GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(x => x.Key, x => x.Last(), StringComparer.OrdinalIgnoreCase);
 
         string[] orderedPaths =
         [
-            .. automaticMap.Keys
-                .Union(currentMap.Keys, StringComparer.OrdinalIgnoreCase)
+            .. automaticMap.Keys.Union(currentMap.Keys, StringComparer.OrdinalIgnoreCase)
                 .Union(appliedInclusionState?.Keys ?? [], StringComparer.OrdinalIgnoreCase)
                 .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
         ];
 
         if (orderedPaths.Length > 0)
         {
-            var overridablePaths = automaticMap.Values
-                .Where(x => x.IsMergeCandidate)
+            var overridablePaths = automaticMap.Values.Where(x => x.IsMergeCandidate)
                 .Select(x => x.FullPath)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -177,27 +167,21 @@ public sealed class FilesPaneViewModel : ViewModelBase
             bool automaticIncluded = automaticFile.IsIncluded;
             currentMap.TryGetValue(path, out InputFile? currentFile);
 
-            bool hasProcessingFailure =
-                currentFile?.SkipReason?.Category == SkippedFileCategory.ProcessingFailure;
+            bool hasProcessingFailure = currentFile?.SkipReason?.Category == SkippedFileCategory.ProcessingFailure;
 
             bool currentIncluded = automaticFile.IsMergeCandidate
-                ? hasProcessingFailure && currentFile is not null
-                    ? currentFile.IsIncluded
-                    : _manualInclusionOverrides.TryGetValue(path, out bool manualValue)
-                        ? manualValue
-                        : currentFile?.IsIncluded ?? automaticIncluded
+                ? hasProcessingFailure && currentFile is not null ? currentFile.IsIncluded :
+                _manualInclusionOverrides.TryGetValue(path, out bool manualValue) ? manualValue :
+                currentFile?.IsIncluded ?? automaticIncluded
                 : automaticIncluded;
 
             bool appliedIncluded = automaticFile.IsMergeCandidate
-                ? appliedInclusionState is not null &&
-                  appliedInclusionState.TryGetValue(path, out bool appliedValue)
+                ? appliedInclusionState is not null && appliedInclusionState.TryGetValue(path, out bool appliedValue)
                     ? appliedValue
                     : currentFile?.IsIncluded ?? automaticIncluded
                 : automaticIncluded;
 
-            InputFile model = hasProcessingFailure && currentFile is not null
-                ? currentFile
-                : automaticFile;
+            InputFile model = hasProcessingFailure && currentFile is not null ? currentFile : automaticFile;
 
             InputFileItemViewModel item = new(
                 model: model,
@@ -205,8 +189,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
                 currentIncluded: currentIncluded,
                 appliedIncluded: appliedIncluded)
             {
-                HasManualOverride = !hasProcessingFailure &&
-                                    currentIncluded != automaticIncluded,
+                HasManualOverride = !hasProcessingFailure && currentIncluded != automaticIncluded,
                 IsAppliedInPreview = currentIncluded == appliedIncluded
             };
 
@@ -239,7 +222,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
         }
 
         SubscribeToFileItemEvents();
-        RaiseBulkCommandsCanExecuteChanged();
+        RaiseFileInclusionCommandsCanExecuteChanged();
         RefreshFilesView();
     }
 
@@ -249,8 +232,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
 
         return
         [
-            .. _manualInclusionOverrides
-                .Where(x => !nonCandidatePaths.Contains(x.Key))
+            .. _manualInclusionOverrides.Where(x => !nonCandidatePaths.Contains(x.Key))
                 .OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
                 .Select(x => new FileInclusionOverride(x.Key, x.Value))
         ];
@@ -260,8 +242,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
     {
         HashSet<string> nonCandidatePaths = GetKnownNonCandidatePaths();
 
-        return _manualInclusionOverrides
-            .Where(x => !nonCandidatePaths.Contains(x.Key))
+        return _manualInclusionOverrides.Where(x => !nonCandidatePaths.Contains(x.Key))
             .OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
     }
@@ -274,8 +255,10 @@ public sealed class FilesPaneViewModel : ViewModelBase
 
         foreach (KeyValuePair<string, bool> pair in overrides)
         {
-            InputFileItemViewModel? file = Files.FirstOrDefault(x =>
-                string.Equals(x.FullPath, pair.Key, StringComparison.OrdinalIgnoreCase));
+            InputFileItemViewModel? file = Files.FirstOrDefault(x => string.Equals(
+                x.FullPath,
+                pair.Key,
+                StringComparison.OrdinalIgnoreCase));
 
             if (file is not null && !file.CanOverrideInclusion)
                 continue;
@@ -287,10 +270,9 @@ public sealed class FilesPaneViewModel : ViewModelBase
         {
             foreach (InputFileItemViewModel file in Files)
             {
-                bool currentIncluded =
-                    _manualInclusionOverrides.TryGetValue(file.FullPath, out bool manualValue)
-                        ? manualValue
-                        : file.AutomaticIncluded;
+                bool currentIncluded = _manualInclusionOverrides.TryGetValue(file.FullPath, out bool manualValue)
+                    ? manualValue
+                    : file.AutomaticIncluded;
 
                 file.IsIncluded = currentIncluded;
                 file.HasManualOverride = currentIncluded != file.AutomaticIncluded;
@@ -298,18 +280,14 @@ public sealed class FilesPaneViewModel : ViewModelBase
             }
         });
 
-        ResetAllFileOverridesCommand.RaiseCanExecuteChanged();
-        RaiseBulkCommandsCanExecuteChanged();
+        RaiseFileInclusionCommandsCanExecuteChanged();
         RefreshFilesView();
         FileOverridesChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public IReadOnlyDictionary<string, bool> BuildCurrentInclusionState()
     {
-        return Files.ToDictionary(
-            x => x.FullPath,
-            x => x.IsIncluded,
-            StringComparer.OrdinalIgnoreCase);
+        return Files.ToDictionary(x => x.FullPath, x => x.IsIncluded, StringComparer.OrdinalIgnoreCase);
     }
 
     public void ResetSelections()
@@ -321,8 +299,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
 
     private HashSet<string> GetKnownNonCandidatePaths()
     {
-        return Files
-            .Where(x => !x.IsMergeCandidate)
+        return Files.Where(x => !x.IsMergeCandidate)
             .Select(x => x.FullPath)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
@@ -375,8 +352,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
     {
         foreach (FileListFilterOptionViewModel facet in _filters.AllFacets)
         {
-            int count = Files.Count(file =>
-                _filters.MatchesForFacetCount(file, SelectedFiles, facet.Facet));
+            int count = Files.Count(file => _filters.MatchesForFacetCount(file, SelectedFiles, facet.Facet));
 
             facet.UpdateCount(count);
         }
@@ -397,8 +373,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
         if (SelectedFiles.Count == 0)
             return;
 
-        InputFileItemViewModel[] selectedFiles =
-            [.. SelectedFiles.Where(x => x.CanOverrideInclusion)];
+        InputFileItemViewModel[] selectedFiles = [.. SelectedFiles.Where(x => x.CanOverrideInclusion)];
 
         if (selectedFiles.Length == 0)
             return;
@@ -474,9 +449,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
         }
     }
 
-    private void ApplyFileInclusion(
-        InputFileItemViewModel file,
-        bool isIncluded)
+    private void ApplyFileInclusion(InputFileItemViewModel file, bool isIncluded)
     {
         if (!file.CanOverrideInclusion)
             return;
@@ -496,8 +469,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
 
     private void FinishFileInclusionUpdate()
     {
-        ResetAllFileOverridesCommand.RaiseCanExecuteChanged();
-        RaiseBulkCommandsCanExecuteChanged();
+        RaiseFileInclusionCommandsCanExecuteChanged();
         RefreshFilesView();
         FileOverridesChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -518,7 +490,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
             }
         });
 
-        RaiseBulkCommandsCanExecuteChanged();
+        RaiseFileInclusionCommandsCanExecuteChanged();
         RefreshFilesView();
         FileOverridesChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -528,9 +500,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
         if (_isLoadingFiles)
             return;
 
-        if (e.OldItems is not null &&
-            ContextFile is not null &&
-            e.OldItems.Contains(ContextFile))
+        if (e.OldItems is not null && ContextFile is not null && e.OldItems.Contains(ContextFile))
         {
             ContextFile = null;
         }
@@ -547,8 +517,7 @@ public sealed class FilesPaneViewModel : ViewModelBase
                 item.PropertyChanged += FileItem_PropertyChanged;
         }
 
-        ResetAllFileOverridesCommand.RaiseCanExecuteChanged();
-        RaiseBulkCommandsCanExecuteChanged();
+        RaiseFileInclusionCommandsCanExecuteChanged();
         RefreshFilesView();
     }
 
@@ -572,27 +541,25 @@ public sealed class FilesPaneViewModel : ViewModelBase
             file.HasManualOverride = hasManualOverride;
             file.IsAppliedInPreview = file.IsIncluded == file.AppliedIncluded;
 
-            ResetAllFileOverridesCommand.RaiseCanExecuteChanged();
-            RaiseBulkCommandsCanExecuteChanged();
+            RaiseFileInclusionCommandsCanExecuteChanged();
             RefreshFilesView();
             FileOverridesChanged?.Invoke(this, EventArgs.Empty);
             return;
         }
 
-        if (e.PropertyName is nameof(InputFileItemViewModel.HasManualOverride) or
-            nameof(InputFileItemViewModel.IsAppliedInPreview))
+        if (e.PropertyName is nameof(InputFileItemViewModel.HasManualOverride)
+            or nameof(InputFileItemViewModel.IsAppliedInPreview))
         {
-            ResetAllFileOverridesCommand.RaiseCanExecuteChanged();
-            RaiseBulkCommandsCanExecuteChanged();
+            RaiseFileInclusionCommandsCanExecuteChanged();
             RefreshFilesView();
         }
     }
 
     private void Filters_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(FileListFiltersViewModel.SearchText) or
-            nameof(FileListFiltersViewModel.ShowOnlySelected) or
-            nameof(FileListFiltersViewModel.HasActiveFacets))
+        if (e.PropertyName is nameof(FileListFiltersViewModel.SearchText)
+            or nameof(FileListFiltersViewModel.ShowOnlySelected)
+            or nameof(FileListFiltersViewModel.HasActiveFacets))
         {
             RefreshFilesView();
         }
@@ -608,6 +575,12 @@ public sealed class FilesPaneViewModel : ViewModelBase
     {
         foreach (InputFileItemViewModel item in Files)
             item.PropertyChanged -= FileItem_PropertyChanged;
+    }
+
+    private void RaiseFileInclusionCommandsCanExecuteChanged()
+    {
+        ResetAllFileOverridesCommand.RaiseCanExecuteChanged();
+        RaiseBulkCommandsCanExecuteChanged();
     }
 
     private void RaiseBulkCommandsCanExecuteChanged()

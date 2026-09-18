@@ -24,11 +24,7 @@ public sealed class MergeBuilder : IMergeBuilder
 
         if (session.Profile.GeneralOptions.IncludeHeaderComment)
         {
-            AppendHeader(
-                builder,
-                session,
-                sourceExcludedFiles,
-                generatedAtUtc);
+            AppendHeader(builder, session, sourceExcludedFiles, generatedAtUtc);
         }
 
         MergeSection[] orderedSections = [.. sections.OrderBy(x => x.Order)];
@@ -77,8 +73,7 @@ public sealed class MergeBuilder : IMergeBuilder
         IReadOnlyCollection<InputFile> sourceExcludedFiles,
         DateTime generatedAtUtc)
     {
-        OutputMetadataOptions metadataOptions =
-            session.Profile.GeneralOptions.OutputMetadataOptions;
+        OutputMetadataOptions metadataOptions = session.Profile.GeneralOptions.OutputMetadataOptions;
 
         builder.AppendLine("// ===============================================");
         builder.AppendLine("// Auto-generated merged source file");
@@ -98,11 +93,7 @@ public sealed class MergeBuilder : IMergeBuilder
             builder.AppendLine($"// Files skipped: {session.Files.Count(x => !x.IsIncluded)}");
         }
 
-        AppendSkippedFilesMetadata(
-            builder,
-            session,
-            sourceExcludedFiles,
-            metadataOptions);
+        AppendSkippedFilesMetadata(builder, session, sourceExcludedFiles, metadataOptions);
 
         builder.AppendLine("// ===============================================");
         builder.AppendLine();
@@ -119,13 +110,10 @@ public sealed class MergeBuilder : IMergeBuilder
         if (mode == SkippedFilesMetadataMode.None)
             return;
 
-        SkippedFileCategorySelection categorySelection =
-            metadataOptions.EffectiveSkippedFileCategories;
+        SkippedFileCategorySelection categorySelection = metadataOptions.EffectiveSkippedFileCategories;
 
         IEnumerable<InputFile> skippedFileCandidates =
-            session.Files.Where(x =>
-                !x.IsIncluded &&
-                ShouldIncludeSkippedFile(x, categorySelection));
+            session.Files.Where(x => !x.IsIncluded && ShouldIncludeSkippedFile(x, categorySelection));
 
         if (categorySelection.Includes(SkippedFileCategory.SourceExclusion))
         {
@@ -134,8 +122,7 @@ public sealed class MergeBuilder : IMergeBuilder
 
         InputFile[] skippedFiles =
         [
-            .. skippedFileCandidates
-                .GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
+            .. skippedFileCandidates.GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
                 .Select(x => x.First())
                 .OrderBy(x => x.RelativePath, StringComparer.OrdinalIgnoreCase)
         ];
@@ -160,19 +147,14 @@ public sealed class MergeBuilder : IMergeBuilder
         }
     }
 
-    private static bool ShouldIncludeSkippedFile(
-        InputFile file,
-        SkippedFileCategorySelection categorySelection)
+    private static bool ShouldIncludeSkippedFile(InputFile file, SkippedFileCategorySelection categorySelection)
     {
-        SkippedFileCategory category =
-            file.SkipReason?.Category ?? SkippedFileCategory.Other;
+        SkippedFileCategory category = file.SkipReason?.Category ?? SkippedFileCategory.Other;
 
         return categorySelection.Includes(category);
     }
 
-    private static void AppendDetailedSkippedFile(
-        StringBuilder builder,
-        InputFile file)
+    private static void AppendDetailedSkippedFile(StringBuilder builder, InputFile file)
     {
         builder.AppendLine($"// - {file.RelativePath}");
 

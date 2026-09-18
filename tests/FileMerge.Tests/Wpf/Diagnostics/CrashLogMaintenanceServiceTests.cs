@@ -7,8 +7,8 @@ namespace FileMerger.Tests.Wpf.Diagnostics;
 
 public sealed class CrashLogMaintenanceServiceTests : IDisposable
 {
-    private readonly string _tempRoot;
     private readonly CrashLogPathPolicy _pathPolicy;
+    private readonly string _tempRoot;
 
     public CrashLogMaintenanceServiceTests()
     {
@@ -19,6 +19,12 @@ public sealed class CrashLogMaintenanceServiceTests : IDisposable
             Guid.NewGuid().ToString("N"));
 
         _pathPolicy = new CrashLogPathPolicy(_tempRoot);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempRoot))
+            Directory.Delete(_tempRoot, recursive: true);
     }
 
     [Fact]
@@ -46,10 +52,8 @@ public sealed class CrashLogMaintenanceServiceTests : IDisposable
     [Fact]
     public void GetCrashLogFiles_Should_Return_Crash_Log_Files_Only()
     {
-        string first = CreateFile(
-            "crash-20260701-120000-000-aaaaaaaa.log");
-        string second = CreateFile(
-            "crash-20260702-120000-000-bbbbbbbb.log");
+        string first = CreateFile("crash-20260701-120000-000-aaaaaaaa.log");
+        string second = CreateFile("crash-20260702-120000-000-bbbbbbbb.log");
         CreateFile("notes.log");
         CreateFile("crash-other.txt");
         CreateFile("random.txt");
@@ -84,9 +88,7 @@ public sealed class CrashLogMaintenanceServiceTests : IDisposable
         CrashLogFileListResult result = service.GetCrashLogFiles();
 
         Assert.True(result.IsSuccessful);
-        Assert.Equal(
-            [newest, middle, oldest],
-            result.Files.Select(x => x.Path));
+        Assert.Equal([newest, middle, oldest], result.Files.Select(x => x.Path));
     }
 
     [Fact]
@@ -117,10 +119,8 @@ public sealed class CrashLogMaintenanceServiceTests : IDisposable
     [Fact]
     public void CleanupOldCrashLogs_Should_Not_Delete_When_File_Count_Is_Within_Retention_Limit()
     {
-        string first = CreateFile(
-            "crash-20260701-120000-000-aaaaaaaa.log");
-        string second = CreateFile(
-            "crash-20260702-120000-000-bbbbbbbb.log");
+        string first = CreateFile("crash-20260701-120000-000-aaaaaaaa.log");
+        string second = CreateFile("crash-20260702-120000-000-bbbbbbbb.log");
 
         CrashLogMaintenanceService service = CreateService(retentionLimit: 2);
 
@@ -149,12 +149,9 @@ public sealed class CrashLogMaintenanceServiceTests : IDisposable
     [Fact]
     public void ClearAllCrashLogs_Should_Delete_All_Crash_Log_Files()
     {
-        string first = CreateFile(
-            "crash-20260701-120000-000-aaaaaaaa.log");
-        string second = CreateFile(
-            "crash-20260702-120000-000-bbbbbbbb.log");
-        string third = CreateFile(
-            "crash-20260703-120000-000-cccccccc.log");
+        string first = CreateFile("crash-20260701-120000-000-aaaaaaaa.log");
+        string second = CreateFile("crash-20260702-120000-000-bbbbbbbb.log");
+        string third = CreateFile("crash-20260703-120000-000-cccccccc.log");
 
         CrashLogMaintenanceService service = CreateService();
 
@@ -222,27 +219,20 @@ public sealed class CrashLogMaintenanceServiceTests : IDisposable
     }
 
     private CrashLogMaintenanceService CreateService(
-        int retentionLimit =
-            ApplicationPreferences.DefaultCrashLogRetentionLimit,
+        int retentionLimit = ApplicationPreferences.DefaultCrashLogRetentionLimit,
         FakeFileSystemLauncher? launcher = null)
     {
         FakeApplicationPreferencesStore preferencesStore = new();
-        preferencesStore.SetCurrent(new ApplicationPreferences(
-            isPreviewLineWrapEnabledByDefault:
-            ApplicationPreferences.DefaultIsPreviewLineWrapEnabledByDefault,
-            previewDisplayCharacterLimit:
-            ApplicationPreferences.DefaultPreviewDisplayCharacterLimit,
-            crashLogRetentionLimit: retentionLimit));
+        preferencesStore.SetCurrent(
+            new ApplicationPreferences(
+                isPreviewLineWrapEnabledByDefault: ApplicationPreferences.DefaultIsPreviewLineWrapEnabledByDefault,
+                previewDisplayCharacterLimit: ApplicationPreferences.DefaultPreviewDisplayCharacterLimit,
+                crashLogRetentionLimit: retentionLimit));
 
-        return new CrashLogMaintenanceService(
-            _pathPolicy,
-            preferencesStore,
-            launcher ?? new FakeFileSystemLauncher());
+        return new CrashLogMaintenanceService(_pathPolicy, preferencesStore, launcher ?? new FakeFileSystemLauncher());
     }
 
-    private string CreateFile(
-        string fileName,
-        DateTime? lastWriteTimeUtc = null)
+    private string CreateFile(string fileName, DateTime? lastWriteTimeUtc = null)
     {
         string directory = _pathPolicy.GetCrashLogDirectory();
         Directory.CreateDirectory(directory);
@@ -254,11 +244,5 @@ public sealed class CrashLogMaintenanceServiceTests : IDisposable
             File.SetLastWriteTimeUtc(path, lastWriteTimeUtc.Value);
 
         return path;
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_tempRoot))
-            Directory.Delete(_tempRoot, recursive: true);
     }
 }

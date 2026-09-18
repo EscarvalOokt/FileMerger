@@ -17,8 +17,6 @@ public sealed class FolderBrowserService : IFolderBrowserService
         }
 
         bool? result = dialog.ShowDialog();
-        return result == true
-            ? dialog.FolderNames.ToArray()
-            : [];
+        return result == true ? dialog.FolderNames.ToArray() : [];
     }
 }

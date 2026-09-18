@@ -19,9 +19,7 @@ public sealed class RecentWorkspaceMenuItemViewModel : ViewModelBase
         DisplayName = BuildDisplayName(FilePath);
         DirectoryPath = Path.GetDirectoryName(FilePath) ?? string.Empty;
 
-        MenuHeader = IsMissing
-            ? $"{DisplayName} (missing)"
-            : DisplayName;
+        MenuHeader = IsMissing ? $"{DisplayName} (missing)" : DisplayName;
 
         ToolTip = BuildToolTip();
     }
@@ -43,9 +41,7 @@ public sealed class RecentWorkspaceMenuItemViewModel : ViewModelBase
     public string ToolTip { get; }
 
     public string LastUsedText =>
-        LastUsedAtUtc
-            .ToLocalTime()
-            .ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture);
+        LastUsedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture);
 
     private static string BuildDisplayName(string filePath)
     {
@@ -59,9 +55,7 @@ public sealed class RecentWorkspaceMenuItemViewModel : ViewModelBase
 
         string withoutExtension = Path.GetFileNameWithoutExtension(fileName);
 
-        return string.IsNullOrWhiteSpace(withoutExtension)
-            ? fileName
-            : withoutExtension;
+        return string.IsNullOrWhiteSpace(withoutExtension) ? fileName : withoutExtension;
     }
 
     private string BuildToolTip()

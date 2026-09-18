@@ -17,13 +17,9 @@ public sealed class AppliedPreviewFileStateStore : IAppliedPreviewFileStateStore
     {
         ArgumentNullException.ThrowIfNull(files);
 
-        _current = files
-            .GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
+        _current = files.GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
             .OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                x => x.Key,
-                x => x.Last().IsIncluded,
-                StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(x => x.Key, x => x.Last().IsIncluded, StringComparer.OrdinalIgnoreCase);
     }
 
     public void Clear()

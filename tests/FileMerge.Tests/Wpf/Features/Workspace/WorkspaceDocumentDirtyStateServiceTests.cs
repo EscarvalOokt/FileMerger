@@ -46,9 +46,7 @@ public sealed class WorkspaceDocumentDirtyStateServiceTests
         service.RefreshPreviewDirtyState(document);
 
         Assert.True(document.PreviewDirtyTracker.IsPreviewDirty);
-        Assert.Equal(
-            PreviewDirtyReason.ProfileChanged,
-            document.PreviewDirtyTracker.PreviewDirtyReason);
+        Assert.Equal(PreviewDirtyReason.ProfileChanged, document.PreviewDirtyTracker.PreviewDirtyReason);
     }
 
     [Fact]
@@ -68,9 +66,7 @@ public sealed class WorkspaceDocumentDirtyStateServiceTests
         service.RefreshPreviewDirtyState(document);
 
         Assert.False(document.PreviewDirtyTracker.IsPreviewDirty);
-        Assert.Equal(
-            PreviewDirtyReason.None,
-            document.PreviewDirtyTracker.PreviewDirtyReason);
+        Assert.Equal(PreviewDirtyReason.None, document.PreviewDirtyTracker.PreviewDirtyReason);
     }
 
     [Fact]
@@ -78,8 +74,7 @@ public sealed class WorkspaceDocumentDirtyStateServiceTests
     {
         WorkspaceDocumentDirtyStateService service = new(new MainStateFactory());
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            service.RefreshPreviewDirtyState(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => service.RefreshPreviewDirtyState(null!));
 
         Assert.Equal("document", ex.ParamName);
     }
@@ -89,8 +84,7 @@ public sealed class WorkspaceDocumentDirtyStateServiceTests
     {
         WorkspaceDocumentDirtyStateService service = new(new MainStateFactory());
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            service.MarkPreviewApplied(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => service.MarkPreviewApplied(null!));
 
         Assert.Equal("document", ex.ParamName);
     }
@@ -255,8 +249,7 @@ public sealed class WorkspaceDocumentDirtyStateServiceTests
     {
         WorkspaceDocumentDirtyStateService service = new(new MainStateFactory());
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            service.MarkWorkspaceSaved(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => service.MarkWorkspaceSaved(null!));
 
         Assert.Equal("document", ex.ParamName);
     }

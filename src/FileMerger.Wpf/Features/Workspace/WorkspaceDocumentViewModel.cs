@@ -15,17 +15,17 @@ namespace FileMerger.Wpf.Features.Workspace;
 
 public sealed class WorkspaceDocumentViewModel : ViewModelBase
 {
-    private string _previewContent = string.Empty;
-    private string _previewNotice = string.Empty;
-    private string _previewCharacterCountText = FormatPreviewCharacterCountText(0);
-    private PreviewGenerationSummaryViewModel _previewSummary = PreviewGenerationSummaryViewModel.Empty;
-    private bool _isPreviewSummaryExpanded = true;
-    private bool _isPreviewLineWrapEnabled;
-    private MergeOutput? _lastOutput;
     private CancellationTokenSource? _buildPreviewCancellationTokenSource;
     private string? _currentProfileEntryId;
-    private string? _profileOriginEntryId;
+    private bool _isPreviewLineWrapEnabled;
+    private bool _isPreviewSummaryExpanded = true;
+    private MergeOutput? _lastOutput;
+    private string _previewCharacterCountText = FormatPreviewCharacterCountText(0);
+    private string _previewContent = string.Empty;
+    private string _previewNotice = string.Empty;
+    private PreviewGenerationSummaryViewModel _previewSummary = PreviewGenerationSummaryViewModel.Empty;
     private string? _profileOriginDisplayName;
+    private string? _profileOriginEntryId;
     private string? _workspaceFilePath;
 
     public WorkspaceDocumentViewModel(
@@ -90,10 +90,7 @@ public sealed class WorkspaceDocumentViewModel : ViewModelBase
     public bool HasSuccessfulPreviewBuild => LastOutput is not null;
 
     public bool IsEmptyWorkspace =>
-        !SourcesPane.HasSources &&
-        FilesPane.HasNoFiles &&
-        !HasPreviewContent &&
-        LastOutput is null;
+        !SourcesPane.HasSources && FilesPane.HasNoFiles && !HasPreviewContent && LastOutput is null;
 
     public bool ShowPreviewEmptyState => !HasPreviewContent;
     public string PreviewEmptyTitle => BuildPreviewEmptyTitle();
@@ -182,9 +179,7 @@ public sealed class WorkspaceDocumentViewModel : ViewModelBase
         get => _currentProfileEntryId;
         set
         {
-            string? normalized = string.IsNullOrWhiteSpace(value)
-                ? null
-                : value.Trim();
+            string? normalized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
             SetProperty(ref _currentProfileEntryId, normalized);
         }
@@ -195,9 +190,7 @@ public sealed class WorkspaceDocumentViewModel : ViewModelBase
         get => _profileOriginEntryId;
         set
         {
-            string? normalized = string.IsNullOrWhiteSpace(value)
-                ? null
-                : value.Trim();
+            string? normalized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
             SetProperty(ref _profileOriginEntryId, normalized);
         }
@@ -208,9 +201,7 @@ public sealed class WorkspaceDocumentViewModel : ViewModelBase
         get => _profileOriginDisplayName;
         set
         {
-            string? normalized = string.IsNullOrWhiteSpace(value)
-                ? null
-                : value.Trim();
+            string? normalized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
             SetProperty(ref _profileOriginDisplayName, normalized);
         }
@@ -221,9 +212,7 @@ public sealed class WorkspaceDocumentViewModel : ViewModelBase
         get => _workspaceFilePath;
         set
         {
-            string? normalized = string.IsNullOrWhiteSpace(value)
-                ? null
-                : value.Trim();
+            string? normalized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
             SetProperty(ref _workspaceFilePath, normalized);
         }
@@ -307,17 +296,13 @@ public sealed class WorkspaceDocumentViewModel : ViewModelBase
 
     private void EmptyStateSource_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        bool affectsEmptyState =
-            sender == SourcesPane &&
-            e.PropertyName == nameof(SourcesPaneViewModel.HasSources) ||
-            sender == FilesPane &&
-            e.PropertyName == nameof(FilesPaneViewModel.HasNoFiles) ||
-            sender == ValidationPane &&
-            e.PropertyName == nameof(ValidationPaneViewModel.HasErrors) ||
-            sender == PreviewDirtyTracker &&
-            e.PropertyName == nameof(PreviewDirtyStateTracker.HasAppliedPreview) ||
-            sender == OperationStatus &&
-            e.PropertyName == nameof(OperationStatusViewModel.IsBusy);
+        bool affectsEmptyState = sender == SourcesPane && e.PropertyName == nameof(SourcesPaneViewModel.HasSources) ||
+                                 sender == FilesPane && e.PropertyName == nameof(FilesPaneViewModel.HasNoFiles) ||
+                                 sender == ValidationPane &&
+                                 e.PropertyName == nameof(ValidationPaneViewModel.HasErrors) ||
+                                 sender == PreviewDirtyTracker &&
+                                 e.PropertyName == nameof(PreviewDirtyStateTracker.HasAppliedPreview) ||
+                                 sender == OperationStatus && e.PropertyName == nameof(OperationStatusViewModel.IsBusy);
 
         if (affectsEmptyState)
             RefreshEmptyStateProperties();
@@ -345,7 +330,8 @@ public sealed class WorkspaceDocumentViewModel : ViewModelBase
         if (!PreviewDirtyTracker.HasAppliedPreview)
             return "Build preview to discover files from the configured sources.";
 
-        return "Check source paths, enabled file types, profile filters, source exclusions, and unsupported text fallback settings.";
+        return
+            "Check source paths, enabled file types, profile filters, source exclusions, and unsupported text fallback settings.";
     }
 
     private string BuildPreviewEmptyTitle()

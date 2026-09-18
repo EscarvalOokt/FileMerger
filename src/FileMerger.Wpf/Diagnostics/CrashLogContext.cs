@@ -27,15 +27,11 @@ public sealed record CrashLogContext(
         if (string.IsNullOrWhiteSpace(exceptionSource))
             throw new ArgumentException("Exception source cannot be empty.", nameof(exceptionSource));
 
-        Assembly resolvedAssembly =
-            assembly
-            ?? Assembly.GetEntryAssembly()
-            ?? typeof(CrashLogContext).Assembly;
+        Assembly resolvedAssembly = assembly ?? Assembly.GetEntryAssembly() ?? typeof(CrashLogContext).Assembly;
 
         AssemblyName assemblyName = resolvedAssembly.GetName();
 
-        string? informationalVersion = resolvedAssembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+        string? informationalVersion = resolvedAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             ?.InformationalVersion;
 
         return new CrashLogContext(

@@ -28,9 +28,7 @@ public sealed class KnownFileTypesTests
     [Fact]
     public void All_Should_Contain_All_Default_File_Types()
     {
-        var allExtensions = KnownFileTypes.All
-            .Select(x => x.Extension)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var allExtensions = KnownFileTypes.All.Select(x => x.Extension).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (FileTypeDefinition defaultType in KnownFileTypes.Default)
         {
@@ -59,9 +57,7 @@ public sealed class KnownFileTypesTests
     [Fact]
     public void All_Should_Contain_Wpf_File_Types()
     {
-        var extensions = KnownFileTypes.All
-            .Select(x => x.Extension)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var extensions = KnownFileTypes.All.Select(x => x.Extension).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         Assert.Contains(".sln", extensions);
         Assert.Contains(".slnx", extensions);
@@ -76,9 +72,7 @@ public sealed class KnownFileTypesTests
     [Fact]
     public void All_Should_Contain_Unity_File_Types()
     {
-        var extensions = KnownFileTypes.All
-            .Select(x => x.Extension)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var extensions = KnownFileTypes.All.Select(x => x.Extension).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         Assert.Contains(".asmdef", extensions);
         Assert.Contains(".asmref", extensions);
@@ -108,8 +102,7 @@ public sealed class KnownFileTypesTests
     [Fact]
     public void WpfApplication_Should_Enable_Wpf_Application_File_Types()
     {
-        var extensions = KnownFileTypes.WpfApplication
-            .Select(x => x.Extension)
+        var extensions = KnownFileTypes.WpfApplication.Select(x => x.Extension)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         Assert.Contains(".cs", extensions);
@@ -127,8 +120,7 @@ public sealed class KnownFileTypesTests
     [Fact]
     public void UnityProject_Should_Enable_Unity_Project_File_Types()
     {
-        var extensions = KnownFileTypes.UnityProject
-            .Select(x => x.Extension)
+        var extensions = KnownFileTypes.UnityProject.Select(x => x.Extension)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         Assert.Contains(".cs", extensions);
@@ -149,8 +141,9 @@ public sealed class KnownFileTypesTests
     [Fact]
     public void UnityProject_Should_Not_Enable_Meta_By_Default()
     {
-        Assert.DoesNotContain(KnownFileTypes.UnityProject, x =>
-            string.Equals(x.Extension, ".meta", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            KnownFileTypes.UnityProject,
+            x => string.Equals(x.Extension, ".meta", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -212,9 +205,7 @@ public sealed class KnownFileTypesTests
     [Fact]
     public void All_Should_Contain_MsBuild_Props_And_Targets_File_Types()
     {
-        var extensions = KnownFileTypes.All
-            .Select(x => x.Extension)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var extensions = KnownFileTypes.All.Select(x => x.Extension).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         Assert.Contains(KnownFileTypes.Props.Extension, extensions);
         Assert.Contains(KnownFileTypes.Targets.Extension, extensions);

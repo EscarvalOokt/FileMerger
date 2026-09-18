@@ -21,14 +21,21 @@ public sealed class MergeWriterTests : IDisposable
         Directory.CreateDirectory(_tempRoot);
     }
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempRoot))
+        {
+            Directory.Delete(_tempRoot, recursive: true);
+        }
+    }
+
     [Fact]
     public void Write_Should_Throw_When_Output_Is_Null()
     {
         var writer = new MergeWriter();
         var target = new OutputTarget(Path.Combine(_tempRoot, "merged.txt"));
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            writer.Write(null!, target));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => writer.Write(null!, target));
 
         Assert.Equal("output", ex.ParamName);
     }
@@ -39,8 +46,7 @@ public sealed class MergeWriterTests : IDisposable
         var writer = new MergeWriter();
         MergeOutput output = CreateOutput("merged content");
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            writer.Write(output, null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => writer.Write(output, null!));
 
         Assert.Equal("target", ex.ParamName);
     }
@@ -85,13 +91,5 @@ public sealed class MergeWriterTests : IDisposable
             statistics: new MergeStatistics(1, 1, 0, content.Length, TimeSpan.Zero),
             generatedAtUtc: DateTime.UtcNow,
             outputTarget: null);
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_tempRoot))
-        {
-            Directory.Delete(_tempRoot, recursive: true);
-        }
     }
 }

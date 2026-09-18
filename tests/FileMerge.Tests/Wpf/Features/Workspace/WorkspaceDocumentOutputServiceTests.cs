@@ -49,6 +49,39 @@ public sealed class WorkspaceDocumentOutputServiceTests
     }
 
     [Fact]
+    public async Task SaveOutputAsync_Should_Explain_When_Saving_Stale_Last_Build()
+    {
+        FakeMergeWriter writer = new();
+        WorkspaceDocumentOutputService service = CreateService(writer, new FakeSaveFileDialogService());
+        WorkspaceDocumentViewModel document = CreateDocument();
+
+        MergeOutput output = CreateOutput();
+        document.SetLastOutput(output);
+        document.SessionSettings.OutputPath = @"D:\Output\saved.txt";
+
+        MainStateFactory stateFactory = new();
+        WorkspaceDocumentDirtyStateService dirtyStateService = new(stateFactory);
+        dirtyStateService.MarkPreviewApplied(document);
+
+        document.SessionSettings.SessionName = "Changed after build";
+        dirtyStateService.RefreshPreviewDirtyState(document);
+
+        Assert.True(document.PreviewDirtyTracker.HasAppliedPreview);
+        Assert.True(document.PreviewDirtyTracker.IsPreviewDirty);
+
+        await service.SaveOutputAsync(document);
+
+        Assert.Same(output, writer.Output);
+        Assert.NotNull(writer.Target);
+        Assert.Equal(@"D:\Output\saved.txt", writer.Target!.Path);
+        Assert.True(document.PreviewDirtyTracker.IsPreviewDirty);
+        Assert.Equal(
+            "Last built output saved successfully. Changes made since that build are not included in the saved content; run Build Preview to rebuild it.",
+            document.OperationStatus.StatusMessage);
+        Assert.Equal(StatusSeverity.Success, document.OperationStatus.StatusSeverity);
+    }
+
+    [Fact]
     public async Task SaveOutputAsync_Should_Report_Error_Status_When_Writer_Fails()
     {
         FakeMergeWriter writer = new()
@@ -119,8 +152,7 @@ public sealed class WorkspaceDocumentOutputServiceTests
     {
         WorkspaceDocumentOutputService service = CreateService(new FakeMergeWriter(), new FakeSaveFileDialogService());
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            service.BrowseOutputPath(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => service.BrowseOutputPath(null!));
 
         Assert.Equal("document", ex.ParamName);
     }
@@ -128,9 +160,7 @@ public sealed class WorkspaceDocumentOutputServiceTests
     [Fact]
     public void CanOpenOutputFolder_Should_Return_False_When_OutputPath_Is_Empty()
     {
-        WorkspaceDocumentOutputService service = CreateService(
-            new FakeMergeWriter(),
-            new FakeSaveFileDialogService());
+        WorkspaceDocumentOutputService service = CreateService(new FakeMergeWriter(), new FakeSaveFileDialogService());
 
         WorkspaceDocumentViewModel document = CreateDocument();
 
@@ -244,8 +274,7 @@ public sealed class WorkspaceDocumentOutputServiceTests
     {
         WorkspaceDocumentOutputService service = CreateService(new FakeMergeWriter(), new FakeSaveFileDialogService());
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            service.CanOpenOutputFolder(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => service.CanOpenOutputFolder(null!));
 
         Assert.Equal("document", ex.ParamName);
     }
@@ -255,8 +284,7 @@ public sealed class WorkspaceDocumentOutputServiceTests
     {
         WorkspaceDocumentOutputService service = CreateService(new FakeMergeWriter(), new FakeSaveFileDialogService());
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            service.OpenOutputFolder(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => service.OpenOutputFolder(null!));
 
         Assert.Equal("document", ex.ParamName);
     }

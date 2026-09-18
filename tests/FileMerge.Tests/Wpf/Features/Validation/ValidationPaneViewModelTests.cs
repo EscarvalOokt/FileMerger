@@ -31,7 +31,8 @@ public sealed class ValidationPaneViewModelTests
     {
         ValidationPaneViewModel vm = new();
 
-        vm.Load([
+        vm.Load(
+        [
             Issue(ValidationSeverity.Error, "error.code")
         ]);
 
@@ -54,7 +55,8 @@ public sealed class ValidationPaneViewModelTests
     {
         ValidationPaneViewModel vm = new();
 
-        vm.Load([
+        vm.Load(
+        [
             Issue(ValidationSeverity.Warning, "warning.code")
         ]);
 
@@ -75,7 +77,8 @@ public sealed class ValidationPaneViewModelTests
     {
         ValidationPaneViewModel vm = new();
 
-        vm.Load([
+        vm.Load(
+        [
             Issue(ValidationSeverity.Info, "info.code")
         ]);
 
@@ -97,13 +100,15 @@ public sealed class ValidationPaneViewModelTests
     {
         ValidationPaneViewModel vm = new();
 
-        vm.Load([
+        vm.Load(
+        [
             Issue(ValidationSeverity.Info, "info.code")
         ]);
 
         vm.IsDetailsExpanded = true;
 
-        vm.Load([
+        vm.Load(
+        [
             Issue(ValidationSeverity.Info, "another.info.code")
         ]);
 
@@ -117,7 +122,8 @@ public sealed class ValidationPaneViewModelTests
     {
         ValidationPaneViewModel vm = new();
 
-        vm.Load([
+        vm.Load(
+        [
             Issue(ValidationSeverity.Warning, "warning.code")
         ]);
 
@@ -139,7 +145,8 @@ public sealed class ValidationPaneViewModelTests
     {
         ValidationPaneViewModel vm = new();
 
-        vm.Load([
+        vm.Load(
+        [
             Issue(ValidationSeverity.Error, "error.code")
         ]);
 
@@ -161,7 +168,8 @@ public sealed class ValidationPaneViewModelTests
     {
         ValidationPaneViewModel vm = new();
 
-        vm.Load([
+        vm.Load(
+        [
             Issue(ValidationSeverity.Error, "error.code"),
             Issue(ValidationSeverity.Warning, "warning.code"),
             Issue(ValidationSeverity.Info, "info.code")
@@ -186,7 +194,8 @@ public sealed class ValidationPaneViewModelTests
     {
         ValidationPaneViewModel vm = new();
 
-        vm.Load([
+        vm.Load(
+        [
             Issue(ValidationSeverity.Info, "info.code")
         ]);
 
@@ -212,19 +221,13 @@ public sealed class ValidationPaneViewModelTests
     {
         ValidationPaneViewModel vm = new();
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            vm.Load(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => vm.Load(null!));
 
         Assert.Equal("issues", ex.ParamName);
     }
 
-    private static ValidationIssue Issue(
-        ValidationSeverity severity,
-        string code)
+    private static ValidationIssue Issue(ValidationSeverity severity, string code)
     {
-        return new ValidationIssue(
-            severity,
-            code,
-            $"{code} message");
+        return new ValidationIssue(severity, code, $"{code} message");
     }
 }

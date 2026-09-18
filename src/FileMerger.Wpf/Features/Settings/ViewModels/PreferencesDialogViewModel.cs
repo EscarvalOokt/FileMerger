@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using FileMerger.Wpf.Diagnostics;
 using FileMerger.Wpf.Shared.Commands;
@@ -11,17 +12,18 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
     private readonly IApplicationPreferencesStore _applicationPreferencesStore;
     private readonly ICrashLogMaintenanceService _crashLogMaintenanceService;
     private readonly IUserPromptService _userPromptService;
-
-    private bool _isPreviewLineWrapEnabledByDefault;
-    private string _previewDisplayCharacterLimitText;
-    private string _crashLogRetentionLimitText;
     private string _crashLogFileCountText = string.Empty;
     private string _crashLogMaintenanceStatusText = string.Empty;
+    private string _crashLogRetentionLimitText;
     private bool _hasCrashLogFiles;
     private bool _hasOldCrashLogFiles;
     private bool _isBusy;
-    private string _validationErrorMessage = string.Empty;
+
+    private bool _isPreviewLineWrapEnabledByDefault;
+    private string _previewDisplayCharacterLimitText;
+    private string _previewDisplayCharacterLimitValidationMessage = string.Empty;
     private string _saveErrorMessage = string.Empty;
+    private string _validationErrorMessage = string.Empty;
 
     public PreferencesDialogViewModel(
         IApplicationPreferencesStore applicationPreferencesStore,
@@ -38,38 +40,21 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
 
         ApplicationPreferences current = applicationPreferencesStore.Current;
 
-        _isPreviewLineWrapEnabledByDefault =
-            current.IsPreviewLineWrapEnabledByDefault;
-        _previewDisplayCharacterLimitText =
-            current.PreviewDisplayCharacterLimit.ToString(
-                CultureInfo.InvariantCulture);
-        _crashLogRetentionLimitText =
-            current.CrashLogRetentionLimit.ToString(
-                CultureInfo.InvariantCulture);
+        _isPreviewLineWrapEnabledByDefault = current.IsPreviewLineWrapEnabledByDefault;
+        _previewDisplayCharacterLimitText = current.PreviewDisplayCharacterLimit.ToString(CultureInfo.InvariantCulture);
+        _crashLogRetentionLimitText = current.CrashLogRetentionLimit.ToString(CultureInfo.InvariantCulture);
 
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => CanSave);
         CancelCommand = new RelayCommand(Cancel, () => !IsBusy);
-        RestoreDefaultsCommand = new RelayCommand(
-            RestoreDefaults,
-            () => !IsBusy);
-        RefreshCrashLogsCommand = new RelayCommand(
-            RefreshCrashLogs,
-            () => !IsBusy);
-        OpenCrashLogsFolderCommand = new RelayCommand(
-            OpenCrashLogsFolder,
-            () => !IsBusy);
-        ClearOldCrashLogsCommand = new RelayCommand(
-            ClearOldCrashLogs,
-            () => !IsBusy && HasOldCrashLogFiles);
-        ClearAllCrashLogsCommand = new RelayCommand(
-            ClearAllCrashLogs,
-            () => !IsBusy && HasCrashLogFiles);
+        RestoreDefaultsCommand = new RelayCommand(RestoreDefaults, () => !IsBusy);
+        RefreshCrashLogsCommand = new RelayCommand(RefreshCrashLogs, () => !IsBusy);
+        OpenCrashLogsFolderCommand = new RelayCommand(OpenCrashLogsFolder, () => !IsBusy);
+        ClearOldCrashLogsCommand = new RelayCommand(ClearOldCrashLogs, () => !IsBusy && HasOldCrashLogFiles);
+        ClearAllCrashLogsCommand = new RelayCommand(ClearAllCrashLogs, () => !IsBusy && HasCrashLogFiles);
 
         Validate();
         RefreshCrashLogState(clearStatus: true);
     }
-
-    public event EventHandler<bool?>? RequestClose;
 
     public bool IsPreviewLineWrapEnabledByDefault
     {
@@ -83,15 +68,14 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
         }
     }
 
+    [AllowNull]
     public string PreviewDisplayCharacterLimitText
     {
         get => _previewDisplayCharacterLimitText;
         set
         {
             string normalized = value ?? string.Empty;
-            if (!SetProperty(
-                    ref _previewDisplayCharacterLimitText,
-                    normalized))
+            if (!SetProperty(ref _previewDisplayCharacterLimitText, normalized))
             {
                 return;
             }
@@ -101,6 +85,7 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
         }
     }
 
+    [AllowNull]
     public string CrashLogRetentionLimitText
     {
         get => _crashLogRetentionLimitText;
@@ -134,19 +119,20 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
     }
 
     public string ErrorMessage =>
-        !string.IsNullOrWhiteSpace(_saveErrorMessage)
-            ? _saveErrorMessage
-            : _validationErrorMessage;
+        !string.IsNullOrWhiteSpace(_saveErrorMessage) ? _saveErrorMessage : _validationErrorMessage;
 
     public bool HasErrorMessage => !string.IsNullOrWhiteSpace(ErrorMessage);
 
-    public bool HasValidationErrors =>
-        !string.IsNullOrWhiteSpace(_validationErrorMessage);
+    public bool HasValidationErrors => !string.IsNullOrWhiteSpace(_validationErrorMessage);
+
+    public string PreviewDisplayCharacterLimitValidationMessage => _previewDisplayCharacterLimitValidationMessage;
+
+    public bool HasPreviewDisplayCharacterLimitValidationError =>
+        !string.IsNullOrWhiteSpace(PreviewDisplayCharacterLimitValidationMessage);
 
     public bool CanSave => !IsBusy && !HasValidationErrors;
 
-    public string CrashLogDirectoryPath =>
-        _crashLogMaintenanceService.GetCrashLogDirectory();
+    public string CrashLogDirectoryPath => _crashLogMaintenanceService.GetCrashLogDirectory();
 
     public string CrashLogFileCountText
     {
@@ -164,8 +150,7 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
         }
     }
 
-    public bool HasCrashLogMaintenanceStatus =>
-        !string.IsNullOrWhiteSpace(CrashLogMaintenanceStatusText);
+    public bool HasCrashLogMaintenanceStatus => !string.IsNullOrWhiteSpace(CrashLogMaintenanceStatusText);
 
     public bool HasCrashLogFiles
     {
@@ -212,6 +197,8 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
 
     public RelayCommand ClearAllCrashLogsCommand { get; }
 
+    public event EventHandler<bool?>? RequestClose;
+
     private async Task SaveAsync()
     {
         Validate();
@@ -232,12 +219,10 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            await _applicationPreferencesStore.UpdateAsync(_ =>
-                new ApplicationPreferences(
-                    isPreviewLineWrapEnabledByDefault:
-                    IsPreviewLineWrapEnabledByDefault,
-                    previewDisplayCharacterLimit: previewLimit,
-                    crashLogRetentionLimit: crashRetentionLimit));
+            await _applicationPreferencesStore.UpdateAsync(_ => new ApplicationPreferences(
+                isPreviewLineWrapEnabledByDefault: IsPreviewLineWrapEnabledByDefault,
+                previewDisplayCharacterLimit: previewLimit,
+                crashLogRetentionLimit: crashRetentionLimit));
 
             RequestClose?.Invoke(this, true);
         }
@@ -267,14 +252,12 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
 
         SetProperty(
             ref _previewDisplayCharacterLimitText,
-            defaults.PreviewDisplayCharacterLimit.ToString(
-                CultureInfo.InvariantCulture),
+            defaults.PreviewDisplayCharacterLimit.ToString(CultureInfo.InvariantCulture),
             nameof(PreviewDisplayCharacterLimitText));
 
         SetProperty(
             ref _crashLogRetentionLimitText,
-            defaults.CrashLogRetentionLimit.ToString(
-                CultureInfo.InvariantCulture),
+            defaults.CrashLogRetentionLimit.ToString(CultureInfo.InvariantCulture),
             nameof(CrashLogRetentionLimitText));
 
         ClearSaveError();
@@ -291,8 +274,7 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
         if (clearStatus)
             CrashLogMaintenanceStatusText = string.Empty;
 
-        CrashLogFileListResult result =
-            _crashLogMaintenanceService.GetCrashLogFiles();
+        CrashLogFileListResult result = _crashLogMaintenanceService.GetCrashLogFiles();
 
         if (!result.IsSuccessful)
         {
@@ -301,22 +283,19 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
             HasOldCrashLogFiles = false;
 
             string message = result.Error?.Message ?? "Unknown error.";
-            CrashLogMaintenanceStatusText =
-                $"Failed to read crash log folder: {message}";
+            CrashLogMaintenanceStatusText = $"Failed to read crash log folder: {message}";
             return;
         }
 
         int count = result.Files.Count;
         CrashLogFileCountText = FormatCrashLogFileCountText(count);
         HasCrashLogFiles = count > 0;
-        HasOldCrashLogFiles =
-            count > _applicationPreferencesStore.Current.CrashLogRetentionLimit;
+        HasOldCrashLogFiles = count > _applicationPreferencesStore.Current.CrashLogRetentionLimit;
     }
 
     private void OpenCrashLogsFolder()
     {
-        CrashLogFolderOpenResult result =
-            _crashLogMaintenanceService.OpenCrashLogDirectory();
+        CrashLogFolderOpenResult result = _crashLogMaintenanceService.OpenCrashLogDirectory();
 
         if (result.IsSuccessful)
         {
@@ -325,8 +304,7 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
         else
         {
             string message = result.Error?.Message ?? "Unknown error.";
-            CrashLogMaintenanceStatusText =
-                $"Failed to open crash log folder: {message}";
+            CrashLogMaintenanceStatusText = $"Failed to open crash log folder: {message}";
         }
 
         RefreshCrashLogState(clearStatus: false);
@@ -337,21 +315,18 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
         if (!HasOldCrashLogFiles)
             return;
 
-        int retentionLimit =
-            _applicationPreferencesStore.Current.CrashLogRetentionLimit;
+        int retentionLimit = _applicationPreferencesStore.Current.CrashLogRetentionLimit;
 
         bool confirmed = _userPromptService.Confirm(
             title: "Clear old crash logs?",
-            message:
-            "This will delete crash log files older than the saved retention limit. " +
-            $"The current saved limit is {FormatNumber(retentionLimit)} file(s). " +
-            "This cannot be undone.");
+            message: "This will delete crash log files older than the saved retention limit. " +
+                     $"The current saved limit is {FormatNumber(retentionLimit)} file(s). " +
+                     "This cannot be undone.");
 
         if (!confirmed)
             return;
 
-        CrashLogCleanupResult result =
-            _crashLogMaintenanceService.CleanupOldCrashLogs();
+        CrashLogCleanupResult result = _crashLogMaintenanceService.CleanupOldCrashLogs();
 
         ApplyCleanupResult(result, oldLogs: true);
         RefreshCrashLogState(clearStatus: false);
@@ -364,23 +339,18 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
 
         bool confirmed = _userPromptService.Confirm(
             title: "Clear all crash logs?",
-            message:
-            "This will delete all crash log files from the diagnostics folder. " +
-            "This cannot be undone.");
+            message: "This will delete all crash log files from the diagnostics folder. " + "This cannot be undone.");
 
         if (!confirmed)
             return;
 
-        CrashLogCleanupResult result =
-            _crashLogMaintenanceService.ClearAllCrashLogs();
+        CrashLogCleanupResult result = _crashLogMaintenanceService.ClearAllCrashLogs();
 
         ApplyCleanupResult(result, oldLogs: false);
         RefreshCrashLogState(clearStatus: false);
     }
 
-    private void ApplyCleanupResult(
-        CrashLogCleanupResult result,
-        bool oldLogs)
+    private void ApplyCleanupResult(CrashLogCleanupResult result, bool oldLogs)
     {
         ArgumentNullException.ThrowIfNull(result);
 
@@ -388,83 +358,75 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
         {
             if (result.DeletedCount == 0)
             {
-                CrashLogMaintenanceStatusText = oldLogs
-                    ? "No old crash logs to clear."
-                    : "No crash logs to clear.";
+                CrashLogMaintenanceStatusText = oldLogs ? "No old crash logs to clear." : "No crash logs to clear.";
                 return;
             }
 
-            CrashLogMaintenanceStatusText =
-                $"Deleted {FormatCrashLogFileCount(result.DeletedCount)}.";
+            CrashLogMaintenanceStatusText = $"Deleted {FormatCrashLogFileCount(result.DeletedCount)}.";
             return;
         }
 
-        CrashLogMaintenanceStatusText =
-            $"Deleted {FormatCrashLogFileCount(result.DeletedCount)}, but " +
-            $"{FormatCrashLogFileCount(result.Failures.Count)} could not be deleted.";
+        CrashLogMaintenanceStatusText = $"Deleted {FormatCrashLogFileCount(result.DeletedCount)}, but " +
+                                        $"{FormatCrashLogFileCount(result.Failures.Count)} could not be deleted.";
     }
 
     private void Validate()
     {
-        List<string> errors = [];
-
-        ValidateInteger(
+        string previewDisplayCharacterLimitError = ValidateInteger(
             PreviewDisplayCharacterLimitText,
             "Preview display character limit",
             ApplicationPreferences.MinimumPreviewDisplayCharacterLimit,
-            ApplicationPreferences.MaximumPreviewDisplayCharacterLimit,
-            errors);
+            ApplicationPreferences.MaximumPreviewDisplayCharacterLimit);
 
-        ValidateInteger(
+        string crashLogRetentionLimitError = ValidateInteger(
             CrashLogRetentionLimitText,
             "Crash log retention limit",
             ApplicationPreferences.MinimumCrashLogRetentionLimit,
-            ApplicationPreferences.MaximumCrashLogRetentionLimit,
-            errors);
+            ApplicationPreferences.MaximumCrashLogRetentionLimit);
+
+        SetPreviewDisplayCharacterLimitValidationMessage(previewDisplayCharacterLimitError);
+
+        List<string> errors = [];
+
+        if (!string.IsNullOrWhiteSpace(previewDisplayCharacterLimitError))
+            errors.Add(previewDisplayCharacterLimitError);
+
+        if (!string.IsNullOrWhiteSpace(crashLogRetentionLimitError))
+            errors.Add(crashLogRetentionLimitError);
 
         string nextErrorMessage = string.Join(Environment.NewLine, errors);
-        if (string.Equals(
-                _validationErrorMessage,
-                nextErrorMessage,
-                StringComparison.Ordinal))
-        {
+        if (string.Equals(_validationErrorMessage, nextErrorMessage, StringComparison.Ordinal))
             return;
-        }
 
         _validationErrorMessage = nextErrorMessage;
         RaiseErrorStateChanged();
         RaiseSaveStateChanged();
     }
 
-    private static void ValidateInteger(
-        string text,
-        string displayName,
-        int minimum,
-        int maximum,
-        List<string> errors)
+    private static string ValidateInteger(string text, string displayName, int minimum, int maximum)
     {
         if (string.IsNullOrWhiteSpace(text))
-        {
-            errors.Add($"{displayName} is required.");
-            return;
-        }
+            return $"{displayName} is required.";
 
-        if (!int.TryParse(
-                text,
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out int value))
-        {
-            errors.Add($"{displayName} must be a whole number.");
-            return;
-        }
+        if (!int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
+            return $"{displayName} must be a whole number.";
 
         if (value < minimum || value > maximum)
         {
-            errors.Add(
-                $"{displayName} must be between " +
-                $"{FormatNumber(minimum)} and {FormatNumber(maximum)}.");
+            return $"{displayName} must be between " + $"{FormatNumber(minimum)} and {FormatNumber(maximum)}.";
         }
+
+        return string.Empty;
+    }
+
+    private void SetPreviewDisplayCharacterLimitValidationMessage(string message)
+    {
+        if (string.Equals(_previewDisplayCharacterLimitValidationMessage, message, StringComparison.Ordinal))
+            return;
+
+        _previewDisplayCharacterLimitValidationMessage = message;
+        OnPropertyChanged(nameof(PreviewDisplayCharacterLimitValidationMessage));
+        OnPropertyChanged(nameof(HasPreviewDisplayCharacterLimitValidationError));
     }
 
     private void ClearSaveError()
@@ -515,8 +477,6 @@ public sealed class PreferencesDialogViewModel : ViewModelBase
 
     private static string FormatCrashLogFileCount(int count)
     {
-        return count == 1
-            ? "1 crash log file"
-            : $"{FormatNumber(count)} crash log files";
+        return count == 1 ? "1 crash log file" : $"{FormatNumber(count)} crash log files";
     }
 }

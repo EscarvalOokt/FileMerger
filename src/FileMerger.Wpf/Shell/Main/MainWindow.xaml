@@ -13,8 +13,8 @@
                        Title="FileMerger"
                        Width="1400"
                        Height="900"
-                       MinWidth="1100"
-                       MinHeight="700"
+                       MinWidth="1140"
+                       MinHeight="760"
                        Icon="/Resources/FileMerger_Icon.ico"
                        Style="{StaticResource WindowingShellWindowStyle}"
                        WindowStartupLocation="CenterScreen"
@@ -367,6 +367,11 @@
 
                             <MenuItem Header="_Help"
                                       Style="{StaticResource DarkApplicationTopMenuItemStyle}">
+                                <MenuItem Command="{Binding OpenUpdateCheckCommand}"
+                                          Header="Check for Updates..." />
+
+                                <Separator Style="{StaticResource DarkContextMenuSeparatorStyle}" />
+
                                 <MenuItem Command="{Binding OpenKeyboardShortcutsCommand}"
                                           Header="Keyboard Shortcuts..."
                                           InputGestureText="F1" />
@@ -520,10 +525,10 @@
                     <Grid Grid.Row="3">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="0.95*"
-                                              MinWidth="560" />
+                                              MinWidth="500" />
                             <ColumnDefinition Width="8" />
                             <ColumnDefinition Width="1.05*"
-                                              MinWidth="560" />
+                                              MinWidth="500" />
                         </Grid.ColumnDefinitions>
 
                         <Grid Grid.Column="0"
@@ -531,7 +536,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*"
-                                               MinHeight="320" />
+                                               MinHeight="200" />
                             </Grid.RowDefinitions>
 
                             <Border Grid.Row="0"
@@ -619,8 +624,8 @@
                                 </Grid>
                             </Border>
 
-                            <GroupBox Grid.Row="1"
-                                      Header="Discovered files">
+                            <Border Grid.Row="1"
+                                    Style="{StaticResource SurfaceCardBorderStyle}">
                                 <DockPanel LastChildFill="True">
                                     <StackPanel Margin="0,0,0,6"
                                                 DockPanel.Dock="Top"
@@ -655,146 +660,164 @@
                                                 BorderThickness="1"
                                                 CornerRadius="4">
                                             <Grid VerticalAlignment="Center">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="180" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="8" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="6" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0"
-                                                           Margin="0,0,6,0"
-                                                           VerticalAlignment="Center"
-                                                           Text="Search:" />
-                                                <TextBox Grid.Column="1"
-                                                         Style="{StaticResource CompactTextBoxStyle}"
-                                                         Text="{Binding FilesPane.Filters.SearchText, UpdateSourceTrigger=PropertyChanged}" />
-                                                <TextBlock Grid.Column="2"
-                                                           Margin="12,0"
-                                                           HorizontalAlignment="Right"
-                                                           VerticalAlignment="Center"
-                                                           Foreground="{StaticResource Brush.TextSecondary}"
-                                                           Text="{Binding FilesPane.FilterSummary}" />
-                                                <CheckBox Grid.Column="3"
-                                                          VerticalAlignment="Center"
-                                                          Content="Only selected"
-                                                          IsChecked="{Binding FilesPane.Filters.ShowOnlySelected}"
-                                                          Style="{StaticResource CompactCheckBoxStyle}" />
-                                                <Button Grid.Column="5"
-                                                        AutomationProperties.Name="{Binding FilesPane.Filters.FacetMenuLabel}"
-                                                        Click="FileFiltersButton_Click"
-                                                        Style="{StaticResource IconButtonStyle}"
-                                                        Tag="{Binding FilesPane.Filters}"
-                                                        ToolTip="{Binding FilesPane.Filters.FacetMenuLabel}">
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Grid Style="{StaticResource IconHostStyle}">
-                                                            <Path Data="{StaticResource IconGeometry.Filter}"
-                                                                  Style="{StaticResource IconPathStyle}" />
-                                                        </Grid>
-                                                        <Border Height="14"
-                                                                MinWidth="14"
-                                                                Margin="2,0,0,0"
-                                                                Padding="2,0"
-                                                                Style="{StaticResource InfoPillBadgeStyle}"
-                                                                Visibility="{Binding FilesPane.Filters.HasActiveFacets, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                            <TextBlock HorizontalAlignment="Center"
-                                                                       VerticalAlignment="Center"
-                                                                       FontSize="9"
-                                                                       FontWeight="SemiBold"
-                                                                       Foreground="{StaticResource Brush.InfoForeground}"
-                                                                       Text="{Binding FilesPane.Filters.SelectedFacetCount}" />
-                                                        </Border>
-                                                    </StackPanel>
-                                                    <Button.ContextMenu>
-                                                        <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
-                                                        <ContextMenu MinWidth="210"
-                                                                     DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}"
-                                                                     Placement="Bottom"
-                                                                     Style="{StaticResource DarkContextMenuStyle}">
-                                                            <MenuItem FontWeight="SemiBold"
-                                                                      Header="Inclusion"
-                                                                      IsEnabled="False"
-                                                                      Style="{StaticResource DarkContextMenuItemStyle}" />
-                                                            <MenuItem Header="{Binding InclusionFacets[0].DisplayText}"
-                                                                      IsCheckable="True"
-                                                                      IsChecked="{Binding InclusionFacets[0].IsSelected, Mode=TwoWay}"
-                                                                      StaysOpenOnClick="True"
-                                                                      Style="{StaticResource DarkContextMenuItemStyle}" />
-                                                            <MenuItem Header="{Binding InclusionFacets[1].DisplayText}"
-                                                                      IsCheckable="True"
-                                                                      IsChecked="{Binding InclusionFacets[1].IsSelected, Mode=TwoWay}"
-                                                                      StaysOpenOnClick="True"
-                                                                      Style="{StaticResource DarkContextMenuItemStyle}" />
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
 
-                                                            <Separator
-                                                                Style="{StaticResource DarkContextMenuSeparatorStyle}" />
+                                                <Grid Grid.Row="0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="6" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="6" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
 
-                                                            <MenuItem FontWeight="SemiBold"
-                                                                      Header="Reason / type"
-                                                                      IsEnabled="False"
-                                                                      Style="{StaticResource DarkContextMenuItemStyle}" />
-                                                            <MenuItem
-                                                                Header="{Binding ReasonTypeFacets[0].DisplayText}"
-                                                                IsCheckable="True"
-                                                                IsChecked="{Binding ReasonTypeFacets[0].IsSelected, Mode=TwoWay}"
-                                                                StaysOpenOnClick="True"
-                                                                Style="{StaticResource DarkContextMenuItemStyle}" />
-                                                            <MenuItem
-                                                                Header="{Binding ReasonTypeFacets[1].DisplayText}"
-                                                                IsCheckable="True"
-                                                                IsChecked="{Binding ReasonTypeFacets[1].IsSelected, Mode=TwoWay}"
-                                                                StaysOpenOnClick="True"
-                                                                Style="{StaticResource DarkContextMenuItemStyle}" />
-                                                            <MenuItem
-                                                                Header="{Binding ReasonTypeFacets[2].DisplayText}"
-                                                                IsCheckable="True"
-                                                                IsChecked="{Binding ReasonTypeFacets[2].IsSelected, Mode=TwoWay}"
-                                                                StaysOpenOnClick="True"
-                                                                Style="{StaticResource DarkContextMenuItemStyle}" />
-                                                            <MenuItem
-                                                                Header="{Binding ReasonTypeFacets[3].DisplayText}"
-                                                                IsCheckable="True"
-                                                                IsChecked="{Binding ReasonTypeFacets[3].IsSelected, Mode=TwoWay}"
-                                                                StaysOpenOnClick="True"
-                                                                Style="{StaticResource DarkContextMenuItemStyle}" />
+                                                    <TextBlock Grid.Column="0"
+                                                               Margin="0,0,6,0"
+                                                               VerticalAlignment="Center"
+                                                               Text="Search:" />
+                                                    <TextBox Grid.Column="1"
+                                                             Style="{StaticResource CompactTextBoxStyle}"
+                                                             Text="{Binding FilesPane.Filters.SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <Button Grid.Column="3"
+                                                            AutomationProperties.Name="{Binding FilesPane.Filters.FacetMenuLabel}"
+                                                            Click="FileFiltersButton_Click"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            Tag="{Binding FilesPane.Filters}"
+                                                            ToolTip="{Binding FilesPane.Filters.FacetMenuLabel}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Grid Style="{StaticResource IconHostStyle}">
+                                                                <Path Data="{StaticResource IconGeometry.Filter}"
+                                                                      Style="{StaticResource IconPathStyle}" />
+                                                            </Grid>
+                                                            <Border Height="14"
+                                                                    MinWidth="14"
+                                                                    Margin="2,0,0,0"
+                                                                    Padding="2,0"
+                                                                    Style="{StaticResource InfoPillBadgeStyle}"
+                                                                    Visibility="{Binding FilesPane.Filters.HasActiveFacets, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <TextBlock HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center"
+                                                                           FontSize="9"
+                                                                           FontWeight="SemiBold"
+                                                                           Foreground="{StaticResource Brush.InfoForeground}"
+                                                                           Text="{Binding FilesPane.Filters.SelectedFacetCount}" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <Button.ContextMenu>
+                                                            <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                                                            <ContextMenu MinWidth="210"
+                                                                         DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}"
+                                                                         Placement="Bottom"
+                                                                         Style="{StaticResource DarkContextMenuStyle}">
+                                                                <MenuItem FontWeight="SemiBold"
+                                                                          Header="Inclusion"
+                                                                          IsEnabled="False"
+                                                                          Style="{StaticResource DarkContextMenuItemStyle}" />
+                                                                <MenuItem
+                                                                    Header="{Binding InclusionFacets[0].DisplayText}"
+                                                                    IsCheckable="True"
+                                                                    IsChecked="{Binding InclusionFacets[0].IsSelected, Mode=TwoWay}"
+                                                                    StaysOpenOnClick="True"
+                                                                    Style="{StaticResource DarkContextMenuItemStyle}" />
+                                                                <MenuItem
+                                                                    Header="{Binding InclusionFacets[1].DisplayText}"
+                                                                    IsCheckable="True"
+                                                                    IsChecked="{Binding InclusionFacets[1].IsSelected, Mode=TwoWay}"
+                                                                    StaysOpenOnClick="True"
+                                                                    Style="{StaticResource DarkContextMenuItemStyle}" />
 
-                                                            <Separator
-                                                                Style="{StaticResource DarkContextMenuSeparatorStyle}" />
+                                                                <Separator
+                                                                    Style="{StaticResource DarkContextMenuSeparatorStyle}" />
 
-                                                            <MenuItem FontWeight="SemiBold"
-                                                                      Header="Workflow"
-                                                                      IsEnabled="False"
-                                                                      Style="{StaticResource DarkContextMenuItemStyle}" />
-                                                            <MenuItem Header="{Binding WorkflowFacets[0].DisplayText}"
-                                                                      IsCheckable="True"
-                                                                      IsChecked="{Binding WorkflowFacets[0].IsSelected, Mode=TwoWay}"
-                                                                      StaysOpenOnClick="True"
-                                                                      Style="{StaticResource DarkContextMenuItemStyle}" />
-                                                            <MenuItem Header="{Binding WorkflowFacets[1].DisplayText}"
-                                                                      IsCheckable="True"
-                                                                      IsChecked="{Binding WorkflowFacets[1].IsSelected, Mode=TwoWay}"
-                                                                      StaysOpenOnClick="True"
-                                                                      Style="{StaticResource DarkContextMenuItemStyle}" />
-                                                        </ContextMenu>
-                                                    </Button.ContextMenu>
-                                                </Button>
-                                                <Button Grid.Column="7"
-                                                        HorizontalAlignment="Right"
-                                                        Command="{Binding FilesPane.ClearFileFiltersCommand}"
-                                                        Content="Clear filters"
-                                                        Style="{StaticResource CompactSecondaryButtonStyle}" />
+                                                                <MenuItem FontWeight="SemiBold"
+                                                                          Header="Reason / type"
+                                                                          IsEnabled="False"
+                                                                          Style="{StaticResource DarkContextMenuItemStyle}" />
+                                                                <MenuItem
+                                                                    Header="{Binding ReasonTypeFacets[0].DisplayText}"
+                                                                    IsCheckable="True"
+                                                                    IsChecked="{Binding ReasonTypeFacets[0].IsSelected, Mode=TwoWay}"
+                                                                    StaysOpenOnClick="True"
+                                                                    Style="{StaticResource DarkContextMenuItemStyle}" />
+                                                                <MenuItem
+                                                                    Header="{Binding ReasonTypeFacets[1].DisplayText}"
+                                                                    IsCheckable="True"
+                                                                    IsChecked="{Binding ReasonTypeFacets[1].IsSelected, Mode=TwoWay}"
+                                                                    StaysOpenOnClick="True"
+                                                                    Style="{StaticResource DarkContextMenuItemStyle}" />
+                                                                <MenuItem
+                                                                    Header="{Binding ReasonTypeFacets[2].DisplayText}"
+                                                                    IsCheckable="True"
+                                                                    IsChecked="{Binding ReasonTypeFacets[2].IsSelected, Mode=TwoWay}"
+                                                                    StaysOpenOnClick="True"
+                                                                    Style="{StaticResource DarkContextMenuItemStyle}" />
+                                                                <MenuItem
+                                                                    Header="{Binding ReasonTypeFacets[3].DisplayText}"
+                                                                    IsCheckable="True"
+                                                                    IsChecked="{Binding ReasonTypeFacets[3].IsSelected, Mode=TwoWay}"
+                                                                    StaysOpenOnClick="True"
+                                                                    Style="{StaticResource DarkContextMenuItemStyle}" />
+
+                                                                <Separator
+                                                                    Style="{StaticResource DarkContextMenuSeparatorStyle}" />
+
+                                                                <MenuItem FontWeight="SemiBold"
+                                                                          Header="Workflow"
+                                                                          IsEnabled="False"
+                                                                          Style="{StaticResource DarkContextMenuItemStyle}" />
+                                                                <MenuItem
+                                                                    Header="{Binding WorkflowFacets[0].DisplayText}"
+                                                                    IsCheckable="True"
+                                                                    IsChecked="{Binding WorkflowFacets[0].IsSelected, Mode=TwoWay}"
+                                                                    StaysOpenOnClick="True"
+                                                                    Style="{StaticResource DarkContextMenuItemStyle}" />
+                                                                <MenuItem
+                                                                    Header="{Binding WorkflowFacets[1].DisplayText}"
+                                                                    IsCheckable="True"
+                                                                    IsChecked="{Binding WorkflowFacets[1].IsSelected, Mode=TwoWay}"
+                                                                    StaysOpenOnClick="True"
+                                                                    Style="{StaticResource DarkContextMenuItemStyle}" />
+                                                            </ContextMenu>
+                                                        </Button.ContextMenu>
+                                                    </Button>
+                                                    <Button Grid.Column="5"
+                                                            HorizontalAlignment="Right"
+                                                            Command="{Binding FilesPane.ClearFileFiltersCommand}"
+                                                            Content="Clear filters"
+                                                            Style="{StaticResource CompactSecondaryButtonStyle}" />
+                                                </Grid>
+
+                                                <Grid Grid.Row="1"
+                                                      Margin="0,6,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <TextBlock Grid.Column="0"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="{StaticResource Brush.TextSecondary}"
+                                                               Text="{Binding FilesPane.FilterSummary}" />
+                                                    <CheckBox Grid.Column="1"
+                                                              VerticalAlignment="Center"
+                                                              Content="Only selected"
+                                                              IsChecked="{Binding FilesPane.Filters.ShowOnlySelected}"
+                                                              Style="{StaticResource CompactCheckBoxStyle}" />
+                                                </Grid>
                                             </Grid>
                                         </Border>
                                     </StackPanel>
-                                    <Grid>
+                                    <Grid MinHeight="72">
                                         <DataGrid AutoGenerateColumns="False"
                                                   CanUserAddRows="False"
                                                   CanUserDeleteRows="False"
                                                   HeadersVisibility="Column"
                                                   ItemsSource="{Binding FilesPane.FilesView}"
+                                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                                   SelectionChanged="FilesDataGrid_SelectionChanged"
                                                   SelectionMode="Extended"
                                                   SelectionUnit="FullRow">
@@ -846,19 +869,20 @@
                                             <DataGrid.Columns>
                                                 <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                                                 <DataGridTextColumn Width="4*"
+                                                                    MinWidth="110"
                                                                     Binding="{Binding RelativePath}"
                                                                     ElementStyle="{StaticResource RelativePathCellStyle}"
                                                                     Header="Relative path"
                                                                     IsReadOnly="True" />
 
                                                 <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
-                                                <DataGridTextColumn Width="96"
+                                                <DataGridTextColumn Width="80"
                                                                     Binding="{Binding Kind}"
                                                                     ElementStyle="{StaticResource DataGridCellTextStyle}"
                                                                     Header="Kind"
                                                                     IsReadOnly="True" />
 
-                                                <DataGridTemplateColumn Width="168"
+                                                <DataGridTemplateColumn Width="120"
                                                                         Header="State"
                                                                         SortMemberPath="FileStateSortKey">
                                                     <DataGridTemplateColumn.CellTemplate>
@@ -927,9 +951,9 @@
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
 
-                                                <DataGridTemplateColumn Width="170"
+                                                <DataGridTemplateColumn Width="150"
                                                                         Header="Reason"
-                                                                        SortMemberPath="SkipReasonCode">
+                                                                        SortMemberPath="SkipReason">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate
                                                             DataType="{x:Type filesViewModels:InputFileItemViewModel}">
@@ -954,8 +978,8 @@
                                                                 </Border>
 
                                                                 <TextBlock MaxWidth="130"
-                                                                           Style="{StaticResource FileStateSkipCodeTextStyle}"
-                                                                           Text="{Binding SkipReasonCode}"
+                                                                           Style="{StaticResource FileStateSkipReasonTextStyle}"
+                                                                           Text="{Binding SkipReason}"
                                                                            Visibility="{Binding HasSkipReason, Converter={StaticResource FileStateBooleanToVisibilityConverter}}" />
 
                                                                 <TextBlock
@@ -970,7 +994,7 @@
                                         </DataGrid>
 
                                         <Border MaxWidth="460"
-                                                Margin="16"
+                                                Margin="16,32,16,0"
                                                 Padding="16"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
@@ -996,7 +1020,7 @@
                                         </Border>
 
                                         <Border MaxWidth="420"
-                                                Margin="16"
+                                                Margin="16,32,16,0"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
                                                 Style="{StaticResource EmptyStateCardBorderStyle}"
@@ -1023,7 +1047,7 @@
                                         </Border>
                                     </Grid>
                                 </DockPanel>
-                            </GroupBox>
+                            </Border>
                         </Grid>
 
                         <GridSplitter Grid.Column="1"
@@ -1032,8 +1056,8 @@
                                       VerticalAlignment="Stretch"
                                       Background="Transparent" />
 
-                        <GroupBox Grid.Column="2"
-                                  Header="Preview">
+                        <Border Grid.Column="2"
+                                Style="{StaticResource SurfaceCardBorderStyle}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -1060,10 +1084,10 @@
                                                 Orientation="Horizontal">
                                         <CheckBox Margin="0,0,10,0"
                                                   VerticalAlignment="Center"
-                                                  Content="Wrap lines"
+                                                  Content="Wrap preview lines"
                                                   IsChecked="{Binding IsPreviewLineWrapEnabled, Mode=TwoWay}"
                                                   Style="{StaticResource CompactCheckBoxStyle}"
-                                                  ToolTip="Wrap long preview lines. Copy and save still use the original output." />
+                                                  ToolTip="Wrap long lines in the current preview. This choice is also saved as the default for new workspace tabs. Copy and Save still use the original output." />
 
                                         <Button Margin="0,0,6,0"
                                                 AutomationProperties.Name="Copy preview"
@@ -1097,6 +1121,7 @@
                                            Margin="0,0,0,6"
                                            Foreground="{StaticResource Brush.Warning}"
                                            Text="{Binding PreviewNotice}"
+                                           TextWrapping="Wrap"
                                            Visibility="{Binding HasPreviewNotice, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
                                 <Grid Grid.Row="3">
@@ -1139,95 +1164,91 @@
                                                 BorderThickness="1"
                                                 CornerRadius="4"
                                                 Visibility="{Binding ShowPreviewEmptyState, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <Grid>
-                                                <StackPanel
-                                                    Visibility="{Binding ShowFirstWorkspaceGuide, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <TextBlock HorizontalAlignment="Center"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{StaticResource Brush.TextPrimary}"
-                                                               Text="{Binding FirstWorkspaceGuideTitle}"
-                                                               TextAlignment="Center"
-                                                               TextWrapping="Wrap" />
-                                                    <TextBlock Margin="0,6,0,0"
-                                                               HorizontalAlignment="Center"
-                                                               Foreground="{StaticResource Brush.TextMuted}"
-                                                               Text="{Binding FirstWorkspaceGuideDescription}"
-                                                               TextAlignment="Center"
-                                                               TextWrapping="Wrap" />
+                                            <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                                          Style="{StaticResource FlatScrollViewerStyle}"
+                                                          VerticalScrollBarVisibility="Auto">
+                                                <Grid>
+                                                    <StackPanel
+                                                        Visibility="{Binding ShowFirstWorkspaceGuide, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <TextBlock HorizontalAlignment="Center"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource Brush.TextPrimary}"
+                                                                   Text="{Binding FirstWorkspaceGuideTitle}"
+                                                                   TextAlignment="Center"
+                                                                   TextWrapping="Wrap" />
+                                                        <TextBlock Margin="0,6,0,0"
+                                                                   HorizontalAlignment="Center"
+                                                                   Foreground="{StaticResource Brush.TextMuted}"
+                                                                   Text="{Binding FirstWorkspaceGuideDescription}"
+                                                                   TextAlignment="Center"
+                                                                   TextWrapping="Wrap" />
 
-                                                    <Grid Margin="0,16,0,0">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="8" />
-                                                            <ColumnDefinition Width="*" />
-                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Margin="0,16,0,0">
+                                                            <Button Padding="12,7"
+                                                                    Command="{Binding SourcesPane.AddFolderSourceCommand}"
+                                                                    Content="Add project folder" />
+                                                            <Button Margin="0,8,0,0"
+                                                                    Padding="12,7"
+                                                                    Command="{Binding SourcesPane.AddFileSourceCommand}"
+                                                                    Content="Add individual file" />
+                                                        </StackPanel>
 
-                                                        <Button Grid.Column="0"
-                                                                Padding="12,7"
-                                                                Command="{Binding SourcesPane.AddFolderSourceCommand}"
-                                                                Content="Add project folder" />
-                                                        <Button Grid.Column="2"
-                                                                Padding="12,7"
-                                                                Command="{Binding SourcesPane.AddFileSourceCommand}"
-                                                                Content="Add individual file" />
-                                                    </Grid>
+                                                        <Border Margin="0,12,0,0"
+                                                                Padding="10"
+                                                                Background="{StaticResource Brush.Surface}"
+                                                                BorderBrush="{StaticResource Brush.Border}"
+                                                                BorderThickness="1"
+                                                                CornerRadius="4">
+                                                            <StackPanel>
+                                                                <TextBlock HorizontalAlignment="Center"
+                                                                           Foreground="{StaticResource Brush.TextMuted}"
+                                                                           Text="{Binding FirstWorkspaceProfileHint}"
+                                                                           TextAlignment="Center"
+                                                                           TextWrapping="Wrap" />
+                                                                <Button Margin="0,8,0,0"
+                                                                        Padding="10,5"
+                                                                        HorizontalAlignment="Center"
+                                                                        Command="{Binding OpenProfilesCommand}"
+                                                                        Content="Change profile" />
+                                                            </StackPanel>
+                                                        </Border>
 
-                                                    <Border Margin="0,12,0,0"
-                                                            Padding="10"
-                                                            Background="{StaticResource Brush.Surface}"
-                                                            BorderBrush="{StaticResource Brush.Border}"
-                                                            BorderThickness="1"
-                                                            CornerRadius="4">
-                                                        <DockPanel LastChildFill="True">
-                                                            <Button Margin="12,0,0,0"
-                                                                    Padding="10,5"
-                                                                    Command="{Binding OpenProfilesCommand}"
-                                                                    Content="Change profile"
-                                                                    DockPanel.Dock="Right" />
-                                                            <TextBlock VerticalAlignment="Center"
-                                                                       Foreground="{StaticResource Brush.TextMuted}"
-                                                                       Text="{Binding FirstWorkspaceProfileHint}"
-                                                                       TextTrimming="CharacterEllipsis" />
-                                                        </DockPanel>
-                                                    </Border>
+                                                        <StackPanel Margin="0,12,0,0">
+                                                            <Button Padding="12,6"
+                                                                    Command="{Binding LoadWorkspaceCommand}"
+                                                                    Content="Open workspace" />
+                                                            <Button Margin="0,8,0,0"
+                                                                    Padding="12,6"
+                                                                    Command="{Binding OpenRecentWorkspaceCommand}"
+                                                                    CommandParameter="{Binding FirstRecentWorkspace}"
+                                                                    Content="{Binding FirstRecentWorkspaceText}"
+                                                                    Visibility="{Binding HasFirstRecentWorkspace, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                        </StackPanel>
+                                                    </StackPanel>
 
-                                                    <DockPanel Margin="0,12,0,0"
-                                                               LastChildFill="True">
-                                                        <Button Margin="8,0,0,0"
-                                                                Padding="12,6"
-                                                                Command="{Binding OpenRecentWorkspaceCommand}"
-                                                                CommandParameter="{Binding FirstRecentWorkspace}"
-                                                                Content="{Binding FirstRecentWorkspaceText}"
-                                                                DockPanel.Dock="Right"
-                                                                Visibility="{Binding HasFirstRecentWorkspace, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                                        <Button Padding="12,6"
-                                                                Command="{Binding LoadWorkspaceCommand}"
-                                                                Content="Open workspace" />
-                                                    </DockPanel>
-                                                </StackPanel>
-
-                                                <StackPanel MaxWidth="460"
-                                                            Visibility="{Binding ShowRegularPreviewEmptyState, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <TextBlock HorizontalAlignment="Center"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{StaticResource Brush.TextPrimary}"
-                                                               Text="{Binding PreviewEmptyTitle}"
-                                                               TextAlignment="Center"
-                                                               TextWrapping="Wrap" />
-                                                    <TextBlock Margin="0,6,0,0"
-                                                               HorizontalAlignment="Center"
-                                                               Foreground="{StaticResource Brush.TextMuted}"
-                                                               Text="{Binding PreviewEmptyDescription}"
-                                                               TextAlignment="Center"
-                                                               TextWrapping="Wrap" />
-                                                    <Button Margin="0,12,0,0"
-                                                            Padding="12,5"
-                                                            HorizontalAlignment="Center"
-                                                            Command="{Binding BuildPreviewCommand}"
-                                                            Content="Build Preview"
-                                                            Visibility="{Binding ShowPreviewEmptyBuildAction, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                                </StackPanel>
-                                            </Grid>
+                                                    <StackPanel MaxWidth="460"
+                                                                Visibility="{Binding ShowRegularPreviewEmptyState, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <TextBlock HorizontalAlignment="Center"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource Brush.TextPrimary}"
+                                                                   Text="{Binding PreviewEmptyTitle}"
+                                                                   TextAlignment="Center"
+                                                                   TextWrapping="Wrap" />
+                                                        <TextBlock Margin="0,6,0,0"
+                                                                   HorizontalAlignment="Center"
+                                                                   Foreground="{StaticResource Brush.TextMuted}"
+                                                                   Text="{Binding PreviewEmptyDescription}"
+                                                                   TextAlignment="Center"
+                                                                   TextWrapping="Wrap" />
+                                                        <Button Margin="0,12,0,0"
+                                                                Padding="12,5"
+                                                                HorizontalAlignment="Center"
+                                                                Command="{Binding BuildPreviewCommand}"
+                                                                Content="Build Preview"
+                                                                Visibility="{Binding ShowPreviewEmptyBuildAction, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </ScrollViewer>
                                         </Border>
                                     </Grid>
 
@@ -1242,7 +1263,7 @@
                                             CornerRadius="4">
                                         <Border.Style>
                                             <Style TargetType="{x:Type Border}">
-                                                <Setter Property="Width" Value="286" />
+                                                <Setter Property="Width" Value="220" />
                                                 <Setter Property="Padding" Value="8" />
                                                 <Setter Property="Background" Value="{StaticResource Brush.SurfaceAlt}" />
                                                 <Style.Triggers>
@@ -1261,9 +1282,6 @@
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="Auto" />
                                                     <RowDefinition Height="8" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="8" />
-                                                    <RowDefinition Height="Auto" />
                                                     <RowDefinition Height="*" />
                                                 </Grid.RowDefinitions>
 
@@ -1291,217 +1309,235 @@
                                                     </Button>
                                                 </Grid>
 
-                                                <TextBlock Grid.Row="2"
-                                                           Foreground="{StaticResource Brush.TextMuted}"
-                                                           Text="No preview has been built yet."
-                                                           TextWrapping="Wrap"
-                                                           Visibility="{Binding PreviewSummary.HasNoSummary, Converter={StaticResource BooleanToVisibilityConverter}}" />
-
-                                                <StackPanel Grid.Row="2"
-                                                            Visibility="{Binding PreviewSummary.HasSummary, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <Grid Margin="0,0,0,6">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="Discovered" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextPrimary}"
-                                                                   Text="{Binding PreviewSummary.FilesDiscoveredText}" />
-                                                    </Grid>
-
-                                                    <Grid Margin="0,0,0,6">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="Included" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextPrimary}"
-                                                                   Text="{Binding PreviewSummary.FilesIncludedText}" />
-                                                    </Grid>
-
-                                                    <Grid Margin="0,0,0,6">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="Not included" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextPrimary}"
-                                                                   Text="{Binding PreviewSummary.FilesNotIncludedText}" />
-                                                    </Grid>
-
-                                                    <Grid Margin="12,0,0,4"
-                                                          Visibility="{Binding PreviewSummary.HasDisabledFileTypeFiles, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextMuted}"
-                                                                   Text="Disabled types" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="{Binding PreviewSummary.DisabledFileTypeFilesText}" />
-                                                    </Grid>
-
-                                                    <Grid Margin="12,0,0,4"
-                                                          Visibility="{Binding PreviewSummary.HasUnsupportedFiles, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextMuted}"
-                                                                   Text="Unsupported" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="{Binding PreviewSummary.UnsupportedFilesText}" />
-                                                    </Grid>
-
-                                                    <Grid Margin="12,0,0,4"
-                                                          Visibility="{Binding PreviewSummary.HasProfileExcludedFiles, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextMuted}"
-                                                                   Text="Profile filters" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="{Binding PreviewSummary.ProfileExcludedFilesText}" />
-                                                    </Grid>
-
-                                                    <Grid Margin="12,0,0,4"
-                                                          Visibility="{Binding PreviewSummary.HasManuallyExcludedFiles, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextMuted}"
-                                                                   Text="Manual" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="{Binding PreviewSummary.ManuallyExcludedFilesText}" />
-                                                    </Grid>
-
-                                                    <Grid Margin="12,0,0,4"
-                                                          Visibility="{Binding PreviewSummary.HasOtherNotIncludedFiles, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextMuted}"
-                                                                   Text="Other" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="{Binding PreviewSummary.OtherNotIncludedFilesText}" />
-                                                    </Grid>
-
-                                                    <Grid Margin="0,2,0,6">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="Included fallback" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextPrimary}"
-                                                                   Text="{Binding PreviewSummary.FallbackTextFilesText}" />
-                                                    </Grid>
-
-                                                    <Grid Margin="0,0,0,6"
-                                                          Visibility="{Binding PreviewSummary.HasSourceExcludedFiles, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="Source excluded" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextPrimary}"
-                                                                   Text="{Binding PreviewSummary.SourceExcludedFilesText}" />
-                                                    </Grid>
-
-                                                    <Grid Margin="0,6,0,6">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="Characters" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextPrimary}"
-                                                                   Text="{Binding PreviewSummary.TotalCharactersText}" />
-                                                    </Grid>
-
-                                                    <Grid Margin="0,0,0,6">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="Displayed" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextPrimary}"
-                                                                   Text="{Binding PreviewSummary.DisplayedCharactersText}" />
-                                                    </Grid>
-
-                                                    <Grid Margin="0,0,0,6">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Foreground="{StaticResource Brush.TextSecondary}"
-                                                                   Text="Duration" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Foreground="{StaticResource Brush.TextPrimary}"
-                                                                   Text="{Binding PreviewSummary.DurationText}" />
-                                                    </Grid>
-                                                </StackPanel>
-
-                                                <StackPanel Grid.Row="4"
-                                                            Visibility="{Binding PreviewSummary.HasSummary, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <TextBlock Margin="0,0,0,3"
-                                                               Foreground="{StaticResource Brush.TextSecondary}"
-                                                               Text="Generated at" />
-                                                    <TextBlock Margin="0,0,0,8"
-                                                               Foreground="{StaticResource Brush.TextPrimary}"
-                                                               Text="{Binding PreviewSummary.GeneratedAtText}"
-                                                               TextWrapping="Wrap" />
-
-                                                    <TextBlock Margin="0,0,0,3"
-                                                               Foreground="{StaticResource Brush.TextSecondary}"
-                                                               Text="Output target" />
-                                                    <TextBlock Foreground="{StaticResource Brush.TextPrimary}"
-                                                               Text="{Binding PreviewSummary.OutputPathText}"
-                                                               TextTrimming="CharacterEllipsis"
-                                                               ToolTip="{Binding PreviewSummary.OutputPathText}" />
-                                                </StackPanel>
-
-                                                <StackPanel Grid.Row="5"
-                                                            Margin="0,8,0,0"
-                                                            VerticalAlignment="Bottom"
-                                                            Visibility="{Binding PreviewSummary.HasSummary, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <Border Margin="0,0,0,6"
-                                                            Padding="8"
-                                                            Background="{StaticResource Brush.WarningSurface}"
-                                                            BorderBrush="{StaticResource Brush.WarningBorder}"
-                                                            BorderThickness="1"
-                                                            CornerRadius="4"
-                                                            Visibility="{Binding PreviewSummary.HasTruncationNotice, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <ScrollViewer Grid.Row="2"
+                                                              HorizontalScrollBarVisibility="Disabled"
+                                                              Style="{StaticResource FlatScrollViewerStyle}"
+                                                              VerticalScrollBarVisibility="Auto">
+                                                    <StackPanel>
                                                         <TextBlock
-                                                            Foreground="{StaticResource Brush.WarningForeground}"
-                                                            Text="{Binding PreviewSummary.TruncationNotice}"
-                                                            TextWrapping="Wrap" />
-                                                    </Border>
+                                                            Foreground="{StaticResource Brush.TextMuted}"
+                                                            Text="No preview has been built yet."
+                                                            TextWrapping="Wrap"
+                                                            Visibility="{Binding PreviewSummary.HasNoSummary, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-                                                    <TextBlock Foreground="{StaticResource Brush.TextMuted}"
-                                                               Text="Discovery exclusions and fallback files can be inspected in Discovered files. Source-excluded files are reported separately and are not shown there."
-                                                               TextWrapping="Wrap" />
-                                                </StackPanel>
+                                                        <StackPanel
+                                                            Visibility="{Binding PreviewSummary.HasSummary, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <Grid Margin="0,0,0,6">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextSecondary}"
+                                                                    Text="Discovered" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextPrimary}"
+                                                                           Text="{Binding PreviewSummary.FilesDiscoveredText}" />
+                                                            </Grid>
+
+                                                            <Grid Margin="0,0,0,6">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextSecondary}"
+                                                                    Text="Included" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextPrimary}"
+                                                                           Text="{Binding PreviewSummary.FilesIncludedText}" />
+                                                            </Grid>
+
+                                                            <Grid Margin="0,0,0,6">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextSecondary}"
+                                                                    Text="Not included" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextPrimary}"
+                                                                           Text="{Binding PreviewSummary.FilesNotIncludedText}" />
+                                                            </Grid>
+
+                                                            <Grid Margin="12,0,0,4"
+                                                                  Visibility="{Binding PreviewSummary.HasDisabledFileTypeFiles, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextMuted}"
+                                                                    Text="Disabled types" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextSecondary}"
+                                                                           Text="{Binding PreviewSummary.DisabledFileTypeFilesText}" />
+                                                            </Grid>
+
+                                                            <Grid Margin="12,0,0,4"
+                                                                  Visibility="{Binding PreviewSummary.HasUnsupportedFiles, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextMuted}"
+                                                                    Text="Unsupported" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextSecondary}"
+                                                                           Text="{Binding PreviewSummary.UnsupportedFilesText}" />
+                                                            </Grid>
+
+                                                            <Grid Margin="12,0,0,4"
+                                                                  Visibility="{Binding PreviewSummary.HasProfileExcludedFiles, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextMuted}"
+                                                                    Text="Profile filters" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextSecondary}"
+                                                                           Text="{Binding PreviewSummary.ProfileExcludedFilesText}" />
+                                                            </Grid>
+
+                                                            <Grid Margin="12,0,0,4"
+                                                                  Visibility="{Binding PreviewSummary.HasManuallyExcludedFiles, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextMuted}"
+                                                                    Text="Manual" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextSecondary}"
+                                                                           Text="{Binding PreviewSummary.ManuallyExcludedFilesText}" />
+                                                            </Grid>
+
+                                                            <Grid Margin="12,0,0,4"
+                                                                  Visibility="{Binding PreviewSummary.HasOtherNotIncludedFiles, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextMuted}"
+                                                                    Text="Other" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextSecondary}"
+                                                                           Text="{Binding PreviewSummary.OtherNotIncludedFilesText}" />
+                                                            </Grid>
+
+                                                            <Grid Margin="0,2,0,6">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextSecondary}"
+                                                                    Text="Included fallback" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextPrimary}"
+                                                                           Text="{Binding PreviewSummary.FallbackTextFilesText}" />
+                                                            </Grid>
+
+                                                            <Grid Margin="0,0,0,6"
+                                                                  Visibility="{Binding PreviewSummary.HasSourceExcludedFiles, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextSecondary}"
+                                                                    Text="Source excluded" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextPrimary}"
+                                                                           Text="{Binding PreviewSummary.SourceExcludedFilesText}" />
+                                                            </Grid>
+
+                                                            <Grid Margin="0,6,0,6">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextSecondary}"
+                                                                    Text="Characters" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextPrimary}"
+                                                                           Text="{Binding PreviewSummary.TotalCharactersText}" />
+                                                            </Grid>
+
+                                                            <Grid Margin="0,0,0,6">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextSecondary}"
+                                                                    Text="Displayed" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextPrimary}"
+                                                                           Text="{Binding PreviewSummary.DisplayedCharactersText}" />
+                                                            </Grid>
+
+                                                            <Grid Margin="0,0,0,6">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.TextSecondary}"
+                                                                    Text="Duration" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Foreground="{StaticResource Brush.TextPrimary}"
+                                                                           Text="{Binding PreviewSummary.DurationText}" />
+                                                            </Grid>
+                                                        </StackPanel>
+
+                                                        <StackPanel Margin="0,8,0,0"
+                                                                    Visibility="{Binding PreviewSummary.HasSummary, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <TextBlock Margin="0,0,0,3"
+                                                                       Foreground="{StaticResource Brush.TextSecondary}"
+                                                                       Text="Generated at" />
+                                                            <TextBlock Margin="0,0,0,8"
+                                                                       Foreground="{StaticResource Brush.TextPrimary}"
+                                                                       Text="{Binding PreviewSummary.GeneratedAtText}"
+                                                                       TextWrapping="Wrap" />
+
+                                                            <TextBlock Margin="0,0,0,3"
+                                                                       Foreground="{StaticResource Brush.TextSecondary}"
+                                                                       Text="Output target" />
+                                                            <TextBlock Foreground="{StaticResource Brush.TextPrimary}"
+                                                                       Text="{Binding PreviewSummary.OutputPathText}"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       ToolTip="{Binding PreviewSummary.OutputPathText}" />
+                                                        </StackPanel>
+
+                                                        <StackPanel Margin="0,8,0,0"
+                                                                    Visibility="{Binding PreviewSummary.HasSummary, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <Border Margin="0,0,0,6"
+                                                                    Padding="8"
+                                                                    Background="{StaticResource Brush.WarningSurface}"
+                                                                    BorderBrush="{StaticResource Brush.WarningBorder}"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="4"
+                                                                    Visibility="{Binding PreviewSummary.HasTruncationNotice, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <TextBlock
+                                                                    Foreground="{StaticResource Brush.WarningForeground}"
+                                                                    Text="{Binding PreviewSummary.TruncationNotice}"
+                                                                    TextWrapping="Wrap" />
+                                                            </Border>
+
+                                                            <TextBlock Foreground="{StaticResource Brush.TextMuted}"
+                                                                       Text="Discovery exclusions and fallback files can be inspected in Discovered files. Source-excluded files are reported separately and are not shown there."
+                                                                       TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </ScrollViewer>
                                             </Grid>
 
                                             <StackPanel HorizontalAlignment="Center"
@@ -1538,8 +1574,8 @@
 
                                 <Grid Grid.Row="5">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Grid.Column="0"
@@ -1563,12 +1599,13 @@
                                                 MinWidth="80"
                                                 Margin="8,0,0,0"
                                                 Command="{Binding SaveCommand}"
-                                                Content="Save"
-                                                Style="{StaticResource SecondaryButtonStyle}" />
+                                                Content="{Binding SaveOutputActionText}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                ToolTip="{Binding SaveOutputActionTooltip}" />
                                     </StackPanel>
                                 </Grid>
                             </Grid>
-                        </GroupBox>
+                        </Border>
                     </Grid>
                 </Grid>
                 <Border Grid.Row="1"

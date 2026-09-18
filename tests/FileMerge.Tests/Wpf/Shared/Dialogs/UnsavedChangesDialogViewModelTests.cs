@@ -7,9 +7,7 @@ public sealed class UnsavedChangesDialogViewModelTests
     [Fact]
     public void Constructor_Should_Store_Title_And_Message()
     {
-        UnsavedChangesDialogViewModel viewModel = new(
-            "Unsaved workspace",
-            "Workspace has unsaved changes.");
+        UnsavedChangesDialogViewModel viewModel = new("Unsaved workspace", "Workspace has unsaved changes.");
 
         Assert.Equal("Unsaved workspace", viewModel.Title);
         Assert.Equal("Workspace has unsaved changes.", viewModel.Message);
@@ -18,9 +16,7 @@ public sealed class UnsavedChangesDialogViewModelTests
     [Fact]
     public void Constructor_Should_Default_Decision_To_Cancel()
     {
-        UnsavedChangesDialogViewModel viewModel = new(
-            "Unsaved workspace",
-            "Workspace has unsaved changes.");
+        UnsavedChangesDialogViewModel viewModel = new("Unsaved workspace", "Workspace has unsaved changes.");
 
         Assert.Equal(UnsavedChangesDecision.Cancel, viewModel.Decision);
     }
@@ -31,9 +27,7 @@ public sealed class UnsavedChangesDialogViewModelTests
     [InlineData(UnsavedChangesDecision.Cancel)]
     public void Choose_Should_Set_Decision(UnsavedChangesDecision decision)
     {
-        UnsavedChangesDialogViewModel viewModel = new(
-            "Unsaved workspace",
-            "Workspace has unsaved changes.");
+        UnsavedChangesDialogViewModel viewModel = new("Unsaved workspace", "Workspace has unsaved changes.");
 
         viewModel.Choose(decision);
 

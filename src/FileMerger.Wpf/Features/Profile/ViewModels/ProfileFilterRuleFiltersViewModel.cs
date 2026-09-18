@@ -28,8 +28,7 @@ public sealed class ProfileFilterRuleFiltersViewModel : ViewModelBase
     }
 
     public bool HasActiveFilters =>
-        !string.IsNullOrWhiteSpace(SearchText) ||
-        Status != ProfileFilterRuleStatusFilterMode.All;
+        !string.IsNullOrWhiteSpace(SearchText) || Status != ProfileFilterRuleStatusFilterMode.All;
 
     public void Reset()
     {
@@ -71,7 +70,6 @@ public sealed class ProfileFilterRuleFiltersViewModel : ViewModelBase
 
     private static bool Contains(string? value, string searchText)
     {
-        return !string.IsNullOrWhiteSpace(value) &&
-               value.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+        return !string.IsNullOrWhiteSpace(value) && value.Contains(searchText, StringComparison.OrdinalIgnoreCase);
     }
 }

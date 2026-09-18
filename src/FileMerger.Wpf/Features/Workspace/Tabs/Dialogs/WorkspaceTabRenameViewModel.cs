@@ -8,9 +8,7 @@ public sealed class WorkspaceTabRenameViewModel : ViewModelBase
 
     public WorkspaceTabRenameViewModel(string currentName)
     {
-        OriginalName = string.IsNullOrWhiteSpace(currentName)
-            ? "Untitled Workspace"
-            : currentName.Trim();
+        OriginalName = string.IsNullOrWhiteSpace(currentName) ? "Untitled Workspace" : currentName.Trim();
 
         _workspaceName = OriginalName;
     }
@@ -35,7 +33,5 @@ public sealed class WorkspaceTabRenameViewModel : ViewModelBase
 
     public bool CanConfirm => !string.IsNullOrWhiteSpace(WorkspaceName);
 
-    public string ValidationMessage => CanConfirm
-        ? string.Empty
-        : "Workspace tab name cannot be empty.";
+    public string ValidationMessage => CanConfirm ? string.Empty : "Workspace tab name cannot be empty.";
 }

@@ -63,13 +63,12 @@ public sealed class MergeSessionTests
     [Fact]
     public void Constructor_Should_Throw_When_Id_Is_Empty()
     {
-        ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-            new MergeSession(
-                id: Guid.Empty,
-                name: "Session 1",
-                sources: [new MergeSource(@"D:\C# Repository\Tests\FileMerger", MergeSourceType.Directory)],
-                profile: CreateProfile(),
-                outputTarget: new OutputTarget(@"D:\C# Repository\Tests\FileMerger\out\merged.txt")));
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => new MergeSession(
+            id: Guid.Empty,
+            name: "Session 1",
+            sources: [new MergeSource(@"D:\C# Repository\Tests\FileMerger", MergeSourceType.Directory)],
+            profile: CreateProfile(),
+            outputTarget: new OutputTarget(@"D:\C# Repository\Tests\FileMerger\out\merged.txt")));
 
         Assert.Equal("id", ex.ParamName);
     }
@@ -80,13 +79,12 @@ public sealed class MergeSessionTests
     [InlineData(" ")]
     public void Constructor_Should_Throw_When_Name_Is_Invalid(string? name)
     {
-        ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-            new MergeSession(
-                id: Guid.NewGuid(),
-                name: name!,
-                sources: [new MergeSource(@"D:\C# Repository\Tests\FileMerger", MergeSourceType.Directory)],
-                profile: CreateProfile(),
-                outputTarget: new OutputTarget(@"D:\C# Repository\Tests\FileMerger\out\merged.txt")));
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => new MergeSession(
+            id: Guid.NewGuid(),
+            name: name!,
+            sources: [new MergeSource(@"D:\C# Repository\Tests\FileMerger", MergeSourceType.Directory)],
+            profile: CreateProfile(),
+            outputTarget: new OutputTarget(@"D:\C# Repository\Tests\FileMerger\out\merged.txt")));
 
         Assert.Equal("name", ex.ParamName);
     }
@@ -94,13 +92,12 @@ public sealed class MergeSessionTests
     [Fact]
     public void Constructor_Should_Throw_When_Sources_Are_Null()
     {
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            new MergeSession(
-                id: Guid.NewGuid(),
-                name: "Session 1",
-                sources: null!,
-                profile: CreateProfile(),
-                outputTarget: new OutputTarget(@"D:\C# Repository\Tests\FileMerger\out\merged.txt")));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => new MergeSession(
+            id: Guid.NewGuid(),
+            name: "Session 1",
+            sources: null!,
+            profile: CreateProfile(),
+            outputTarget: new OutputTarget(@"D:\C# Repository\Tests\FileMerger\out\merged.txt")));
 
         Assert.Equal("sources", ex.ParamName);
     }
@@ -108,13 +105,12 @@ public sealed class MergeSessionTests
     [Fact]
     public void Constructor_Should_Throw_When_Profile_Is_Null()
     {
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            new MergeSession(
-                id: Guid.NewGuid(),
-                name: "Session 1",
-                sources: [new MergeSource(@"D:\C# Repository\Tests\FileMerger", MergeSourceType.Directory)],
-                profile: null!,
-                outputTarget: new OutputTarget(@"D:\C# Repository\Tests\FileMerger\out\merged.txt")));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => new MergeSession(
+            id: Guid.NewGuid(),
+            name: "Session 1",
+            sources: [new MergeSource(@"D:\C# Repository\Tests\FileMerger", MergeSourceType.Directory)],
+            profile: null!,
+            outputTarget: new OutputTarget(@"D:\C# Repository\Tests\FileMerger\out\merged.txt")));
 
         Assert.Equal("profile", ex.ParamName);
     }
@@ -122,13 +118,12 @@ public sealed class MergeSessionTests
     [Fact]
     public void Constructor_Should_Throw_When_OutputTarget_Is_Null()
     {
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            new MergeSession(
-                id: Guid.NewGuid(),
-                name: "Session 1",
-                sources: [new MergeSource(@"D:\C# Repository\Tests\FileMerger", MergeSourceType.Directory)],
-                profile: CreateProfile(),
-                outputTarget: null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => new MergeSession(
+            id: Guid.NewGuid(),
+            name: "Session 1",
+            sources: [new MergeSource(@"D:\C# Repository\Tests\FileMerger", MergeSourceType.Directory)],
+            profile: CreateProfile(),
+            outputTarget: null!));
 
         Assert.Equal("outputTarget", ex.ParamName);
     }
@@ -137,10 +132,10 @@ public sealed class MergeSessionTests
     public void WithFiles_Should_Return_New_Instance_With_New_Files()
     {
         MergeSession session = CreateSession();
-        InputFile[] newFiles = new[]
-        {
+        InputFile[] newFiles =
+        [
             new InputFile(@"D:\C# Repository\Tests\FileMerger\New.cs", "New.cs", ".cs", FileKind.CSharp)
-        };
+        ];
 
         MergeSession result = session.WithFiles(newFiles);
 
@@ -164,10 +159,10 @@ public sealed class MergeSessionTests
     public void WithValidationIssues_Should_Return_New_Instance_With_New_Issues()
     {
         MergeSession session = CreateSession();
-        ValidationIssue[] issues = new[]
-        {
+        ValidationIssue[] issues =
+        [
             new ValidationIssue(ValidationSeverity.Error, "err", "error")
-        };
+        ];
 
         MergeSession result = session.WithValidationIssues(issues);
 
@@ -226,9 +221,6 @@ public sealed class MergeSessionTests
 
     private static MergeProfile CreateProfile()
     {
-        return new MergeProfile(
-            name: "Default",
-            generalOptions: new GeneralMergeOptions(),
-            csOptions: new CsMergeOptions());
+        return new MergeProfile(name: "Default", generalOptions: new GeneralMergeOptions());
     }
 }

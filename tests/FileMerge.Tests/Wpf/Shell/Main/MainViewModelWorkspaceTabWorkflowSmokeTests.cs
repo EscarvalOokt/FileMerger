@@ -151,13 +151,12 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
 
         WorkspaceDocumentViewModel initialDocument = context.ViewModel.CurrentDocument;
 
-        context.LifecycleService.OnLoad = document =>
-            LoadWorkspaceInto(
-                document,
-                sessionName: "Reused Workspace",
-                profileName: "Reused Profile",
-                profileEntryId: "profile-reused",
-                workspaceFilePath: @"D:\Workspaces\reused.filemerger.workspace.json");
+        context.LifecycleService.OnLoad = document => LoadWorkspaceInto(
+            document,
+            sessionName: "Reused Workspace",
+            profileName: "Reused Profile",
+            profileEntryId: "profile-reused",
+            workspaceFilePath: @"D:\Workspaces\reused.filemerger.workspace.json");
 
         context.ViewModel.LoadWorkspaceCommand.Execute(null);
 
@@ -170,13 +169,12 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
 
         MakeWorkspaceNonEmpty(initialDocument);
 
-        context.LifecycleService.OnLoad = document =>
-            LoadWorkspaceInto(
-                document,
-                sessionName: "Loaded Workspace",
-                profileName: "Loaded Profile",
-                profileEntryId: "profile-loaded",
-                workspaceFilePath: @"D:\Workspaces\loaded.filemerger.workspace.json");
+        context.LifecycleService.OnLoad = document => LoadWorkspaceInto(
+            document,
+            sessionName: "Loaded Workspace",
+            profileName: "Loaded Profile",
+            profileEntryId: "profile-loaded",
+            workspaceFilePath: @"D:\Workspaces\loaded.filemerger.workspace.json");
 
         context.ViewModel.LoadWorkspaceCommand.Execute(null);
 
@@ -184,7 +182,9 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
         Assert.NotSame(initialDocument, context.ViewModel.CurrentDocument);
         Assert.Same(context.ViewModel.CurrentDocument, context.LifecycleService.LastLoadWorkspaceDocument);
         Assert.Equal("Loaded Workspace", context.ViewModel.CurrentDocument.SessionSettings.SessionName);
-        Assert.Equal(@"D:\Workspaces\loaded.filemerger.workspace.json", context.ViewModel.CurrentDocument.WorkspaceFilePath);
+        Assert.Equal(
+            @"D:\Workspaces\loaded.filemerger.workspace.json",
+            context.ViewModel.CurrentDocument.WorkspaceFilePath);
         Assert.Equal("Loaded Profile", context.ViewModel.CurrentProfileCard.ProfileName);
         Assert.Equal("profile-loaded", context.ViewModel.CurrentProfileCard.ProfileEntryId);
     }
@@ -256,14 +256,13 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
 
         WorkspaceTabViewModel profileBTab = context.WorkspaceTabs.CreateNewTab();
 
-        context.LifecycleService.OnLoad = document =>
-            LoadWorkspaceInto(
-                document,
-                sessionName: "Loaded Workspace",
-                profileName: "Loaded Profile",
-                profileEntryId: "profile-loaded",
-                workspaceFilePath: @"D:\Workspaces\loaded.filemerger.workspace.json",
-                includeHeaderComment: false);
+        context.LifecycleService.OnLoad = document => LoadWorkspaceInto(
+            document,
+            sessionName: "Loaded Workspace",
+            profileName: "Loaded Profile",
+            profileEntryId: "profile-loaded",
+            workspaceFilePath: @"D:\Workspaces\loaded.filemerger.workspace.json",
+            includeHeaderComment: false);
 
         context.ViewModel.LoadWorkspaceCommand.Execute(null);
 
@@ -342,11 +341,7 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
 
         context.ViewModel.CurrentDocument.SourcesPane.LoadSources(
         [
-            new MergeSource(
-                @"D:\Project",
-                MergeSourceType.Directory,
-                isRecursive: true,
-                isEnabled: true)
+            new MergeSource(@"D:\Project", MergeSourceType.Directory, isRecursive: true, isEnabled: true)
         ]);
 
         Assert.False(context.ViewModel.ShowFirstWorkspaceGuide);
@@ -383,10 +378,11 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
     {
         TestContext context = CreateContext();
 
-        context.RecentWorkspacesService.Entries.Add(new RecentWorkspaceEntry(
-            FilePath: @"D:\Workspaces\one.filemerger.workspace.json",
-            LastUsedAtUtc: DateTime.UtcNow,
-            Exists: true));
+        context.RecentWorkspacesService.Entries.Add(
+            new RecentWorkspaceEntry(
+                FilePath: @"D:\Workspaces\one.filemerger.workspace.json",
+                LastUsedAtUtc: DateTime.UtcNow,
+                Exists: true));
 
         context.ViewModel.RefreshRecentWorkspacesCommand.Execute(null);
 
@@ -400,10 +396,11 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
     {
         TestContext context = CreateContext();
 
-        context.RecentWorkspacesService.Entries.Add(new RecentWorkspaceEntry(
-            FilePath: @"D:\Workspaces\missing.filemerger.workspace.json",
-            LastUsedAtUtc: DateTime.UtcNow,
-            Exists: false));
+        context.RecentWorkspacesService.Entries.Add(
+            new RecentWorkspaceEntry(
+                FilePath: @"D:\Workspaces\missing.filemerger.workspace.json",
+                LastUsedAtUtc: DateTime.UtcNow,
+                Exists: false));
 
         context.ViewModel.RefreshRecentWorkspacesCommand.Execute(null);
 
@@ -423,11 +420,7 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
         WorkspaceTabViewModel configuredTab = context.WorkspaceTabs.CreateNewTab();
         configuredTab.Document.SourcesPane.LoadSources(
         [
-            new MergeSource(
-                @"D:\Project",
-                MergeSourceType.Directory,
-                isRecursive: true,
-                isEnabled: true)
+            new MergeSource(@"D:\Project", MergeSourceType.Directory, isRecursive: true, isEnabled: true)
         ]);
 
         Assert.False(context.ViewModel.ShowFirstWorkspaceGuide);
@@ -446,10 +439,11 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
     {
         TestContext context = CreateContext();
 
-        context.RecentWorkspacesService.Entries.Add(new RecentWorkspaceEntry(
-            FilePath: @"D:\Workspaces\one.filemerger.workspace.json",
-            LastUsedAtUtc: new DateTime(2026, 1, 1, 10, 0, 0, DateTimeKind.Utc),
-            Exists: true));
+        context.RecentWorkspacesService.Entries.Add(
+            new RecentWorkspaceEntry(
+                FilePath: @"D:\Workspaces\one.filemerger.workspace.json",
+                LastUsedAtUtc: new DateTime(2026, 1, 1, 10, 0, 0, DateTimeKind.Utc),
+                Exists: true));
 
         context.ViewModel.RefreshRecentWorkspacesCommand.Execute(null);
 
@@ -462,10 +456,11 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
     {
         TestContext context = CreateContext();
 
-        context.RecentWorkspacesService.Entries.Add(new RecentWorkspaceEntry(
-            FilePath: @"D:\Workspaces\missing.filemerger.workspace.json",
-            LastUsedAtUtc: new DateTime(2026, 1, 1, 10, 0, 0, DateTimeKind.Utc),
-            Exists: false));
+        context.RecentWorkspacesService.Entries.Add(
+            new RecentWorkspaceEntry(
+                FilePath: @"D:\Workspaces\missing.filemerger.workspace.json",
+                LastUsedAtUtc: new DateTime(2026, 1, 1, 10, 0, 0, DateTimeKind.Utc),
+                Exists: false));
 
         context.ViewModel.RefreshRecentWorkspacesCommand.Execute(null);
 
@@ -481,10 +476,11 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
 
         context.PromptService.ConfirmResult = true;
 
-        context.RecentWorkspacesService.Entries.Add(new RecentWorkspaceEntry(
-            FilePath: @"D:\Workspaces\one.filemerger.workspace.json",
-            LastUsedAtUtc: DateTime.UtcNow,
-            Exists: true));
+        context.RecentWorkspacesService.Entries.Add(
+            new RecentWorkspaceEntry(
+                FilePath: @"D:\Workspaces\one.filemerger.workspace.json",
+                LastUsedAtUtc: DateTime.UtcNow,
+                Exists: true));
 
         context.ViewModel.RefreshRecentWorkspacesCommand.Execute(null);
         context.ViewModel.ClearRecentWorkspacesCommand.Execute(null);
@@ -507,12 +503,13 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
         context.RecentWorkspacesService.Entries.Add(entry);
         context.ViewModel.RefreshRecentWorkspacesCommand.Execute(null);
 
-        RecentWorkspaceMenuItemViewModel item =
-            Assert.Single(context.ViewModel.MissingRecentWorkspaces);
+        RecentWorkspaceMenuItemViewModel item = Assert.Single(context.ViewModel.MissingRecentWorkspaces);
 
         context.ViewModel.RemoveMissingRecentWorkspaceCommand.Execute(item);
 
-        Assert.Equal(@"D:\Workspaces\missing.filemerger.workspace.json", Assert.Single(context.RecentWorkspacesService.RemovedPaths));
+        Assert.Equal(
+            @"D:\Workspaces\missing.filemerger.workspace.json",
+            Assert.Single(context.RecentWorkspacesService.RemovedPaths));
         Assert.Empty(context.ViewModel.RecentWorkspaces);
     }
 
@@ -521,15 +518,15 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
     {
         TestContext context = CreateContext();
 
-        context.RecentWorkspacesService.Entries.Add(new RecentWorkspaceEntry(
-            FilePath: @"D:\Workspaces\missing.filemerger.workspace.json",
-            LastUsedAtUtc: DateTime.UtcNow,
-            Exists: false));
+        context.RecentWorkspacesService.Entries.Add(
+            new RecentWorkspaceEntry(
+                FilePath: @"D:\Workspaces\missing.filemerger.workspace.json",
+                LastUsedAtUtc: DateTime.UtcNow,
+                Exists: false));
 
         context.ViewModel.RefreshRecentWorkspacesCommand.Execute(null);
 
-        RecentWorkspaceMenuItemViewModel item =
-            Assert.Single(context.ViewModel.MissingRecentWorkspaces);
+        RecentWorkspaceMenuItemViewModel item = Assert.Single(context.ViewModel.MissingRecentWorkspaces);
 
         Assert.Equal("missing", item.DisplayName);
         Assert.Equal("missing (missing)", item.MenuHeader);
@@ -540,10 +537,11 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
     {
         TestContext context = CreateContext();
 
-        context.RecentWorkspacesService.Entries.Add(new RecentWorkspaceEntry(
-            FilePath: @"D:\Workspaces\one.filemerger.workspace.json",
-            LastUsedAtUtc: new DateTime(2026, 1, 1, 10, 0, 0, DateTimeKind.Utc),
-            Exists: true));
+        context.RecentWorkspacesService.Entries.Add(
+            new RecentWorkspaceEntry(
+                FilePath: @"D:\Workspaces\one.filemerger.workspace.json",
+                LastUsedAtUtc: new DateTime(2026, 1, 1, 10, 0, 0, DateTimeKind.Utc),
+                Exists: true));
 
         await context.ViewModel.InitializeAsync();
 
@@ -560,10 +558,11 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
     {
         TestContext context = CreateContext();
 
-        context.RecentWorkspacesService.Entries.Add(new RecentWorkspaceEntry(
-            FilePath: @"D:\Workspaces\missing.filemerger.workspace.json",
-            LastUsedAtUtc: new DateTime(2026, 1, 1, 10, 0, 0, DateTimeKind.Utc),
-            Exists: false));
+        context.RecentWorkspacesService.Entries.Add(
+            new RecentWorkspaceEntry(
+                FilePath: @"D:\Workspaces\missing.filemerger.workspace.json",
+                LastUsedAtUtc: new DateTime(2026, 1, 1, 10, 0, 0, DateTimeKind.Utc),
+                Exists: false));
 
         await context.ViewModel.InitializeAsync();
 
@@ -582,9 +581,7 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
         FakeWorkspaceDocumentDirtyStateService dirtyStateService = new();
         FakeUserPromptService promptService = new();
 
-        WorkspaceDocumentCloneService cloneService = new(
-            documentFactory,
-            dirtyStateService);
+        WorkspaceDocumentCloneService cloneService = new(documentFactory, dirtyStateService);
 
         WorkspaceTabManagerViewModel workspaceTabs = new(
             documentFactory,
@@ -600,6 +597,7 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
         FakeWorkspaceTabRenameDialogService renameDialogService = new();
         FakeClipboardService clipboardService = new();
         FakeKeyboardShortcutsDialogService keyboardShortcutsDialogService = new();
+        FakeUpdateCheckDialogService updateCheckDialogService = new();
         FakeRecentWorkspacesService recentWorkspacesService = new();
         FakeApplicationPreferencesStore applicationPreferencesStore = new();
 
@@ -614,6 +612,7 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
             renameDialogService,
             clipboardService,
             keyboardShortcutsDialogService,
+            updateCheckDialogService,
             promptService,
             recentWorkspacesService,
             applicationPreferencesStore,
@@ -638,7 +637,6 @@ public sealed class MainViewModelWorkspaceTabWorkflowSmokeTests
             IncludeFileSeparators: true,
             IncludeRelativePathInSeparator: true,
             TrimTrailingEmptyLines: true,
-            RemoveUsingDirectives: false,
             FileTypes: [],
             LineEndingMode: LineEndingMode.Preserve,
             SortMode: SortMode.ByRelativePathAscending,

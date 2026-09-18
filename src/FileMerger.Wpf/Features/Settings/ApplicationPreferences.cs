@@ -10,22 +10,20 @@ public sealed record ApplicationPreferences
     public const int MinimumCrashLogRetentionLimit = 1;
     public const int MaximumCrashLogRetentionLimit = 500;
 
-    public static ApplicationPreferences Default { get; } = new(
-        DefaultIsPreviewLineWrapEnabledByDefault,
-        DefaultPreviewDisplayCharacterLimit,
-        DefaultCrashLogRetentionLimit);
-
     public ApplicationPreferences(
         bool isPreviewLineWrapEnabledByDefault,
         int previewDisplayCharacterLimit,
         int crashLogRetentionLimit)
     {
         IsPreviewLineWrapEnabledByDefault = isPreviewLineWrapEnabledByDefault;
-        PreviewDisplayCharacterLimit =
-            NormalizePreviewDisplayCharacterLimit(previewDisplayCharacterLimit);
-        CrashLogRetentionLimit =
-            NormalizeCrashLogRetentionLimit(crashLogRetentionLimit);
+        PreviewDisplayCharacterLimit = NormalizePreviewDisplayCharacterLimit(previewDisplayCharacterLimit);
+        CrashLogRetentionLimit = NormalizeCrashLogRetentionLimit(crashLogRetentionLimit);
     }
+
+    public static ApplicationPreferences Default { get; } = new(
+        DefaultIsPreviewLineWrapEnabledByDefault,
+        DefaultPreviewDisplayCharacterLimit,
+        DefaultCrashLogRetentionLimit);
 
     public bool IsPreviewLineWrapEnabledByDefault { get; }
 
@@ -35,17 +33,11 @@ public sealed record ApplicationPreferences
 
     public static int NormalizePreviewDisplayCharacterLimit(int value)
     {
-        return Math.Clamp(
-            value,
-            MinimumPreviewDisplayCharacterLimit,
-            MaximumPreviewDisplayCharacterLimit);
+        return Math.Clamp(value, MinimumPreviewDisplayCharacterLimit, MaximumPreviewDisplayCharacterLimit);
     }
 
     public static int NormalizeCrashLogRetentionLimit(int value)
     {
-        return Math.Clamp(
-            value,
-            MinimumCrashLogRetentionLimit,
-            MaximumCrashLogRetentionLimit);
+        return Math.Clamp(value, MinimumCrashLogRetentionLimit, MaximumCrashLogRetentionLimit);
     }
 }

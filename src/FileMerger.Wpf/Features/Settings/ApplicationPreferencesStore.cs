@@ -5,15 +5,13 @@ public sealed class ApplicationPreferencesStore : IApplicationPreferencesStore
     private readonly IApplicationPreferencesService _preferencesService;
     private readonly SemaphoreSlim _sync = new(1, 1);
 
-    public ApplicationPreferencesStore(
-        IApplicationPreferencesService preferencesService)
+    public ApplicationPreferencesStore(IApplicationPreferencesService preferencesService)
     {
         ArgumentNullException.ThrowIfNull(preferencesService);
         _preferencesService = preferencesService;
     }
 
-    public ApplicationPreferences Current { get; private set; } =
-        ApplicationPreferences.Default;
+    public ApplicationPreferences Current { get; private set; } = ApplicationPreferences.Default;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {

@@ -230,13 +230,6 @@
                             Tag="{Binding IsFileTypesSectionSelected}" />
 
                     <Button Command="{Binding SelectSectionCommand}"
-                            CommandParameter="{x:Static viewModels:ProfileEditorSection.CSharpTransformations}"
-                            Content="C# transformations"
-                            Style="{StaticResource CompactSectionNavigationButtonStyle}"
-                            Tag="{Binding IsCSharpTransformationsSectionSelected}"
-                            Visibility="{Binding ShowCSharpOptions, Converter={StaticResource BooleanToVisibilityConverter}}" />
-
-                    <Button Command="{Binding SelectSectionCommand}"
                             CommandParameter="{x:Static viewModels:ProfileEditorSection.FilterRules}"
                             Content="Filter rules"
                             Style="{StaticResource CompactSectionNavigationButtonStyle}"
@@ -633,188 +626,48 @@
                 </DockPanel>
 
                 <StackPanel
-                    Visibility="{Binding IsCSharpTransformationsSectionSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <TextBlock Style="{StaticResource ProfileEditorSectionTitleStyle}"
-                               Text="C# transformations" />
-                    <TextBlock Style="{StaticResource ProfileEditorSectionDescriptionStyle}"
-                               Text="Configure transformations that apply only to enabled C# files." />
-
-                    <CheckBox Content="Remove using directives"
-                              IsChecked="{Binding RemoveUsingDirectives}"
-                              Style="{StaticResource CompactCheckBoxStyle}" />
-                </StackPanel>
-
-                <DockPanel
                     Visibility="{Binding IsFilterRulesSectionSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <StackPanel DockPanel.Dock="Top">
-                        <TextBlock Style="{StaticResource ProfileEditorSectionTitleStyle}"
-                                   Text="Filter rules" />
-                        <TextBlock Style="{StaticResource ProfileEditorSectionDescriptionStyle}"
-                                   Text="Manage advanced include/exclude rules applied after discovery and file type selection." />
-                    </StackPanel>
+                    <TextBlock Style="{StaticResource ProfileEditorSectionTitleStyle}"
+                               Text="Filter rules" />
+                    <TextBlock Style="{StaticResource ProfileEditorSectionDescriptionStyle}"
+                               Text="Manage advanced include/exclude rules applied after discovery and file type selection." />
 
-                    <Border Margin="0,0,0,8"
-                            Padding="8"
-                            Background="{StaticResource Brush.Surface}"
-                            BorderBrush="{StaticResource Brush.Border}"
-                            BorderThickness="1"
-                            CornerRadius="6"
-                            DockPanel.Dock="Top">
+                    <Border Style="{StaticResource SurfaceCompactCardBorderStyle}">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="260" />
-                                <ColumnDefinition Width="140" />
-                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <TextBox Grid.Column="0"
-                                     Margin="0,0,8,0"
-                                     VerticalAlignment="Center"
-                                     Style="{StaticResource CompactTextBoxStyle}"
-                                     Text="{Binding FilterRuleFilters.SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                            <StackPanel Grid.Column="0"
+                                        Margin="0,0,16,0"
+                                        VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock FontWeight="SemiBold"
+                                               Text="Configured rules: " />
+                                    <TextBlock FontWeight="SemiBold"
+                                               Text="{Binding FilterRules.Count}" />
+                                </StackPanel>
+                                <TextBlock Margin="0,4,0,0"
+                                           Foreground="{StaticResource Brush.TextSecondary}"
+                                           Text="Open the dedicated editor to search, reorder, validate, and edit filter rules."
+                                           TextWrapping="Wrap" />
+                                <TextBlock Margin="0,6,0,0"
+                                           Foreground="{StaticResource Brush.Error}"
+                                           Style="{StaticResource DialogHintTextStyle}"
+                                           Text="{Binding DraftValidationMessage}"
+                                           Visibility="{Binding HasInvalidFilterRules, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            </StackPanel>
 
-                            <ComboBox Grid.Column="1"
-                                      Margin="0,0,8,0"
-                                      DisplayMemberPath="DisplayName"
-                                      ItemsSource="{Binding FilterRuleStatusFilterOptions}"
-                                      SelectedValue="{Binding FilterRuleFilters.Status, UpdateSourceTrigger=PropertyChanged}"
-                                      SelectedValuePath="Value"
-                                      Style="{StaticResource CompactComboBoxStyle}" />
-
-                            <Button Grid.Column="2"
-                                    Margin="0,0,12,0"
-                                    Command="{Binding ClearFilterRuleFiltersCommand}"
-                                    Content="Clear filters"
-                                    Style="{StaticResource CompactSecondaryButtonStyle}" />
-
-                            <TextBlock Grid.Column="3"
-                                       VerticalAlignment="Center"
-                                       Foreground="{StaticResource Brush.TextSecondary}"
-                                       Text="{Binding FilterRuleFilterSummary}" />
+                            <Button Grid.Column="1"
+                                    MinWidth="148"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding EditFilterRulesCommand}"
+                                    Content="Edit filter rules..."
+                                    Style="{StaticResource PrimaryButtonStyle}" />
                         </Grid>
                     </Border>
-
-                    <StackPanel Margin="0,0,0,8"
-                                DockPanel.Dock="Top"
-                                Orientation="Horizontal">
-                        <Button Margin="0,0,6,0"
-                                Padding="10,4"
-                                Command="{Binding AddFilterRuleCommand}"
-                                Content="Add" />
-                        <Button Margin="0,0,6,0"
-                                Padding="10,4"
-                                Command="{Binding DuplicateFilterRuleCommand}"
-                                Content="Duplicate" />
-                        <Button Margin="0,0,6,0"
-                                Padding="10,4"
-                                Command="{Binding RemoveFilterRuleCommand}"
-                                Content="Remove" />
-                        <Button Margin="0,0,6,0"
-                                Padding="10,4"
-                                Command="{Binding MoveFilterRuleUpCommand}"
-                                Content="Up" />
-                        <Button Margin="0,0,6,0"
-                                Padding="10,4"
-                                Command="{Binding MoveFilterRuleDownCommand}"
-                                Content="Down" />
-                        <Button Padding="10,4"
-                                Command="{Binding ClearFilterRulesCommand}"
-                                Content="Clear rules" />
-                    </StackPanel>
-
-                    <Border Padding="8"
-                            Background="{StaticResource Brush.SurfaceAlt}"
-                            BorderBrush="{StaticResource Brush.Border}"
-                            BorderThickness="1"
-                            CornerRadius="4">
-                        <Grid>
-                            <DataGrid MinHeight="160"
-                                      AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      CanUserDeleteRows="False"
-                                      HeadersVisibility="Column"
-                                      ItemsSource="{Binding VisibleFilterRules}"
-                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                      SelectedItem="{Binding SelectedFilterRule, Mode=TwoWay}"
-                                      SelectionMode="Single"
-                                      SelectionUnit="FullRow">
-                                <DataGrid.Columns>
-                                    <DataGridTemplateColumn Width="70"
-                                                            Header="Enabled">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate DataType="{x:Type viewModels:ProfileFilterRuleItemViewModel}">
-                                                <Grid HorizontalAlignment="Stretch"
-                                                      VerticalAlignment="Stretch">
-                                                    <CheckBox
-                                                        IsChecked="{Binding IsEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                        Style="{StaticResource DataGridEditableCheckBoxStyle}" />
-                                                </Grid>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-
-                                    <DataGridTemplateColumn Width="110"
-                                                            Header="Mode">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate DataType="{x:Type viewModels:ProfileFilterRuleItemViewModel}">
-                                                <ComboBox DisplayMemberPath="DisplayName"
-                                                          ItemsSource="{Binding DataContext.FilterModeOptions, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                          SelectedValue="{Binding Mode, UpdateSourceTrigger=PropertyChanged}"
-                                                          SelectedValuePath="Value"
-                                                          Style="{StaticResource CompactComboBoxStyle}" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-
-                                    <DataGridTemplateColumn Width="150"
-                                                            Header="Target">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate DataType="{x:Type viewModels:ProfileFilterRuleItemViewModel}">
-                                                <ComboBox DisplayMemberPath="DisplayName"
-                                                          ItemsSource="{Binding DataContext.FilterTargetOptions, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                          SelectedValue="{Binding Target, UpdateSourceTrigger=PropertyChanged}"
-                                                          SelectedValuePath="Value"
-                                                          Style="{StaticResource CompactComboBoxStyle}" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-
-                                    <DataGridTemplateColumn Width="120"
-                                                            Header="Match">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate DataType="{x:Type viewModels:ProfileFilterRuleItemViewModel}">
-                                                <ComboBox DisplayMemberPath="DisplayName"
-                                                          ItemsSource="{Binding DataContext.RulePatternTypeOptions, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                          SelectedValue="{Binding PatternType, UpdateSourceTrigger=PropertyChanged}"
-                                                          SelectedValuePath="Value"
-                                                          Style="{StaticResource CompactComboBoxStyle}" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-
-                                    <DataGridTextColumn Width="180"
-                                                        Binding="{Binding Pattern, UpdateSourceTrigger=PropertyChanged}"
-                                                        Header="Pattern" />
-                                    <DataGridTextColumn Width="220"
-                                                        Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
-                                                        Header="Description" />
-                                    <DataGridTextColumn Width="240"
-                                                        Binding="{Binding ValidationMessage}"
-                                                        Header="Validation"
-                                                        IsReadOnly="True" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-
-                            <TextBlock HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Foreground="{StaticResource Brush.TextSecondary}"
-                                       Text="No filter rules match the current search and filters."
-                                       Visibility="{Binding HasFilterRuleFilterEmptyState, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                        </Grid>
-                    </Border>
-                </DockPanel>
+                </StackPanel>
             </Grid>
         </Border>
     </Grid>

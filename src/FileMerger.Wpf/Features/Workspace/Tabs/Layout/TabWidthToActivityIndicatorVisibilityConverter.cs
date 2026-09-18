@@ -6,15 +6,9 @@ namespace FileMerger.Wpf.Features.Workspace.Tabs.Layout;
 
 public sealed class TabWidthToActivityIndicatorVisibilityConverter : IMultiValueConverter
 {
-    public object Convert(
-        object[] values,
-        Type targetType,
-        object parameter,
-        CultureInfo culture)
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
-        double actualWidth = values.Length > 0 && values[0] is double width
-            ? width
-            : double.PositiveInfinity;
+        double actualWidth = values.Length > 0 && values[0] is double width ? width : double.PositiveInfinity;
 
         bool hasActivity = values.Length > 1 && values[1] is bool activity && activity;
 
@@ -23,11 +17,7 @@ public sealed class TabWidthToActivityIndicatorVisibilityConverter : IMultiValue
             : Visibility.Collapsed;
     }
 
-    public object[] ConvertBack(
-        object value,
-        Type[] targetTypes,
-        object parameter,
-        CultureInfo culture)
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
     {
         throw new NotSupportedException();
     }

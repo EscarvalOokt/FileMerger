@@ -22,8 +22,7 @@ public sealed record InputFile
         if (string.IsNullOrWhiteSpace(relativePath))
             throw new ArgumentException("Relative path cannot be empty.", nameof(relativePath));
 
-        if (extension is null ||
-            (extension.Length > 0 && string.IsNullOrWhiteSpace(extension)))
+        if (extension is null || (extension.Length > 0 && string.IsNullOrWhiteSpace(extension)))
         {
             throw new ArgumentException("Extension cannot be whitespace.", nameof(extension));
         }

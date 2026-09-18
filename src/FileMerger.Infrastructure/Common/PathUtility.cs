@@ -34,10 +34,7 @@ public static class PathUtility
         string normalizedLeft = NormalizeForComparison(left);
         string normalizedRight = NormalizeForComparison(right);
 
-        return string.Equals(
-            normalizedLeft,
-            normalizedRight,
-            StringComparison.OrdinalIgnoreCase);
+        return string.Equals(normalizedLeft, normalizedRight, StringComparison.OrdinalIgnoreCase);
     }
 
     public static bool PathsOverlap(string left, string right)
@@ -62,8 +59,7 @@ public static class PathUtility
         if (string.IsNullOrWhiteSpace(path))
             return path;
 
-        return path.EndsWith(Path.DirectorySeparatorChar) ||
-               path.EndsWith(Path.AltDirectorySeparatorChar)
+        return path.EndsWith(Path.DirectorySeparatorChar) || path.EndsWith(Path.AltDirectorySeparatorChar)
             ? path
             : path + Path.DirectorySeparatorChar;
     }

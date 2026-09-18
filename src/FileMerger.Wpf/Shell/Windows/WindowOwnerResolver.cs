@@ -10,8 +10,7 @@ public sealed class WindowOwnerResolver : IWindowOwnerResolver
         if (application is null)
             return null;
 
-        Window? activeWindow = application.Windows
-            .OfType<Window>()
+        Window? activeWindow = application.Windows.OfType<Window>()
             .FirstOrDefault(x => x.IsActive && !ReferenceEquals(x, excludedWindow));
 
         if (activeWindow is not null)
@@ -21,8 +20,7 @@ public sealed class WindowOwnerResolver : IWindowOwnerResolver
         if (mainWindow is not null && !ReferenceEquals(mainWindow, excludedWindow))
             return mainWindow;
 
-        return application.Windows
-            .OfType<Window>()
+        return application.Windows.OfType<Window>()
             .FirstOrDefault(x => x.IsVisible && !ReferenceEquals(x, excludedWindow));
     }
 }

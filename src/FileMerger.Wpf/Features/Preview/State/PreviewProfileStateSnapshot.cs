@@ -8,7 +8,6 @@ public sealed class PreviewProfileStateSnapshot(
     bool includeFileSeparators,
     bool includeRelativePathInSeparator,
     bool trimTrailingEmptyLines,
-    bool removeUsingDirectives,
     LineEndingMode lineEndingMode,
     SortMode sortMode,
     InputEncodingMode inputEncodingMode,
@@ -32,7 +31,6 @@ public sealed class PreviewProfileStateSnapshot(
     public bool IncludeFileSeparators { get; } = includeFileSeparators;
     public bool IncludeRelativePathInSeparator { get; } = includeRelativePathInSeparator;
     public bool TrimTrailingEmptyLines { get; } = trimTrailingEmptyLines;
-    public bool RemoveUsingDirectives { get; } = removeUsingDirectives;
     public LineEndingMode LineEndingMode { get; } = lineEndingMode;
     public SortMode SortMode { get; } = sortMode;
     public InputEncodingMode InputEncodingMode { get; } = inputEncodingMode;
@@ -57,9 +55,10 @@ public sealed class PreviewProfileStateSnapshot(
     public SkippedFilesMetadataMode SkippedFilesMetadataMode { get; } = skippedFilesMetadataMode;
     public bool IncludeSourceExcludedFiles { get; } = includeSourceExcludedFiles;
 
-    public SkippedFileCategorySelection SkippedFileCategories { get; } =
-        skippedFileCategories ??
-        SkippedFileCategorySelection.ForCurrentBehavior(includeSourceExcludedFiles);
+    public SkippedFileCategorySelection SkippedFileCategories { get; } = skippedFileCategories ??
+                                                                         SkippedFileCategorySelection
+                                                                             .ForCurrentBehavior(
+                                                                                 includeSourceExcludedFiles);
 
     public bool Equals(PreviewProfileStateSnapshot? other)
     {
@@ -73,7 +72,6 @@ public sealed class PreviewProfileStateSnapshot(
                IncludeFileSeparators == other.IncludeFileSeparators &&
                IncludeRelativePathInSeparator == other.IncludeRelativePathInSeparator &&
                TrimTrailingEmptyLines == other.TrimTrailingEmptyLines &&
-               RemoveUsingDirectives == other.RemoveUsingDirectives &&
                LineEndingMode == other.LineEndingMode &&
                SortMode == other.SortMode &&
                InputEncodingMode == other.InputEncodingMode &&
@@ -107,7 +105,6 @@ public sealed class PreviewProfileStateSnapshot(
         hash.Add(IncludeFileSeparators);
         hash.Add(IncludeRelativePathInSeparator);
         hash.Add(TrimTrailingEmptyLines);
-        hash.Add(RemoveUsingDirectives);
         hash.Add(LineEndingMode);
         hash.Add(SortMode);
         hash.Add(InputEncodingMode);

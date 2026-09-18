@@ -13,11 +13,11 @@ Use the Profile Manager to:
 1. open the profile library;
 2. select a built-in or user profile;
 3. duplicate it or use **Save As**;
-4. adjust file types, filter rules, encoding options, metadata options, and C# options;
+4. adjust file types, filter rules, encoding options, and metadata options, and correct any rule errors;
 5. save the profile;
 6. apply it to the current workspace.
 
-Built-in profiles are read-only. To customize a built-in profile, duplicate it or save it as a new user profile.
+Built-in library entries are read-only, but the Profile Manager allows editing their working copies. **Save** saves an edited built-in profile as a new user profile rather than overwriting the built-in entry. **Duplicate** starts a separate draft, and **Save As** is another way to save a new user profile.
 
 ## Import and export
 
@@ -36,8 +36,8 @@ Recommended workflow for manual editing:
 2. Make a backup copy of the exported JSON file.
 3. Edit the copy manually.
 4. Import the edited file back into FileMerger.
-5. Verify it in the Profile Manager.
-6. Apply it to a test workspace and build preview.
+5. Open it in the Profile Manager, inspect the rules, and correct any validation errors before saving the draft.
+6. Save the corrected profile, apply it to a test workspace, and build preview.
 
 This is safer than creating a large profile JSON document from scratch.
 
@@ -91,8 +91,10 @@ FileMerger profile JSON uses:
 * numeric enum values;
 * `.filemerger.profile.json` file name suffix;
 * `schemaVersion: 1`;
-* a non-empty `metadata` object;
-* a non-empty `profile` object.
+* a present, non-null `metadata` object;
+* a present, non-null `profile` object.
+
+The empty objects in the format outline show the document structure, not a recommended complete profile. Populate the fields using the examples and authoring checklist below.
 
 The app currently serializes enums as numbers, not strings. For example:
 
@@ -106,7 +108,19 @@ not:
 "lineEndingMode": "Preserve"
 ```
 
-If a profile file is malformed, unreadable, uses an unsupported schema version, or does not contain required objects, it is ignored.
+If a profile file cannot be read or deserialized, uses an unsupported schema version, or lacks a non-null `metadata` or `profile` object, it is ignored by the loader. Requiring these objects is not a check that every recommended field has been filled in correctly.
+
+### Loading a file and using its profile
+
+Structural loading and filter-rule validation are separate. The loader checks that it can read and deserialize the document, that the schema version is supported, and that the two required objects are present. It does not run the Profile Editor's filter-rule validation.
+
+Consequently, a structurally readable profile containing an empty or otherwise invalid rule pattern can appear in the library. Import can also store such a profile as a new library entry. Import success does not certify that its rules are valid.
+
+When that profile is opened, the editor keeps the rule for correction. **Apply**, **Save**, **Save As**, and **Create**, including **Save** from the unsaved-changes dialog, reject an editable draft with invalid filter rules. A rejected save keeps the draft in the editor and prevents the requested switch or close. In Workspace Configuration, **OK** rejects invalid rules as well.
+
+A workspace that already contains invalid rules cannot produce a new preview: the error is reported before the merge pipeline starts. The rules are not silently dropped, and a previous successful result is retained when available. Correct the draft before saving it through the Profile Manager or applying it, then rebuild preview.
+
+These are filter-rule checks, not a claim that every setting is fully validated during import or in every editor. The authoring checklist remains necessary.
 
 ## Metadata object
 
@@ -140,6 +154,8 @@ Fields:
 
 For manually authored profiles, use a stable non-empty `id` and a non-empty `name`. The current loader is tolerant when reading user profile files directly from the local profile folder: a missing or blank `metadata.id` is normalized to a newly generated id, and a missing or blank `metadata.name` is normalized to `Profile`. This tolerance is recovery behavior rather than the recommended authoring format.
 
+The editor has a separate normalization rule: assigning a blank working profile name normalizes it to `Default`. This does not change the file loader's `Profile` fallback and does not make an empty name the recommended JSON format.
+
 When importing a profile through the UI, FileMerger creates a new user profile entry and assigns a new id. When loading user profiles directly from the local profile folder, user files are treated as user-defined profiles.
 
 ## Profile object
@@ -154,7 +170,6 @@ Main fields:
 | `includeFileSeparators`                   |     boolean | Adds separators between file sections.               |
 | `includeRelativePathInSeparator`          |     boolean | Uses relative path in section separator text.        |
 | `trimTrailingEmptyLines`                  |     boolean | Trims trailing empty lines from file content.        |
-| `removeUsingDirectives`                   |     boolean | C# option: removes `using` directives from C# files. |
 | `fileTypes`                               |       array | Supported file type selection.                       |
 | `lineEndingMode`                          |      number | See enum table below.                                |
 | `sortMode`                                |      number | See enum table below.                                |
@@ -173,6 +188,10 @@ Main fields:
 | `skippedFilesMetadataMode`                |      number | Controls skipped-file metadata representation. See enum table below. |
 | `includeSourceExcludedFiles`              |     boolean | Legacy compatibility fallback for source-exclusion reporting. Defaults to `false` when missing. |
 | `skippedFileCategories`                   | object/null | Explicit semantic category selection for skipped-file metadata. `null` or missing uses legacy-compatible fallback behavior. |
+
+### Legacy `removeUsingDirectives` compatibility
+
+Profile schema version `1` is unchanged. A schema-1 profile that still contains the legacy `removeUsingDirectives` property remains readable: the property is ignored when the profile is loaded, and it is not serialized when the profile is saved again.
 
 ### Skipped-file metadata policy
 
@@ -258,7 +277,7 @@ Fields:
 | `displayName`                        |  string | Display name shown in UI.                                         |
 | `kind`                               |  number | File kind enum value.                                             |
 | `isEnabled`                          | boolean | Whether this known file type is enabled for merge candidacy by the profile. |
-| `supportsLanguageSpecificProcessing` | boolean | `true` for file types with language-specific options, such as C#. |
+| `supportsLanguageSpecificProcessing` | boolean | Catalog metadata retained in profile files. `true` does not imply that a current user-facing language-specific transformation option is available. |
 
 For predictable results, export an existing profile and edit its `fileTypes` list. Exported profiles contain the catalog-compatible structure expected by the current app.
 
@@ -290,9 +309,26 @@ Fields:
 | `pattern`        |      string | Match pattern. Must not be empty.                                     |
 | `isEnabled`      |     boolean | Whether the rule is active.                                           |
 | `description`    | string/null | Optional description shown in UI.                                     |
-| `isUserEditable` |     boolean | Whether the rule can be edited in UI. Use `true` for manual profiles. |
+| `isUserEditable` |     boolean | Controls whether the editor can remove the rule, individually or when clearing rules. It does not make the row fields read-only. Use `true` for manually authored rules. |
 
-Common examples:
+### Rule validity in the editor
+
+The current checks apply to the trimmed pattern:
+
+* Every rule needs a non-empty, non-whitespace pattern.
+* A `DirectorySegment` pattern must not contain `/` or `\`, regardless of its pattern type.
+* An `Extension` pattern must start with `.`, regardless of its pattern type.
+* A `Regex` pattern must be a valid .NET regular expression.
+
+These checks cover the complete rule collection, including disabled rules and rows hidden by the editor's search or status filters. `isEnabled` controls whether a valid rule participates in filtering; it is not a way to bypass validation. An invalid row blocks applying or saving the draft and building a new preview.
+
+`DirectorySegment` matching evaluates directory components only; the file name itself is never treated as a directory segment.
+
+Regex syntax validation and runtime evaluation are separate. A syntactically valid Regex rule is still evaluated with a 250 ms per-match timeout during preview filtering. If that timeout is exceeded, preview generation fails with an explicit filter-rule validation error instead of treating the expression as a match or no-match.
+
+`isUserEditable: false` prevents the editor's remove/clear actions from deleting that rule. It is not a general edit lock: the current UI still allows changing the row's pattern and other editable fields.
+
+### Common examples
 
 Exclude `bin` directory:
 
@@ -442,7 +478,6 @@ Example JSON:
     "includeFileSeparators": true,
     "includeRelativePathInSeparator": true,
     "trimTrailingEmptyLines": true,
-    "removeUsingDirectives": false,
     "fileTypes": [
       {
         "extension": ".txt",
@@ -593,8 +628,11 @@ Before adding a manually created profile file, verify:
 * `profile.fileTypes` exists and is an array;
 * each file type has a valid extension starting with `.`;
 * enum values are numeric;
-* filter rule patterns are not empty;
-* regex filter rules are valid regular expressions;
+* all filter rule patterns, including disabled rules, remain non-empty after trimming;
+* `DirectorySegment` patterns contain neither `/` nor `\`;
+* `Extension` patterns start with `.`;
+* regex filter rules are valid regular expressions and account for the 250 ms per-match runtime timeout;
+* `isUserEditable` is not being relied on as a general lock on editing rule fields;
 * encoding names are valid .NET encoding names;
 * unsupported text fallback is enabled only when intentionally needed;
 * `profile.skippedFilesMetadataMode` uses a valid numeric `SkippedFilesMetadataMode` value;
@@ -605,9 +643,9 @@ After editing:
 
 1. Restart FileMerger or reopen the Profile Manager.
 2. Check that the profile appears in the user profiles list.
-3. Open the profile and verify file types and rules.
-4. Apply it to a test workspace.
-5. Build preview and inspect discovered/skipped files.
+3. Open the profile and verify file types and all rules, including disabled or filtered-out rows.
+4. Correct any rule errors and save the corrected draft before applying it to a test workspace.
+5. Build preview and inspect discovered/skipped files. Rebuild after any later configuration or inclusion changes before saving the updated merged output.
 
 ## Editing existing profile files
 
@@ -621,7 +659,9 @@ When editing an existing user profile directly:
 6. Save the file as UTF-8.
 7. Reopen Profile Manager and verify the result.
 
-If the profile disappears after editing, the file is probably invalid, unreadable, has an unsupported schema version, or no longer matches the expected document structure.
+If the profile disappears after editing, check that the file is readable, can be deserialized, has the supported schema version, and contains the required objects.
+
+If the profile appears but Apply or Save is disabled, inspect its rules in the editor. An older or imported profile can be structurally readable while containing invalid rules. Fix the affected rows and save again; the application does not repair the profile by silently deleting those rules. If a save attempt through the unsaved-changes dialog is rejected, the same draft remains open for correction.
 
 ## Recommended profile ids
 
@@ -658,6 +698,5 @@ The following settings belong to profiles rather than application preferences:
 * line ending mode
 * sort mode
 * output metadata options
-* C# transformation options
 
 Application preferences are for UI/workflow/display behavior only and should not be used to control generated output.

@@ -18,7 +18,6 @@ public sealed class FakeWorkspaceDocumentPreviewService : IWorkspaceDocumentPrev
         LastBuildPreviewDocument = document;
         BuildPreviewCalls++;
 
-        return OnBuildPreviewAsync?.Invoke(document, stateChanged, cancellationToken)
-               ?? Task.CompletedTask;
+        return OnBuildPreviewAsync?.Invoke(document, stateChanged, cancellationToken) ?? Task.CompletedTask;
     }
 }

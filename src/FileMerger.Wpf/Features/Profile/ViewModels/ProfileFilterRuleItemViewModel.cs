@@ -7,13 +7,13 @@ namespace FileMerger.Wpf.Features.Profile.ViewModels;
 
 public sealed class ProfileFilterRuleItemViewModel : ViewModelBase
 {
-    private FilterMode _mode;
-    private FilterTarget _target;
-    private RulePatternType _patternType;
-    private string _pattern = string.Empty;
-    private bool _isEnabled = true;
     private string? _description;
+    private bool _isEnabled = true;
     private bool _isUserEditable = true;
+    private FilterMode _mode;
+    private string _pattern = string.Empty;
+    private RulePatternType _patternType;
+    private FilterTarget _target;
     private string _validationMessage = string.Empty;
 
     public ProfileFilterRuleItemViewModel()
@@ -138,8 +138,7 @@ public sealed class ProfileFilterRuleItemViewModel : ViewModelBase
             return;
         }
 
-        if (Target == FilterTarget.DirectorySegment &&
-            (pattern.Contains('\\') || pattern.Contains('/')))
+        if (Target == FilterTarget.DirectorySegment && (pattern.Contains('\\') || pattern.Contains('/')))
         {
             ValidationMessage = "Directory segment cannot contain path separators.";
             return;
@@ -169,8 +168,6 @@ public sealed class ProfileFilterRuleItemViewModel : ViewModelBase
 
     private static string? NormalizeDescription(string? value)
     {
-        return string.IsNullOrWhiteSpace(value)
-            ? null
-            : value.Trim();
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

@@ -14,9 +14,7 @@ public sealed class KeyboardShortcutGroupViewModel
 
         Title = title;
         Shortcuts = [.. shortcuts];
-        EmptyText = string.IsNullOrWhiteSpace(emptyText)
-            ? "No keyboard shortcuts assigned yet."
-            : emptyText.Trim();
+        EmptyText = string.IsNullOrWhiteSpace(emptyText) ? "No keyboard shortcuts assigned yet." : emptyText.Trim();
     }
 
     public string Title { get; }

@@ -16,9 +16,7 @@ public partial class PreferencesWindow : GuardedWindow
         Closed += PreferencesWindow_Closed;
     }
 
-    private void PreferencesWindow_DataContextChanged(
-        object sender,
-        DependencyPropertyChangedEventArgs e)
+    private void PreferencesWindow_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         _viewModel?.RequestClose -= ViewModel_RequestClose;
 

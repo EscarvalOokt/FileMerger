@@ -39,8 +39,7 @@ public sealed class OutputMetadataOptionsTests
     [Fact]
     public void EffectiveSkippedFileCategories_Should_Use_Current_Behavior_When_Explicit_Selection_Is_Not_Set()
     {
-        OutputMetadataOptions result = new(
-            IncludeSourceExcludedFiles: false);
+        OutputMetadataOptions result = new(IncludeSourceExcludedFiles: false);
 
         SkippedFileCategorySelection selection = result.EffectiveSkippedFileCategories;
 
@@ -56,11 +55,9 @@ public sealed class OutputMetadataOptionsTests
     [Fact]
     public void EffectiveSkippedFileCategories_Should_Include_Source_Exclusions_When_Legacy_Option_Is_Enabled()
     {
-        OutputMetadataOptions result = new(
-            IncludeSourceExcludedFiles: true);
+        OutputMetadataOptions result = new(IncludeSourceExcludedFiles: true);
 
-        Assert.True(result.EffectiveSkippedFileCategories.Includes(
-            SkippedFileCategory.SourceExclusion));
+        Assert.True(result.EffectiveSkippedFileCategories.Includes(SkippedFileCategory.SourceExclusion));
     }
 
     [Fact]
@@ -75,13 +72,10 @@ public sealed class OutputMetadataOptionsTests
             IncludeProcessingFailures: false,
             IncludeOther: false);
 
-        OutputMetadataOptions result = new(
-            IncludeSourceExcludedFiles: true,
-            SkippedFileCategories: explicitSelection);
+        OutputMetadataOptions result = new(IncludeSourceExcludedFiles: true, SkippedFileCategories: explicitSelection);
 
         Assert.Same(explicitSelection, result.EffectiveSkippedFileCategories);
-        Assert.False(result.EffectiveSkippedFileCategories.Includes(
-            SkippedFileCategory.SourceExclusion));
+        Assert.False(result.EffectiveSkippedFileCategories.Includes(SkippedFileCategory.SourceExclusion));
     }
 
     [Fact]

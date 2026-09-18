@@ -32,14 +32,15 @@ public sealed class ProfileFilterRuleItemViewModelTests
     [Fact]
     public void ToDto_Should_Map_All_Fields()
     {
-        var vm = new ProfileFilterRuleItemViewModel(new WorkspaceFileFilterRuleDto(
-            Mode: FilterMode.Include,
-            Target: FilterTarget.Extension,
-            PatternType: RulePatternType.Exact,
-            Pattern: ".cs",
-            IsEnabled: true,
-            Description: "Include C#",
-            IsUserEditable: true));
+        var vm = new ProfileFilterRuleItemViewModel(
+            new WorkspaceFileFilterRuleDto(
+                Mode: FilterMode.Include,
+                Target: FilterTarget.Extension,
+                PatternType: RulePatternType.Exact,
+                Pattern: ".cs",
+                IsEnabled: true,
+                Description: "Include C#",
+                IsUserEditable: true));
 
         WorkspaceFileFilterRuleDto dto = vm.ToDto();
 
@@ -67,12 +68,13 @@ public sealed class ProfileFilterRuleItemViewModelTests
     [Fact]
     public void Regex_Should_Be_Invalid_When_Pattern_Is_Invalid()
     {
-        var vm = new ProfileFilterRuleItemViewModel(new WorkspaceFileFilterRuleDto(
-            Mode: FilterMode.Exclude,
-            Target: FilterTarget.FileName,
-            PatternType: RulePatternType.Regex,
-            Pattern: "[",
-            IsEnabled: true));
+        var vm = new ProfileFilterRuleItemViewModel(
+            new WorkspaceFileFilterRuleDto(
+                Mode: FilterMode.Exclude,
+                Target: FilterTarget.FileName,
+                PatternType: RulePatternType.Regex,
+                Pattern: "[",
+                IsEnabled: true));
 
         Assert.True(vm.HasValidationError);
         Assert.Contains("Invalid regex:", vm.ValidationMessage);
@@ -81,12 +83,13 @@ public sealed class ProfileFilterRuleItemViewModelTests
     [Fact]
     public void DirectorySegment_Should_Be_Invalid_When_Pattern_Contains_Path_Separator()
     {
-        var vm = new ProfileFilterRuleItemViewModel(new WorkspaceFileFilterRuleDto(
-            Mode: FilterMode.Exclude,
-            Target: FilterTarget.DirectorySegment,
-            PatternType: RulePatternType.Exact,
-            Pattern: @"Library\PackageCache",
-            IsEnabled: true));
+        var vm = new ProfileFilterRuleItemViewModel(
+            new WorkspaceFileFilterRuleDto(
+                Mode: FilterMode.Exclude,
+                Target: FilterTarget.DirectorySegment,
+                PatternType: RulePatternType.Exact,
+                Pattern: @"Library\PackageCache",
+                IsEnabled: true));
 
         Assert.True(vm.HasValidationError);
         Assert.Equal("Directory segment cannot contain path separators.", vm.ValidationMessage);
@@ -95,12 +98,13 @@ public sealed class ProfileFilterRuleItemViewModelTests
     [Fact]
     public void Extension_Should_Be_Invalid_When_Pattern_Does_Not_Start_With_Dot()
     {
-        var vm = new ProfileFilterRuleItemViewModel(new WorkspaceFileFilterRuleDto(
-            Mode: FilterMode.Include,
-            Target: FilterTarget.Extension,
-            PatternType: RulePatternType.Exact,
-            Pattern: "cs",
-            IsEnabled: true));
+        var vm = new ProfileFilterRuleItemViewModel(
+            new WorkspaceFileFilterRuleDto(
+                Mode: FilterMode.Include,
+                Target: FilterTarget.Extension,
+                PatternType: RulePatternType.Exact,
+                Pattern: "cs",
+                IsEnabled: true));
 
         Assert.True(vm.HasValidationError);
         Assert.Equal("Extension pattern should start with '.'.", vm.ValidationMessage);
@@ -109,14 +113,15 @@ public sealed class ProfileFilterRuleItemViewModelTests
     [Fact]
     public void Clone_Should_Copy_Current_Rule()
     {
-        var vm = new ProfileFilterRuleItemViewModel(new WorkspaceFileFilterRuleDto(
-            Mode: FilterMode.Exclude,
-            Target: FilterTarget.FileName,
-            PatternType: RulePatternType.Wildcard,
-            Pattern: "*.g.cs",
-            IsEnabled: true,
-            Description: "Generated",
-            IsUserEditable: true));
+        var vm = new ProfileFilterRuleItemViewModel(
+            new WorkspaceFileFilterRuleDto(
+                Mode: FilterMode.Exclude,
+                Target: FilterTarget.FileName,
+                PatternType: RulePatternType.Wildcard,
+                Pattern: "*.g.cs",
+                IsEnabled: true,
+                Description: "Generated",
+                IsUserEditable: true));
 
         ProfileFilterRuleItemViewModel clone = vm.Clone();
 

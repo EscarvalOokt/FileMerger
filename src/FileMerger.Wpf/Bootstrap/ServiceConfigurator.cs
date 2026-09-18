@@ -1,4 +1,9 @@
+using FileMerger.Application.Updates;
 using FileMerger.Application.UseCases.BuildPreview;
+using FileMerger.Application.UseCases.CheckForUpdates;
+using FileMerger.Application.UseCases.DownloadAndValidateUpdatePackage;
+using FileMerger.Application.UseCases.LaunchUpdateInstaller;
+using FileMerger.Application.UseCases.PrepareUpdateInstallation;
 using FileMerger.Application.UseCases.SaveOutput;
 using FileMerger.Domain.Profiles;
 using FileMerger.Infrastructure.DependencyInjection;
@@ -11,6 +16,10 @@ using FileMerger.Wpf.Features.Settings.Dialogs;
 using FileMerger.Wpf.Features.Settings.ViewModels;
 using FileMerger.Wpf.Features.Settings.Views;
 using FileMerger.Wpf.Features.Sources.Dialogs;
+using FileMerger.Wpf.Features.Updates.Dialogs;
+using FileMerger.Wpf.Features.Updates.Services;
+using FileMerger.Wpf.Features.Updates.ViewModels;
+using FileMerger.Wpf.Features.Updates.Views;
 using FileMerger.Wpf.Features.Workspace;
 using FileMerger.Wpf.Features.Workspace.Configuration.Dialogs;
 using FileMerger.Wpf.Features.Workspace.Configuration.Views;
@@ -36,6 +45,12 @@ public static class ServiceConfigurator
 
         services.AddSingleton<BuildMergePreviewUseCase>();
         services.AddSingleton<SaveMergeOutputUseCase>();
+        services.AddSingleton<UpdateReleaseManifestParser>();
+        services.AddSingleton<UpdateCompatibilityPolicy>();
+        services.AddSingleton<CheckForUpdatesUseCase>();
+        services.AddSingleton<DownloadAndValidateUpdatePackageUseCase>();
+        services.AddSingleton<PrepareUpdateInstallationUseCase>();
+        services.AddSingleton<LaunchUpdateInstallerUseCase>();
 
         services.AddSingleton<IFileTypeCatalog, BuiltInFileTypeCatalog>();
         services.AddSingleton<IBuiltInProfilePresetProvider, BuiltInProfilePresetProvider>();
@@ -47,6 +62,9 @@ public static class ServiceConfigurator
 
         services.AddSingleton<IWindowOwnerResolver, WindowOwnerResolver>();
         services.AddSingleton<IKeyboardShortcutsDialogService, KeyboardShortcutsDialogService>();
+        services.AddSingleton<IUpdateCheckDialogService, UpdateCheckDialogService>();
+        services.AddSingleton<IProfileFilterRulesDialogService, ProfileFilterRulesDialogService>();
+        services.AddSingleton<IApplicationWindowCloseGuardService, ApplicationWindowCloseGuardService>();
 
         services.AddSingleton<IFolderBrowserService, FolderBrowserService>();
         services.AddSingleton<ISaveFileDialogService, SaveFileDialogService>();
@@ -55,6 +73,7 @@ public static class ServiceConfigurator
         services.AddSingleton<ISourceDetailsDialogService, SourceDetailsDialogService>();
         services.AddSingleton<IClipboardService, ClipboardService>();
         services.AddSingleton<IFileSystemLauncher, FileSystemLauncher>();
+        services.AddSingleton<IApplicationShutdownService, ApplicationShutdownService>();
 
         services.AddSingleton<RecentWorkspacesStoragePathPolicy>();
         services.AddSingleton<IRecentWorkspacesService, JsonRecentWorkspacesService>();
@@ -70,6 +89,7 @@ public static class ServiceConfigurator
         services.AddSingleton<IWorkspaceDocumentFactory, WorkspaceDocumentFactory>();
         services.AddSingleton<IWorkspaceDocumentCloneService, WorkspaceDocumentCloneService>();
         services.AddSingleton<IWorkspaceConfigurationDialogService, WorkspaceConfigurationDialogService>();
+        services.AddSingleton<IWorkspaceLocalProfileDialogService, WorkspaceLocalProfileDialogService>();
         services.AddSingleton<IWorkspaceTabRenameDialogService, WorkspaceTabRenameDialogService>();
         services.AddSingleton<WorkspaceTabManagerViewModel>();
 
@@ -82,6 +102,8 @@ public static class ServiceConfigurator
         services.AddSingleton<IProfileEditorFactory, ProfileEditorFactory>();
         services.AddSingleton<IProfileManagerWindowService, ProfileManagerWindowService>();
 
+        services.AddSingleton<IUpdateInstallationCoordinator, UpdateInstallationCoordinator>();
+
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<ICurrentSessionProfileHost>(sp => sp.GetRequiredService<MainViewModel>());
 
@@ -89,7 +111,10 @@ public static class ServiceConfigurator
         services.AddTransient<ProfileManagerWindow>();
         services.AddTransient<PreferencesDialogViewModel>();
         services.AddTransient<PreferencesWindow>();
+        services.AddTransient<UpdateCheckDialogViewModel>();
+        services.AddTransient<UpdateCheckWindow>();
         services.AddTransient<WorkspaceConfigurationWindow>();
+        services.AddTransient<WorkspaceLocalProfileWindow>();
 
         return services.BuildServiceProvider();
     }

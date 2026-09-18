@@ -26,8 +26,7 @@ public sealed record SkippedFileCategorySelection(
         };
     }
 
-    public static SkippedFileCategorySelection ForCurrentBehavior(
-        bool includeSourceExcludedFiles)
+    public static SkippedFileCategorySelection ForCurrentBehavior(bool includeSourceExcludedFiles)
     {
         return new SkippedFileCategorySelection(
             IncludeDisabledFileTypes: true,

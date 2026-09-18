@@ -8,12 +8,10 @@ namespace FileMerger.Wpf.Features.Settings.Dialogs;
 
 public sealed class PreferencesDialogService : IPreferencesDialogService
 {
-    private readonly IServiceProvider _serviceProvider;
     private readonly IWindowOwnerResolver _ownerResolver;
+    private readonly IServiceProvider _serviceProvider;
 
-    public PreferencesDialogService(
-        IServiceProvider serviceProvider,
-        IWindowOwnerResolver ownerResolver)
+    public PreferencesDialogService(IServiceProvider serviceProvider, IWindowOwnerResolver ownerResolver)
     {
         ArgumentNullException.ThrowIfNull(serviceProvider);
         ArgumentNullException.ThrowIfNull(ownerResolver);
@@ -24,11 +22,9 @@ public sealed class PreferencesDialogService : IPreferencesDialogService
 
     public Task<bool> ShowDialogAsync()
     {
-        PreferencesWindow window =
-            _serviceProvider.GetRequiredService<PreferencesWindow>();
+        PreferencesWindow window = _serviceProvider.GetRequiredService<PreferencesWindow>();
 
-        PreferencesDialogViewModel viewModel =
-            _serviceProvider.GetRequiredService<PreferencesDialogViewModel>();
+        PreferencesDialogViewModel viewModel = _serviceProvider.GetRequiredService<PreferencesDialogViewModel>();
 
         window.DataContext = viewModel;
 

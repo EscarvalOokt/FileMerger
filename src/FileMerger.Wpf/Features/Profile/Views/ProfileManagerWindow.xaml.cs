@@ -54,8 +54,7 @@ public partial class ProfileManagerWindow : GuardedWindow
         if (sender is not ListBox listBox)
             return;
 
-        var candidate =
-            listBox.SelectedItem as ProfileLibraryListItemViewModel;
+        var candidate = listBox.SelectedItem as ProfileLibraryListItemViewModel;
 
         await ViewModel.RequestSelectProfileAsync(candidate);
         SyncSelectionFromViewModel();
@@ -91,8 +90,7 @@ public partial class ProfileManagerWindow : GuardedWindow
             .FirstOrDefault(listBox => ReferenceEquals(listBox.ItemsSource, ViewModel.ProfilesView));
     }
 
-    private static IEnumerable<T> FindVisualDescendants<T>(DependencyObject root)
-        where T : DependencyObject
+    private static IEnumerable<T> FindVisualDescendants<T>(DependencyObject root) where T : DependencyObject
     {
         if (root is null)
             yield break;

@@ -15,40 +15,25 @@ public sealed class OpenFileDialogService : IOpenFileDialogService
 
     public IReadOnlyList<string> SelectFiles(string? initialPath = null, string? filter = null)
     {
-        OpenFileDialog dialog = CreateDialog(
-            initialPath: initialPath,
-            filter: filter,
-            multiselect: true);
+        OpenFileDialog dialog = CreateDialog(initialPath: initialPath, filter: filter, multiselect: true);
 
         bool? result = dialog.ShowDialog();
-        return result == true
-            ? dialog.FileNames.ToArray()
-            : [];
+        return result == true ? dialog.FileNames.ToArray() : [];
     }
 
     public string? SelectFile(string? initialPath = null, string? filter = null)
     {
-        OpenFileDialog dialog = CreateDialog(
-            initialPath: initialPath,
-            filter: filter,
-            multiselect: false);
+        OpenFileDialog dialog = CreateDialog(initialPath: initialPath, filter: filter, multiselect: false);
 
         bool? result = dialog.ShowDialog();
-        return result == true
-            ? dialog.FileName
-            : null;
+        return result == true ? dialog.FileName : null;
     }
 
-    private OpenFileDialog CreateDialog(
-        string? initialPath,
-        string? filter,
-        bool multiselect)
+    private OpenFileDialog CreateDialog(string? initialPath, string? filter, bool multiselect)
     {
         OpenFileDialog dialog = new()
         {
-            Filter = string.IsNullOrWhiteSpace(filter)
-                ? _fileDialogFilterBuilder.BuildDefaultOpenFileFilter()
-                : filter,
+            Filter = string.IsNullOrWhiteSpace(filter) ? _fileDialogFilterBuilder.BuildDefaultOpenFileFilter() : filter,
             Multiselect = multiselect
         };
 

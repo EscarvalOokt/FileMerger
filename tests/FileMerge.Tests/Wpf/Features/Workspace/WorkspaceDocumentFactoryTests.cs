@@ -66,13 +66,13 @@ public sealed class WorkspaceDocumentFactoryTests
     public void CreateDefaultDocument_Should_Apply_LineWrap_Default_From_ApplicationPreferences()
     {
         FakeApplicationPreferencesStore preferencesStore = new();
-        preferencesStore.SetCurrent(new ApplicationPreferences(
-            isPreviewLineWrapEnabledByDefault: true,
-            previewDisplayCharacterLimit: 20_000,
-            crashLogRetentionLimit: 50));
+        preferencesStore.SetCurrent(
+            new ApplicationPreferences(
+                isPreviewLineWrapEnabledByDefault: true,
+                previewDisplayCharacterLimit: 20_000,
+                crashLogRetentionLimit: 50));
 
-        WorkspaceDocumentFactory factory =
-            WorkspaceDocumentTestFactory.CreateFactory(preferencesStore);
+        WorkspaceDocumentFactory factory = WorkspaceDocumentTestFactory.CreateFactory(preferencesStore);
 
         WorkspaceDocumentViewModel document = factory.CreateDefaultDocument();
 
@@ -98,10 +98,7 @@ public sealed class WorkspaceDocumentFactoryTests
 
         document.ValidationPane.Load(
         [
-            new ValidationIssue(
-                ValidationSeverity.Warning,
-                "test.warning",
-                "Test warning.")
+            new ValidationIssue(ValidationSeverity.Warning, "test.warning", "Test warning.")
         ]);
 
         document.AppliedPreviewFileStateStore.Set(

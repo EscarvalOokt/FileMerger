@@ -26,16 +26,86 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
         Directory.CreateDirectory(_tempRoot);
     }
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempRoot))
+            Directory.Delete(_tempRoot, recursive: true);
+    }
+
+    [Fact]
+    public async Task SaveAsync_Should_Replace_Existing_User_Profile_After_Successful_Write()
+    {
+        ProfileLibraryService service = CreateService();
+        ProfileLibraryEntry? saved = null;
+
+        try
+        {
+            saved = await service.SaveAsync(CreateEntry(CreateProfile(includeSourceExcludedFiles: false)));
+            string originalFilePath = Assert.IsType<string>(saved.FilePath);
+
+            ProfileLibraryEntry updated = await service.SaveAsync(
+                saved with
+                {
+                    Profile = CreateProfile(includeSourceExcludedFiles: true)
+                });
+
+            Assert.Equal(originalFilePath, updated.FilePath);
+
+            ProfileLibraryEntry loaded = await service.LoadAsync(updated.Id);
+
+            Assert.True(loaded.Profile.IncludeSourceExcludedFiles);
+            AssertNoTemporaryFiles(originalFilePath);
+        }
+        finally
+        {
+            DeleteProfileFile(saved?.FilePath);
+        }
+    }
+
+    [Fact]
+    public async Task SaveAsync_Should_Preserve_Existing_User_Profile_When_Commit_Fails()
+    {
+        ProfileLibraryService service = CreateService();
+        ProfileLibraryEntry? saved = null;
+
+        try
+        {
+            saved = await service.SaveAsync(CreateEntry(CreateProfile(includeSourceExcludedFiles: false)));
+            string filePath = Assert.IsType<string>(saved.FilePath);
+            string originalJson = await File.ReadAllTextAsync(filePath);
+            ProfileLibraryEntry updated = saved with
+            {
+                Profile = CreateProfile(includeSourceExcludedFiles: true)
+            };
+
+            {
+                await using FileStream lockStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.None);
+
+                Exception exception = await Assert.ThrowsAnyAsync<Exception>(() => service.SaveAsync(updated));
+
+                Assert.True(
+                    exception is IOException or UnauthorizedAccessException,
+                    $"Expected an I/O commit failure, but got '{exception.GetType().FullName}'.");
+            }
+
+            string persistedJson = await File.ReadAllTextAsync(filePath);
+
+            Assert.Equal(originalJson, persistedJson);
+            AssertNoTemporaryFiles(filePath);
+        }
+        finally
+        {
+            DeleteProfileFile(saved?.FilePath);
+        }
+    }
+
     [Fact]
     public async Task SaveAsync_And_LoadAsync_Should_RoundTrip_Skipped_File_Category_Selection()
     {
         ProfileLibraryService service = CreateService();
-        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection(
-            includeSourceExclusions: false);
+        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection(includeSourceExclusions: false);
         ProfileLibraryEntry entry = CreateEntry(
-            CreateProfile(
-                includeSourceExcludedFiles: true,
-                skippedFileCategories: selection));
+            CreateProfile(includeSourceExcludedFiles: true, skippedFileCategories: selection));
 
         ProfileLibraryEntry? saved = null;
         try
@@ -50,8 +120,7 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
             ProfileEditorViewModel editor = CreateEditor();
             editor.ApplyProfile(loaded.Profile);
 
-            OutputMetadataOptions options =
-                editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
+            OutputMetadataOptions options = editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
 
             Assert.True(options.IncludeSourceExcludedFiles);
             Assert.Equal(selection, options.SkippedFileCategories);
@@ -68,12 +137,9 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
     {
         ProfileLibraryService service = CreateService();
         string path = Path.Combine(_tempRoot, "import.filemerger.profile.json");
-        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection(
-            includeSourceExclusions: true);
+        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection(includeSourceExclusions: true);
         ProfileLibraryEntry source = CreateEntry(
-            CreateProfile(
-                includeSourceExcludedFiles: false,
-                skippedFileCategories: selection));
+            CreateProfile(includeSourceExcludedFiles: false, skippedFileCategories: selection));
 
         await service.ExportAsync(source, path);
 
@@ -106,9 +172,7 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
         string path = Path.Combine(_tempRoot, "profile.filemerger.profile.json");
         SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
         ProfileLibraryEntry entry = CreateEntry(
-            CreateProfile(
-                includeSourceExcludedFiles: true,
-                skippedFileCategories: selection));
+            CreateProfile(includeSourceExcludedFiles: true, skippedFileCategories: selection));
 
         await service.ExportAsync(entry, path);
 
@@ -120,12 +184,18 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
 
         Assert.Equal(1, root.GetProperty("schemaVersion").GetInt32());
         Assert.True(profile.GetProperty("includeSourceExcludedFiles").GetBoolean());
-        Assert.Equal(selection.IncludeDisabledFileTypes, categories.GetProperty("includeDisabledFileTypes").GetBoolean());
+        Assert.Equal(
+            selection.IncludeDisabledFileTypes,
+            categories.GetProperty("includeDisabledFileTypes").GetBoolean());
         Assert.Equal(selection.IncludeUnsupportedFiles, categories.GetProperty("includeUnsupportedFiles").GetBoolean());
-        Assert.Equal(selection.IncludeProfileExclusions, categories.GetProperty("includeProfileExclusions").GetBoolean());
+        Assert.Equal(
+            selection.IncludeProfileExclusions,
+            categories.GetProperty("includeProfileExclusions").GetBoolean());
         Assert.Equal(selection.IncludeManualExclusions, categories.GetProperty("includeManualExclusions").GetBoolean());
         Assert.Equal(selection.IncludeSourceExclusions, categories.GetProperty("includeSourceExclusions").GetBoolean());
-        Assert.Equal(selection.IncludeProcessingFailures, categories.GetProperty("includeProcessingFailures").GetBoolean());
+        Assert.Equal(
+            selection.IncludeProcessingFailures,
+            categories.GetProperty("includeProcessingFailures").GetBoolean());
         Assert.Equal(selection.IncludeOther, categories.GetProperty("includeOther").GetBoolean());
     }
 
@@ -134,23 +204,18 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
     {
         ProfileLibraryService service = CreateService();
         string path = Path.Combine(_tempRoot, "profile.filemerger.profile.json");
-        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection(
-            includeSourceExclusions: false);
+        SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection(includeSourceExclusions: false);
         ProfileLibraryEntry entry = CreateEntry(
-            CreateProfile(
-                includeSourceExcludedFiles: true,
-                skippedFileCategories: selection));
+            CreateProfile(includeSourceExcludedFiles: true, skippedFileCategories: selection));
 
         await service.ExportAsync(entry, path);
 
-        ProfileLibraryDocumentDto document =
-            await DeserializeProfileDocumentAsync(path);
+        ProfileLibraryDocumentDto document = await DeserializeProfileDocumentAsync(path);
 
         ProfileEditorViewModel editor = CreateEditor();
         editor.ApplyProfile(document.Profile);
 
-        OutputMetadataOptions options =
-            editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
+        OutputMetadataOptions options = editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
 
         Assert.True(options.IncludeSourceExcludedFiles);
         Assert.Equal(selection, options.SkippedFileCategories);
@@ -172,12 +237,9 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
         var root = JsonNode.Parse(json)!;
         root["profile"]!.AsObject().Remove("skippedFileCategories");
 
-        await File.WriteAllTextAsync(
-            path,
-            root.ToJsonString(CreateJsonOptions()));
+        await File.WriteAllTextAsync(path, root.ToJsonString(CreateJsonOptions()));
 
-        ProfileLibraryDocumentDto document =
-            await DeserializeProfileDocumentAsync(path);
+        ProfileLibraryDocumentDto document = await DeserializeProfileDocumentAsync(path);
 
         Assert.Equal(1, document.SchemaVersion);
         Assert.Null(document.Profile.SkippedFileCategories);
@@ -186,8 +248,7 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
         ProfileEditorViewModel editor = CreateEditor();
         editor.ApplyProfile(document.Profile);
 
-        OutputMetadataOptions options =
-            editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
+        OutputMetadataOptions options = editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
 
         Assert.Null(options.SkippedFileCategories);
         Assert.True(options.EffectiveSkippedFileCategories.IncludeDisabledFileTypes);
@@ -199,6 +260,52 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
         Assert.True(options.EffectiveSkippedFileCategories.IncludeOther);
     }
 
+    [Fact]
+    public async Task Legacy_Schema_V1_Profile_With_RemoveUsingDirectives_Should_Load_And_Save_Without_Field()
+    {
+        ProfileLibraryService service = CreateService();
+        string path = Path.Combine(_tempRoot, "legacy-using.filemerger.profile.json");
+        ProfileLibraryDocumentDto source = new(SchemaVersion: 1, Metadata: CreateMetadata(), Profile: CreateProfile());
+
+        string json = JsonSerializer.Serialize(source, CreateJsonOptions());
+        var root = JsonNode.Parse(json)!;
+        root["profile"]!.AsObject()["removeUsingDirectives"] = true;
+
+        await File.WriteAllTextAsync(path, root.ToJsonString(CreateJsonOptions()));
+
+        IReadOnlyCollection<ProfileLibraryEntry>? imported = null;
+        try
+        {
+            imported = await service.ImportAsync([path]);
+
+            ProfileLibraryEntry importedEntry = Assert.Single(imported);
+            Assert.True(importedEntry.Profile.TrimTrailingEmptyLines);
+
+            string savedPath = Assert.IsType<string>(importedEntry.FilePath);
+            string savedJson = await File.ReadAllTextAsync(savedPath);
+            using var savedDocument = JsonDocument.Parse(savedJson);
+
+            Assert.False(
+                savedDocument.RootElement.GetProperty("profile").TryGetProperty("removeUsingDirectives", out _));
+        }
+        finally
+        {
+            if (imported is not null)
+            {
+                foreach (ProfileLibraryEntry importedEntry in imported)
+                    DeleteProfileFile(importedEntry.FilePath);
+            }
+        }
+    }
+
+    private static void AssertNoTemporaryFiles(string targetPath)
+    {
+        string directory = Path.GetDirectoryName(targetPath)!;
+        string pattern = $".{Path.GetFileName(targetPath)}.*.tmp";
+
+        Assert.Empty(Directory.GetFiles(directory, pattern, SearchOption.TopDirectoryOnly));
+    }
+
     private static ProfileLibraryService CreateService()
     {
         return new ProfileLibraryService(new EmptyBuiltInProfilePresetProvider());
@@ -206,7 +313,7 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
 
     private static ProfileEditorViewModel CreateEditor()
     {
-        return new ProfileEditorViewModel(new BuiltInFileTypeCatalog());
+        return new ProfileEditorViewModel(new BuiltInFileTypeCatalog(), new NoOpProfileFilterRulesDialogService());
     }
 
     private static ProfileLibraryEntry CreateEntry(WorkspaceProfileDto profile)
@@ -239,7 +346,6 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
             IncludeFileSeparators: true,
             IncludeRelativePathInSeparator: true,
             TrimTrailingEmptyLines: true,
-            RemoveUsingDirectives: false,
             FileTypes:
             [
                 new WorkspaceFileTypeDto(
@@ -265,8 +371,7 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
             SkippedFileCategories: skippedFileCategories);
     }
 
-    private static SkippedFileCategorySelection CreateSkippedFileCategorySelection(
-        bool includeSourceExclusions = false)
+    private static SkippedFileCategorySelection CreateSkippedFileCategorySelection(bool includeSourceExclusions = false)
     {
         return new SkippedFileCategorySelection(
             IncludeDisabledFileTypes: true,
@@ -284,15 +389,12 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
             File.Delete(filePath);
     }
 
-    private static async Task<ProfileLibraryDocumentDto> DeserializeProfileDocumentAsync(
-        string path)
+    private static async Task<ProfileLibraryDocumentDto> DeserializeProfileDocumentAsync(string path)
     {
         await using FileStream stream = File.OpenRead(path);
 
         ProfileLibraryDocumentDto? document =
-            await JsonSerializer.DeserializeAsync<ProfileLibraryDocumentDto>(
-                stream,
-                CreateJsonOptions());
+            await JsonSerializer.DeserializeAsync<ProfileLibraryDocumentDto>(stream, CreateJsonOptions());
 
         return Assert.IsType<ProfileLibraryDocumentDto>(document);
     }
@@ -306,17 +408,18 @@ public sealed class ProfileLibraryPersistenceTests : IDisposable
         };
     }
 
-    public void Dispose()
-    {
-        if (Directory.Exists(_tempRoot))
-            Directory.Delete(_tempRoot, recursive: true);
-    }
-
     private sealed class EmptyBuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
     {
         public IReadOnlyCollection<ProfileLibraryEntry> GetAll()
         {
             return [];
+        }
+    }
+
+    private sealed class NoOpProfileFilterRulesDialogService : IProfileFilterRulesDialogService
+    {
+        public void Show(ProfileEditorViewModel editor)
+        {
         }
     }
 }

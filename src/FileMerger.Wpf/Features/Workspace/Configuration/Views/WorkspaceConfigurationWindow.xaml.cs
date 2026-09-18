@@ -15,9 +15,7 @@ public partial class WorkspaceConfigurationWindow
         Closed += WorkspaceConfigurationWindow_Closed;
     }
 
-    private void WorkspaceConfigurationWindow_DataContextChanged(
-        object sender,
-        DependencyPropertyChangedEventArgs e)
+    private void WorkspaceConfigurationWindow_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         _viewModel?.RequestClose -= ViewModel_RequestClose;
 

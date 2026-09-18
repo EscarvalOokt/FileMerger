@@ -43,9 +43,7 @@ public sealed class WorkspaceTabViewModel : ViewModelBase
                 return sessionName.Trim();
 
             string? fileTitle = BuildTitleFromWorkspaceFilePath(Document.WorkspaceFilePath);
-            return string.IsNullOrWhiteSpace(fileTitle)
-                ? UntitledWorkspaceTitle
-                : fileTitle;
+            return string.IsNullOrWhiteSpace(fileTitle) ? UntitledWorkspaceTitle : fileTitle;
         }
     }
 
@@ -78,9 +76,10 @@ public sealed class WorkspaceTabViewModel : ViewModelBase
         }
     }
 
-    public string CloseTooltip => IsBusy
-        ? "Workspace operation is running. This tab cannot be closed right now."
-        : "Close workspace tab (Ctrl+W)";
+    public string CloseTooltip =>
+        IsBusy
+            ? "Workspace operation is running. This tab cannot be closed right now."
+            : "Close workspace tab (Ctrl+W)";
 
     public bool HasDirtyIndicator => IsWorkspaceDirty;
 
@@ -125,10 +124,7 @@ public sealed class WorkspaceTabViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(message))
             return false;
 
-        return !string.Equals(
-            message.Trim(),
-            ReadyStatusMessage,
-            StringComparison.Ordinal);
+        return !string.Equals(message.Trim(), ReadyStatusMessage, StringComparison.Ordinal);
     }
 
     private static string? BuildTitleFromWorkspaceFilePath(string? workspaceFilePath)
@@ -143,15 +139,11 @@ public sealed class WorkspaceTabViewModel : ViewModelBase
         if (fileName.EndsWith(WorkspaceFileExtension, StringComparison.OrdinalIgnoreCase))
         {
             string title = fileName[..^WorkspaceFileExtension.Length].Trim();
-            return string.IsNullOrWhiteSpace(title)
-                ? null
-                : title;
+            return string.IsNullOrWhiteSpace(title) ? null : title;
         }
 
         string fallbackTitle = Path.GetFileNameWithoutExtension(fileName).Trim();
-        return string.IsNullOrWhiteSpace(fallbackTitle)
-            ? null
-            : fallbackTitle;
+        return string.IsNullOrWhiteSpace(fallbackTitle) ? null : fallbackTitle;
     }
 
     private void SessionSettings_PropertyChanged(object? sender, PropertyChangedEventArgs e)

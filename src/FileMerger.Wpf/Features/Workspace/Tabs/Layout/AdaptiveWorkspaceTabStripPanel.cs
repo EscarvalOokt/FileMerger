@@ -11,9 +11,7 @@ public sealed class AdaptiveWorkspaceTabStripPanel : Panel
             return new Size();
 
         UIElement tabsElement = InternalChildren[0];
-        UIElement? newTabButton = InternalChildren.Count > 1
-            ? InternalChildren[1]
-            : null;
+        UIElement? newTabButton = InternalChildren.Count > 1 ? InternalChildren[1] : null;
 
         newTabButton?.Measure(new Size(double.PositiveInfinity, availableSize.Height));
 
@@ -22,13 +20,9 @@ public sealed class AdaptiveWorkspaceTabStripPanel : Panel
 
         tabsElement.Measure(new Size(tabsAvailableWidth, availableSize.Height));
 
-        double desiredWidth = Math.Min(
-            availableSize.Width,
-            tabsElement.DesiredSize.Width + buttonWidth);
+        double desiredWidth = Math.Min(availableSize.Width, tabsElement.DesiredSize.Width + buttonWidth);
 
-        double desiredHeight = Math.Max(
-            tabsElement.DesiredSize.Height,
-            newTabButton?.DesiredSize.Height ?? 0.0);
+        double desiredHeight = Math.Max(tabsElement.DesiredSize.Height, newTabButton?.DesiredSize.Height ?? 0.0);
 
         return new Size(desiredWidth, desiredHeight);
     }
@@ -39,20 +33,14 @@ public sealed class AdaptiveWorkspaceTabStripPanel : Panel
             return finalSize;
 
         UIElement tabsElement = InternalChildren[0];
-        UIElement? newTabButton = InternalChildren.Count > 1
-            ? InternalChildren[1]
-            : null;
+        UIElement? newTabButton = InternalChildren.Count > 1 ? InternalChildren[1] : null;
 
         double buttonWidth = newTabButton?.DesiredSize.Width ?? 0.0;
         double tabsWidth = Math.Max(0.0, finalSize.Width - buttonWidth);
 
         tabsElement.Arrange(new Rect(0.0, 0.0, tabsWidth, finalSize.Height));
 
-        newTabButton?.Arrange(new Rect(
-            tabsWidth,
-            0.0,
-            buttonWidth,
-            finalSize.Height));
+        newTabButton?.Arrange(new Rect(tabsWidth, 0.0, buttonWidth, finalSize.Height));
 
         return finalSize;
     }

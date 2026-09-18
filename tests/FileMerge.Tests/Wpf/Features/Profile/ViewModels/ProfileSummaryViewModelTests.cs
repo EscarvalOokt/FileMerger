@@ -12,13 +12,14 @@ public sealed class ProfileSummaryViewModelTests
     {
         var summary = new ProfileSummaryViewModel();
 
-        summary.Apply(CreateProfile(
-            fileTypes:
-            [
-                FileType(".cs", true, supportsLanguageSpecificProcessing: true),
-                FileType(".xaml", true),
-                FileType(".json", false)
-            ]));
+        summary.Apply(
+            CreateProfile(
+                fileTypes:
+                [
+                    FileType(".cs", true, supportsLanguageSpecificProcessing: true),
+                    FileType(".xaml", true),
+                    FileType(".json", false)
+                ]));
 
         Assert.Equal("2 enabled file types", summary.FileTypesHeadline);
         Assert.Equal(".cs, .xaml", summary.FileTypes);
@@ -29,13 +30,14 @@ public sealed class ProfileSummaryViewModelTests
     {
         var summary = new ProfileSummaryViewModel();
 
-        summary.Apply(CreateProfile(
-            filterRules:
-            [
-                FilterRule("bin", isEnabled: true),
-                FilterRule("obj", isEnabled: false),
-                FilterRule("Library", isEnabled: true)
-            ]));
+        summary.Apply(
+            CreateProfile(
+                filterRules:
+                [
+                    FilterRule("bin", isEnabled: true),
+                    FilterRule("obj", isEnabled: false),
+                    FilterRule("Library", isEnabled: true)
+                ]));
 
         Assert.Equal("2 enabled / 3 total", summary.FilterRulesHeadline);
         Assert.Equal("1 disabled rule will be ignored.", summary.FilterRules);
@@ -46,12 +48,13 @@ public sealed class ProfileSummaryViewModelTests
     {
         var summary = new ProfileSummaryViewModel();
 
-        summary.Apply(CreateProfile(
-            includeBuildTimestampMetadata: true,
-            includeSessionNameMetadata: false,
-            includeOutputPathMetadata: true,
-            includeFileSummaryMetadata: true,
-            skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed));
+        summary.Apply(
+            CreateProfile(
+                includeBuildTimestampMetadata: true,
+                includeSessionNameMetadata: false,
+                includeOutputPathMetadata: true,
+                includeFileSummaryMetadata: true,
+                skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed));
 
         Assert.Equal(
             "Build timestamp · Output path · File summary · Skipped files: Detailed · " +
@@ -65,9 +68,10 @@ public sealed class ProfileSummaryViewModelTests
     {
         var summary = new ProfileSummaryViewModel();
 
-        summary.Apply(CreateProfile(
-            skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed,
-            includeSourceExcludedFiles: true));
+        summary.Apply(
+            CreateProfile(
+                skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed,
+                includeSourceExcludedFiles: true));
 
         Assert.Contains("Skipped files: Detailed", summary.OutputMetadata);
         Assert.Contains("Source exclusions", summary.OutputMetadata);
@@ -87,10 +91,11 @@ public sealed class ProfileSummaryViewModelTests
             IncludeProcessingFailures: false,
             IncludeOther: true);
 
-        summary.Apply(CreateProfile(
-            skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple,
-            includeSourceExcludedFiles: false,
-            skippedFileCategories: selection));
+        summary.Apply(
+            CreateProfile(
+                skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple,
+                includeSourceExcludedFiles: false,
+                skippedFileCategories: selection));
 
         Assert.Contains("Skipped files: Simple", summary.OutputMetadata);
         Assert.Contains(
@@ -114,8 +119,7 @@ public sealed class ProfileSummaryViewModelTests
             IncludeProcessingFailures: false,
             IncludeOther: false);
 
-        summary.Apply(CreateProfile(
-            skippedFileCategories: selection));
+        summary.Apply(CreateProfile(skippedFileCategories: selection));
 
         Assert.Contains("Skipped files: None", summary.OutputMetadata);
         Assert.Contains("Skipped categories: none", summary.OutputMetadata);
@@ -136,11 +140,12 @@ public sealed class ProfileSummaryViewModelTests
     {
         var summary = new ProfileSummaryViewModel();
 
-        summary.Apply(CreateProfile(
-            includeUnsupportedTextFiles: true,
-            unsupportedTextMaxFileSizeBytes: 262_144,
-            unsupportedTextProbeSizeBytes: 4_096,
-            unsupportedTextMaxControlCharacterRatio: 0.1));
+        summary.Apply(
+            CreateProfile(
+                includeUnsupportedTextFiles: true,
+                unsupportedTextMaxFileSizeBytes: 262_144,
+                unsupportedTextProbeSizeBytes: 4_096,
+                unsupportedTextMaxControlCharacterRatio: 0.1));
 
         Assert.Contains("Enabled", summary.UnsupportedTextFallback);
         Assert.Contains("Max size: 262144 bytes", summary.UnsupportedTextFallback);
@@ -153,12 +158,13 @@ public sealed class ProfileSummaryViewModelTests
     {
         var summary = new ProfileSummaryViewModel();
 
-        summary.Apply(CreateProfile(
-            filterRules:
-            [
-                FilterRule("bin", isEnabled: true),
-                FilterRule("obj", isEnabled: true)
-            ]));
+        summary.Apply(
+            CreateProfile(
+                filterRules:
+                [
+                    FilterRule("bin", isEnabled: true),
+                    FilterRule("obj", isEnabled: true)
+                ]));
 
         Assert.Equal("2 enabled / 2 total", summary.FilterRulesHeadline);
         Assert.Equal("All configured rules are enabled.", summary.FilterRules);
@@ -184,7 +190,6 @@ public sealed class ProfileSummaryViewModelTests
             IncludeFileSeparators: true,
             IncludeRelativePathInSeparator: true,
             TrimTrailingEmptyLines: true,
-            RemoveUsingDirectives: false,
             FileTypes: fileTypes ?? [],
             LineEndingMode: LineEndingMode.Preserve,
             SortMode: SortMode.ByRelativePathAscending,
@@ -218,9 +223,7 @@ public sealed class ProfileSummaryViewModelTests
             SupportsLanguageSpecificProcessing: supportsLanguageSpecificProcessing);
     }
 
-    private static WorkspaceFileFilterRuleDto FilterRule(
-        string pattern,
-        bool isEnabled)
+    private static WorkspaceFileFilterRuleDto FilterRule(string pattern, bool isEnabled)
     {
         return new WorkspaceFileFilterRuleDto(
             Mode: FilterMode.Exclude,

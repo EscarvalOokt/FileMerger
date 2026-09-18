@@ -15,15 +15,13 @@ public sealed class JsonApplicationPreferencesService : IApplicationPreferencesS
 
     private readonly ApplicationPreferencesStoragePathPolicy _pathPolicy;
 
-    public JsonApplicationPreferencesService(
-        ApplicationPreferencesStoragePathPolicy pathPolicy)
+    public JsonApplicationPreferencesService(ApplicationPreferencesStoragePathPolicy pathPolicy)
     {
         ArgumentNullException.ThrowIfNull(pathPolicy);
         _pathPolicy = pathPolicy;
     }
 
-    public async Task<ApplicationPreferences> LoadAsync(
-        CancellationToken cancellationToken = default)
+    public async Task<ApplicationPreferences> LoadAsync(CancellationToken cancellationToken = default)
     {
         string filePath = _pathPolicy.GetStorageFilePath();
 
@@ -40,28 +38,23 @@ public sealed class JsonApplicationPreferencesService : IApplicationPreferencesS
                     JsonOptions,
                     cancellationToken);
 
-            if (document is null ||
-                document.SchemaVersion != CurrentSchemaVersion ||
-                document.Preferences is null)
+            if (document is null || document.SchemaVersion != CurrentSchemaVersion || document.Preferences is null)
             {
                 return ApplicationPreferences.Default;
             }
 
             return document.Preferences.ToModel();
         }
-        catch (Exception ex) when (
-            ex is JsonException ||
-            ex is IOException ||
-            ex is UnauthorizedAccessException ||
-            ex is NotSupportedException)
+        catch (Exception ex) when (ex is JsonException ||
+                                   ex is IOException ||
+                                   ex is UnauthorizedAccessException ||
+                                   ex is NotSupportedException)
         {
             return ApplicationPreferences.Default;
         }
     }
 
-    public async Task SaveAsync(
-        ApplicationPreferences preferences,
-        CancellationToken cancellationToken = default)
+    public async Task SaveAsync(ApplicationPreferences preferences, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(preferences);
 
@@ -82,10 +75,6 @@ public sealed class JsonApplicationPreferencesService : IApplicationPreferencesS
 
         await using FileStream stream = File.Create(filePath);
 
-        await JsonSerializer.SerializeAsync(
-            stream,
-            document,
-            JsonOptions,
-            cancellationToken);
+        await JsonSerializer.SerializeAsync(stream, document, JsonOptions, cancellationToken);
     }
 }

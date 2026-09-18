@@ -18,6 +18,12 @@ public sealed class JsonRecentWorkspacesServiceTests : IDisposable
         Directory.CreateDirectory(_tempRoot);
     }
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempRoot))
+            Directory.Delete(_tempRoot, recursive: true);
+    }
+
     [Fact]
     public async Task GetRecentWorkspacesAsync_Should_Return_Empty_When_Storage_File_Is_Missing()
     {
@@ -106,8 +112,12 @@ public sealed class JsonRecentWorkspacesServiceTests : IDisposable
         RecentWorkspaceEntry[] result = [.. await service.GetRecentWorkspacesAsync()];
 
         Assert.Equal(JsonRecentWorkspacesService.MaxEntries, result.Length);
-        Assert.DoesNotContain(result, x => x.FilePath.EndsWith("workspace-0.filemerger.workspace.json", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(result, x => x.FilePath.EndsWith("workspace-12.filemerger.workspace.json", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            result,
+            x => x.FilePath.EndsWith("workspace-0.filemerger.workspace.json", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            result,
+            x => x.FilePath.EndsWith("workspace-12.filemerger.workspace.json", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -210,9 +220,7 @@ public sealed class JsonRecentWorkspacesServiceTests : IDisposable
 
     private JsonRecentWorkspacesService CreateService(ManualTimeProvider? timeProvider = null)
     {
-        return new JsonRecentWorkspacesService(
-            CreatePathPolicy(),
-            timeProvider ?? new ManualTimeProvider());
+        return new JsonRecentWorkspacesService(CreatePathPolicy(), timeProvider ?? new ManualTimeProvider());
     }
 
     private RecentWorkspacesStoragePathPolicy CreatePathPolicy()
@@ -227,16 +235,9 @@ public sealed class JsonRecentWorkspacesServiceTests : IDisposable
         return path;
     }
 
-    public void Dispose()
-    {
-        if (Directory.Exists(_tempRoot))
-            Directory.Delete(_tempRoot, recursive: true);
-    }
-
     private sealed class ManualTimeProvider : TimeProvider
     {
-        private DateTimeOffset _utcNow = new(
-            new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        private DateTimeOffset _utcNow = new(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
         public override DateTimeOffset GetUtcNow()
         {

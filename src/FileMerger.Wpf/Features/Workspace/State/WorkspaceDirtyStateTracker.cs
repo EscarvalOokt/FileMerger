@@ -5,8 +5,8 @@ namespace FileMerger.Wpf.Features.Workspace.State;
 
 public sealed class WorkspaceDirtyStateTracker : ViewModelBase
 {
-    private WorkspaceDocumentStateSnapshot? _lastSavedState;
     private bool _isWorkspaceDirty;
+    private WorkspaceDocumentStateSnapshot? _lastSavedState;
 
     public bool IsWorkspaceDirty
     {
@@ -23,15 +23,10 @@ public sealed class WorkspaceDirtyStateTracker : ViewModelBase
 
     public bool HasSavedState => _lastSavedState is not null;
 
-    public string WorkspaceDirtySummary =>
-        IsWorkspaceDirty
-            ? "Workspace has unsaved changes."
-            : string.Empty;
+    public string WorkspaceDirtySummary => IsWorkspaceDirty ? "Workspace has unsaved changes." : string.Empty;
 
     public string WorkspaceDirtyTooltip =>
-        IsWorkspaceDirty
-            ? "Workspace settings were changed after the last save."
-            : "Workspace is saved.";
+        IsWorkspaceDirty ? "Workspace settings were changed after the last save." : "Workspace is saved.";
 
     public void Reset()
     {
@@ -70,9 +65,7 @@ public sealed class WorkspaceDirtyStateTracker : ViewModelBase
         IsWorkspaceDirty = !WorkspaceStatesEqual(currentState, _lastSavedState);
     }
 
-    private static bool WorkspaceStatesEqual(
-        WorkspaceDocumentStateSnapshot left,
-        WorkspaceDocumentStateSnapshot right)
+    private static bool WorkspaceStatesEqual(WorkspaceDocumentStateSnapshot left, WorkspaceDocumentStateSnapshot right)
     {
         PreviewStateSnapshot leftPreview = left.PreviewState;
         PreviewStateSnapshot rightPreview = right.PreviewState;
@@ -140,11 +133,13 @@ public sealed class WorkspaceDirtyStateTracker : ViewModelBase
             MergeSourceExclusionStateSnapshot leftExclusion = leftEnumerator.Current;
             MergeSourceExclusionStateSnapshot rightExclusion = rightEnumerator.Current;
 
-            if (!string.Equals(leftExclusion.RelativePath, rightExclusion.RelativePath, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(
+                    leftExclusion.RelativePath,
+                    rightExclusion.RelativePath,
+                    StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            if (leftExclusion.Type != rightExclusion.Type ||
-                leftExclusion.IsEnabled != rightExclusion.IsEnabled)
+            if (leftExclusion.Type != rightExclusion.Type || leftExclusion.IsEnabled != rightExclusion.IsEnabled)
             {
                 return false;
             }

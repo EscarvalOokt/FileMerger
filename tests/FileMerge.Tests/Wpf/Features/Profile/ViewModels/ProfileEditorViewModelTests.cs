@@ -37,37 +37,17 @@ public sealed class ProfileEditorViewModelTests
     }
 
     [Fact]
-    public void SelectSectionCommand_Should_Not_Select_CSharp_When_Not_Available()
+    public void EditFilterRulesCommand_Should_Open_Dialog_With_Current_Editor()
     {
-        ProfileEditorViewModel editor = CreateEditor();
-        FileTypeOptionViewModel csharpFileType = editor.FileTypes.Single(x => x.Kind == FileKind.CSharp);
+        FakeProfileFilterRulesDialogService dialogService = new();
+        ProfileEditorViewModel editor = CreateEditor(dialogService);
 
-        csharpFileType.IsEnabled = false;
+        Assert.True(editor.EditFilterRulesCommand.CanExecute(null));
 
-        Assert.False(editor.ShowCSharpOptions);
-        Assert.False(editor.SelectSectionCommand.CanExecute(ProfileEditorSection.CSharpTransformations));
+        editor.EditFilterRulesCommand.Execute(null);
 
-        editor.SelectSectionCommand.Execute(ProfileEditorSection.CSharpTransformations);
-
-        Assert.Equal(ProfileEditorSection.General, editor.SelectedSection);
-    }
-
-    [Fact]
-    public void FileTypes_Should_Move_From_CSharp_Section_When_CSharp_Disabled()
-    {
-        ProfileEditorViewModel editor = CreateEditor();
-        FileTypeOptionViewModel csharpFileType = editor.FileTypes.Single(x => x.Kind == FileKind.CSharp);
-
-        csharpFileType.IsEnabled = true;
-        editor.SelectSectionCommand.Execute(ProfileEditorSection.CSharpTransformations);
-
-        Assert.Equal(ProfileEditorSection.CSharpTransformations, editor.SelectedSection);
-
-        csharpFileType.IsEnabled = false;
-
-        Assert.Equal(ProfileEditorSection.FileTypes, editor.SelectedSection);
-        Assert.True(editor.IsFileTypesSectionSelected);
-        Assert.False(editor.IsCSharpTransformationsSectionSelected);
+        Assert.Equal(1, dialogService.ShowCallCount);
+        Assert.Same(editor, dialogService.LastEditor);
     }
 
     [Fact]
@@ -97,19 +77,30 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library")
+                ]));
 
         MergeProfile runtimeProfile = editor.BuildProfile();
 
-        Assert.DoesNotContain(runtimeProfile.FilterRules, x =>
-            x is { Mode: FilterMode.Exclude, Target: FilterTarget.DirectorySegment, PatternType: RulePatternType.Exact, Pattern: "bin" });
+        Assert.DoesNotContain(
+            runtimeProfile.FilterRules,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.DirectorySegment, PatternType: RulePatternType.Exact,
+                Pattern: "bin"
+            });
 
-        Assert.Contains(runtimeProfile.FilterRules, x =>
-            x is { Mode: FilterMode.Exclude, Target: FilterTarget.DirectorySegment, PatternType: RulePatternType.Exact, Pattern: "Library" });
+        Assert.Contains(
+            runtimeProfile.FilterRules,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.DirectorySegment, PatternType: RulePatternType.Exact,
+                Pattern: "Library"
+            });
     }
 
     [Fact]
@@ -175,11 +166,12 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library")
+                ]));
 
         editor.SelectedFilterRule = editor.FilterRules.Single();
 
@@ -196,12 +188,13 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library"),
-                ExcludeDirectoryRule("Temp")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library"),
+                    ExcludeDirectoryRule("Temp")
+                ]));
 
         editor.SelectedFilterRule = editor.FilterRules[0];
 
@@ -216,12 +209,13 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library"),
-                ExcludeDirectoryRule("Temp")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library"),
+                    ExcludeDirectoryRule("Temp")
+                ]));
 
         editor.SelectedFilterRule = editor.FilterRules[1];
 
@@ -236,12 +230,13 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library"),
-                ExcludeDirectoryRule("Temp")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library"),
+                    ExcludeDirectoryRule("Temp")
+                ]));
 
         editor.SelectedFilterRule = editor.FilterRules[0];
 
@@ -256,12 +251,13 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library"),
-                ExcludeDirectoryRule("Temp")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library"),
+                    ExcludeDirectoryRule("Temp")
+                ]));
 
         editor.ClearFilterRulesCommand.Execute(null);
 
@@ -274,11 +270,12 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library")
+                ]));
 
         ProfileFilterRuleItemViewModel rule = editor.FilterRules.Single();
         rule.Pattern = "Temp";
@@ -296,18 +293,36 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library")
+                ]));
 
-        editor.FilterRules.Single().Pattern = "Temp";
+        ProfileFilterRuleItemViewModel rule = Assert.Single(editor.FilterRules);
+        Assert.Equal("Library", Assert.Single(editor.BuildProfile().FilterRules).Pattern);
+
+        rule.Pattern = string.Empty;
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(editor.BuildProfile);
+        Assert.Equal(editor.DraftValidationMessage, exception.Message);
+        Assert.Same(rule, Assert.Single(editor.FilterRules));
+
+        rule.Pattern = "Temp";
 
         MergeProfile runtimeProfile = editor.BuildProfile();
 
-        Assert.Contains(runtimeProfile.FilterRules, x =>
-            x is { Mode: FilterMode.Exclude, Target: FilterTarget.DirectorySegment, PatternType: RulePatternType.Exact, Pattern: "Temp" });
+        Assert.Contains(
+            runtimeProfile.FilterRules,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.DirectorySegment, PatternType: RulePatternType.Exact,
+                Pattern: "Temp"
+            });
+        Assert.Single(runtimeProfile.FilterRules);
+        Assert.True(editor.CanUseProfile);
+        Assert.Null(editor.DraftValidationMessage);
     }
 
     [Fact]
@@ -315,19 +330,236 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library")
+                ]));
+
+        List<string?> changedProperties = [];
+        editor.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName);
 
         Assert.False(editor.HasInvalidFilterRules);
         Assert.True(editor.CanUseProfile);
+        Assert.Null(editor.DraftValidationMessage);
 
         editor.FilterRules.Single().Pattern = "";
 
         Assert.True(editor.HasInvalidFilterRules);
         Assert.False(editor.CanUseProfile);
+        Assert.Equal("Filter Rules, rule 1: Pattern cannot be empty.", editor.DraftValidationMessage);
+        Assert.Contains(nameof(ProfileEditorViewModel.CanUseProfile), changedProperties);
+        Assert.Contains(nameof(ProfileEditorViewModel.DraftValidationMessage), changedProperties);
+
+        changedProperties.Clear();
+        editor.FilterRules.Single().Pattern = "Library";
+
+        Assert.False(editor.HasInvalidFilterRules);
+        Assert.True(editor.CanUseProfile);
+        Assert.Null(editor.DraftValidationMessage);
+        Assert.Contains(nameof(ProfileEditorViewModel.CanUseProfile), changedProperties);
+        Assert.Contains(nameof(ProfileEditorViewModel.DraftValidationMessage), changedProperties);
+    }
+
+    [Fact]
+    public void DraftValidationMessage_Should_Be_Null_When_No_Filter_Rules_Exist()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+
+        editor.ApplyProfile(CreateProfile(filterRules: []));
+
+        Assert.Empty(editor.FilterRules);
+        Assert.False(editor.HasInvalidFilterRules);
+        Assert.True(editor.CanUseProfile);
+        Assert.Null(editor.DraftValidationMessage);
+    }
+
+    [Theory]
+    [InlineData(FilterTarget.DirectorySegment, RulePatternType.Exact, "")]
+    [InlineData(FilterTarget.DirectorySegment, RulePatternType.Exact, "src/bin")]
+    [InlineData(FilterTarget.Extension, RulePatternType.Exact, "cs")]
+    [InlineData(FilterTarget.FileName, RulePatternType.Regex, "[")]
+    public void DraftValidationMessage_Should_Use_Existing_Rule_Validation(
+        FilterTarget target,
+        RulePatternType patternType,
+        string pattern)
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        WorkspaceFileFilterRuleDto invalidRule = ExcludeDirectoryRule(pattern) with
+        {
+            Target = target,
+            PatternType = patternType
+        };
+
+        editor.ApplyProfile(CreateProfile(filterRules: [ExcludeDirectoryRule("Library"), invalidRule]));
+
+        ProfileFilterRuleItemViewModel rule = editor.FilterRules[1];
+        WorkspaceFileFilterRuleDto before = rule.ToDto();
+
+        Assert.True(rule.HasValidationError);
+        Assert.True(editor.HasInvalidFilterRules);
+        Assert.False(editor.CanUseProfile);
+        Assert.Equal($"Filter Rules, rule 2: {rule.ValidationMessage}", editor.DraftValidationMessage);
+        Assert.Equal(before, rule.ToDto());
+        Assert.Equal(2, editor.FilterRules.Count);
+    }
+
+    [Fact]
+    public void DraftValidationMessage_Should_Include_Invalid_Rule_Hidden_By_Search()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+
+        editor.ApplyProfile(
+            CreateProfile(filterRules: [ExcludeDirectoryRule("Library"), ExcludeDirectoryRule(string.Empty)]));
+
+        editor.FilterRuleFilters.SearchText = "Library";
+
+        Assert.Equal("Library", Assert.Single(editor.VisibleFilterRules).Pattern);
+        Assert.True(editor.HasInvalidFilterRules);
+        Assert.False(editor.CanUseProfile);
+        Assert.Equal("Filter Rules, rule 2: Pattern cannot be empty.", editor.DraftValidationMessage);
+    }
+
+    [Fact]
+    public void DraftValidationMessage_Should_Include_Invalid_Rule_Hidden_By_Status()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library", isEnabled: false),
+                    ExcludeDirectoryRule(string.Empty)
+                ]));
+
+        editor.FilterRuleFilters.Status = ProfileFilterRuleStatusFilterMode.Disabled;
+
+        Assert.Equal("Library", Assert.Single(editor.VisibleFilterRules).Pattern);
+        Assert.True(editor.HasInvalidFilterRules);
+        Assert.False(editor.CanUseProfile);
+        Assert.Equal("Filter Rules, rule 2: Pattern cannot be empty.", editor.DraftValidationMessage);
+    }
+
+    [Fact]
+    public void DraftValidationMessage_Should_Include_Disabled_Invalid_Rule()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+
+        editor.ApplyProfile(CreateProfile(filterRules: [ExcludeDirectoryRule(string.Empty, isEnabled: false)]));
+
+        Assert.False(Assert.Single(editor.FilterRules).IsEnabled);
+        Assert.True(editor.HasInvalidFilterRules);
+        Assert.False(editor.CanUseProfile);
+        Assert.Equal("Filter Rules, rule 1: Pattern cannot be empty.", editor.DraftValidationMessage);
+    }
+
+    [Fact]
+    public void DraftValidationMessage_Should_Follow_First_Remaining_Error()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule(string.Empty),
+                    ExcludeDirectoryRule("src/bin")
+                ]));
+
+        List<string?> changedProperties = [];
+        editor.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName);
+
+        Assert.Equal("Filter Rules, rule 1: Pattern cannot be empty.", editor.DraftValidationMessage);
+
+        editor.FilterRules[0].Pattern = "Library";
+
+        Assert.False(editor.CanUseProfile);
+        Assert.Equal(
+            "Filter Rules, rule 2: Directory segment cannot contain path separators.",
+            editor.DraftValidationMessage);
+        Assert.Contains(nameof(ProfileEditorViewModel.DraftValidationMessage), changedProperties);
+
+        changedProperties.Clear();
+        editor.FilterRules[1].Pattern = "bin";
+
+        Assert.True(editor.CanUseProfile);
+        Assert.Null(editor.DraftValidationMessage);
+        Assert.Contains(nameof(ProfileEditorViewModel.DraftValidationMessage), changedProperties);
+    }
+
+    [Fact]
+    public void DraftValidationMessage_Should_Update_When_Invalid_Rule_Is_Added_And_Removed()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        editor.ApplyProfile(CreateProfile(filterRules: [ExcludeDirectoryRule("Library")]));
+
+        List<string?> changedProperties = [];
+        editor.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName);
+
+        ProfileFilterRuleItemViewModel invalidRule = new(ExcludeDirectoryRule(string.Empty));
+        editor.FilterRules.Add(invalidRule);
+
+        Assert.False(editor.CanUseProfile);
+        Assert.Equal("Filter Rules, rule 2: Pattern cannot be empty.", editor.DraftValidationMessage);
+        Assert.Contains(nameof(ProfileEditorViewModel.CanUseProfile), changedProperties);
+        Assert.Contains(nameof(ProfileEditorViewModel.DraftValidationMessage), changedProperties);
+
+        editor.SelectedFilterRule = invalidRule;
+        changedProperties.Clear();
+        editor.RemoveFilterRuleCommand.Execute(null);
+
+        Assert.Equal("Library", Assert.Single(editor.FilterRules).Pattern);
+        Assert.True(editor.CanUseProfile);
+        Assert.Null(editor.DraftValidationMessage);
+        Assert.Contains(nameof(ProfileEditorViewModel.CanUseProfile), changedProperties);
+        Assert.Contains(nameof(ProfileEditorViewModel.DraftValidationMessage), changedProperties);
+    }
+
+    [Fact]
+    public void DraftValidationMessage_Should_Use_Collection_Order_After_Moving_Rule()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+
+        editor.ApplyProfile(
+            CreateProfile(filterRules: [ExcludeDirectoryRule("Library"), ExcludeDirectoryRule(string.Empty)]));
+
+        editor.SelectedFilterRule = editor.FilterRules[1];
+        List<string?> changedProperties = [];
+        editor.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName);
+
+        Assert.Equal("Filter Rules, rule 2: Pattern cannot be empty.", editor.DraftValidationMessage);
+
+        editor.MoveFilterRuleUpCommand.Execute(null);
+
+        Assert.False(editor.CanUseProfile);
+        Assert.Equal("Filter Rules, rule 1: Pattern cannot be empty.", editor.DraftValidationMessage);
+        Assert.Contains(nameof(ProfileEditorViewModel.DraftValidationMessage), changedProperties);
+    }
+
+    [Fact]
+    public void ApplyProfile_Should_Refresh_DraftValidationMessage_And_Allow_Invalid_Rules_To_Be_Edited()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        List<string?> changedProperties = [];
+        editor.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName);
+
+        editor.ApplyProfile(CreateProfile(filterRules: [ExcludeDirectoryRule(string.Empty)]));
+
+        Assert.Equal(string.Empty, Assert.Single(editor.FilterRules).Pattern);
+        Assert.False(editor.CanUseProfile);
+        Assert.Equal("Filter Rules, rule 1: Pattern cannot be empty.", editor.DraftValidationMessage);
+        Assert.Contains(nameof(ProfileEditorViewModel.DraftValidationMessage), changedProperties);
+
+        changedProperties.Clear();
+        editor.ApplyProfile(CreateProfile(filterRules: [ExcludeDirectoryRule("Library")]));
+
+        Assert.Equal("Library", Assert.Single(editor.FilterRules).Pattern);
+        Assert.True(editor.CanUseProfile);
+        Assert.Null(editor.DraftValidationMessage);
+        Assert.Contains(nameof(ProfileEditorViewModel.CanUseProfile), changedProperties);
+        Assert.Contains(nameof(ProfileEditorViewModel.DraftValidationMessage), changedProperties);
     }
 
     [Fact]
@@ -353,11 +585,12 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            includeUnsupportedTextFiles: true,
-            unsupportedTextMaxFileSizeBytes: 2048,
-            unsupportedTextProbeSizeBytes: 512,
-            unsupportedTextMaxControlCharacterRatio: 0.20));
+        editor.ApplyProfile(
+            CreateProfile(
+                includeUnsupportedTextFiles: true,
+                unsupportedTextMaxFileSizeBytes: 2048,
+                unsupportedTextProbeSizeBytes: 512,
+                unsupportedTextMaxControlCharacterRatio: 0.20));
 
         Assert.True(editor.IncludeUnsupportedTextFiles);
         Assert.Equal(2048, editor.UnsupportedTextMaxFileSizeBytes);
@@ -377,8 +610,7 @@ public sealed class ProfileEditorViewModelTests
 
         MergeProfile runtimeProfile = editor.BuildProfile();
 
-        UnsupportedTextFallbackOptions options =
-            runtimeProfile.GeneralOptions.UnsupportedTextFallbackOptions;
+        UnsupportedTextFallbackOptions options = runtimeProfile.GeneralOptions.UnsupportedTextFallbackOptions;
 
         Assert.True(options.IsEnabled);
         Assert.Equal(2048, options.MaxFileSizeBytes);
@@ -427,13 +659,14 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            includeBuildTimestampMetadata: false,
-            includeSessionNameMetadata: false,
-            includeOutputPathMetadata: false,
-            includeFileSummaryMetadata: false,
-            skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple,
-            includeSourceExcludedFiles: true));
+        editor.ApplyProfile(
+            CreateProfile(
+                includeBuildTimestampMetadata: false,
+                includeSessionNameMetadata: false,
+                includeOutputPathMetadata: false,
+                includeFileSummaryMetadata: false,
+                skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple,
+                includeSourceExcludedFiles: true));
 
         Assert.False(editor.IncludeBuildTimestampMetadata);
         Assert.False(editor.IncludeSessionNameMetadata);
@@ -473,8 +706,7 @@ public sealed class ProfileEditorViewModelTests
         ProfileEditorViewModel editor = CreateEditor();
         SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
 
-        editor.ApplyProfile(CreateProfile(
-            skippedFileCategories: selection));
+        editor.ApplyProfile(CreateProfile(skippedFileCategories: selection));
 
         WorkspaceProfileDto captured = editor.CaptureProfile();
 
@@ -487,13 +719,13 @@ public sealed class ProfileEditorViewModelTests
         ProfileEditorViewModel editor = CreateEditor();
         SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
 
-        editor.ApplyProfile(CreateProfile(
-            skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed,
-            includeSourceExcludedFiles: true,
-            skippedFileCategories: selection));
+        editor.ApplyProfile(
+            CreateProfile(
+                skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed,
+                includeSourceExcludedFiles: true,
+                skippedFileCategories: selection));
 
-        OutputMetadataOptions options =
-            editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
+        OutputMetadataOptions options = editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
 
         Assert.Equal(selection, options.SkippedFileCategories);
         Assert.Equal(selection, options.EffectiveSkippedFileCategories);
@@ -505,9 +737,7 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            includeSourceExcludedFiles: true,
-            skippedFileCategories: null));
+        editor.ApplyProfile(CreateProfile(includeSourceExcludedFiles: true, skippedFileCategories: null));
 
         WorkspaceProfileDto captured = editor.CaptureProfile();
 
@@ -520,12 +750,9 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            includeSourceExcludedFiles: true,
-            skippedFileCategories: null));
+        editor.ApplyProfile(CreateProfile(includeSourceExcludedFiles: true, skippedFileCategories: null));
 
-        OutputMetadataOptions options =
-            editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
+        OutputMetadataOptions options = editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
 
         Assert.Null(options.SkippedFileCategories);
         Assert.True(options.EffectiveSkippedFileCategories.IncludeDisabledFileTypes);
@@ -543,9 +770,7 @@ public sealed class ProfileEditorViewModelTests
         ProfileEditorViewModel editor = CreateEditor();
         SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
 
-        editor.ApplyProfile(CreateProfile(
-            includeSourceExcludedFiles: true,
-            skippedFileCategories: selection));
+        editor.ApplyProfile(CreateProfile(includeSourceExcludedFiles: true, skippedFileCategories: selection));
 
         Assert.True(editor.IncludeDisabledFileTypesInSkippedMetadata);
         Assert.False(editor.IncludeUnsupportedFilesInSkippedMetadata);
@@ -564,9 +789,8 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            includeSourceExcludedFiles: includeSourceExcludedFiles,
-            skippedFileCategories: null));
+        editor.ApplyProfile(
+            CreateProfile(includeSourceExcludedFiles: includeSourceExcludedFiles, skippedFileCategories: null));
 
         Assert.True(editor.IncludeDisabledFileTypesInSkippedMetadata);
         Assert.True(editor.IncludeUnsupportedFilesInSkippedMetadata);
@@ -581,9 +805,7 @@ public sealed class ProfileEditorViewModelTests
     public void Setting_Skipped_Category_To_Current_Effective_Value_Should_Not_Materialize_Legacy_Selection()
     {
         ProfileEditorViewModel editor = CreateEditor();
-        editor.ApplyProfile(CreateProfile(
-            includeSourceExcludedFiles: false,
-            skippedFileCategories: null));
+        editor.ApplyProfile(CreateProfile(includeSourceExcludedFiles: false, skippedFileCategories: null));
 
         editor.IncludeUnsupportedFilesInSkippedMetadata = true;
 
@@ -596,15 +818,12 @@ public sealed class ProfileEditorViewModelTests
     public void Changing_Skipped_Category_Should_Materialize_Explicit_Selection_From_Legacy_Effective_State()
     {
         ProfileEditorViewModel editor = CreateEditor();
-        editor.ApplyProfile(CreateProfile(
-            includeSourceExcludedFiles: true,
-            skippedFileCategories: null));
+        editor.ApplyProfile(CreateProfile(includeSourceExcludedFiles: true, skippedFileCategories: null));
 
         editor.IncludeUnsupportedFilesInSkippedMetadata = false;
 
         WorkspaceProfileDto captured = editor.CaptureProfile();
-        OutputMetadataOptions runtimeOptions =
-            editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
+        OutputMetadataOptions runtimeOptions = editor.BuildProfile().GeneralOptions.OutputMetadataOptions;
 
         Assert.NotNull(captured.SkippedFileCategories);
         Assert.True(captured.SkippedFileCategories.IncludeDisabledFileTypes);
@@ -623,9 +842,7 @@ public sealed class ProfileEditorViewModelTests
         ProfileEditorViewModel editor = CreateEditor();
         SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection();
 
-        editor.ApplyProfile(CreateProfile(
-            includeSourceExcludedFiles: true,
-            skippedFileCategories: selection));
+        editor.ApplyProfile(CreateProfile(includeSourceExcludedFiles: true, skippedFileCategories: selection));
 
         Assert.True(editor.IncludeSourceExcludedFiles);
         Assert.False(editor.IncludeSourceExclusionsInSkippedMetadata);
@@ -635,9 +852,7 @@ public sealed class ProfileEditorViewModelTests
     public void Changing_Source_Category_Should_Not_Overwrite_Legacy_Source_Option()
     {
         ProfileEditorViewModel editor = CreateEditor();
-        editor.ApplyProfile(CreateProfile(
-            includeSourceExcludedFiles: false,
-            skippedFileCategories: null));
+        editor.ApplyProfile(CreateProfile(includeSourceExcludedFiles: false, skippedFileCategories: null));
 
         editor.IncludeSourceExclusionsInSkippedMetadata = true;
 
@@ -667,28 +882,20 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel legacyEditor = CreateEditor();
         ProfileEditorViewModel explicitEditor = CreateEditor();
-        var equivalentSelection =
-            SkippedFileCategorySelection.ForCurrentBehavior(includeSourceExcludedFiles: true);
+        var equivalentSelection = SkippedFileCategorySelection.ForCurrentBehavior(includeSourceExcludedFiles: true);
 
-        legacyEditor.ApplyProfile(CreateProfile(
-            includeSourceExcludedFiles: true,
-            skippedFileCategories: null));
-        explicitEditor.ApplyProfile(CreateProfile(
-            includeSourceExcludedFiles: true,
-            skippedFileCategories: equivalentSelection));
+        legacyEditor.ApplyProfile(CreateProfile(includeSourceExcludedFiles: true, skippedFileCategories: null));
+        explicitEditor.ApplyProfile(
+            CreateProfile(includeSourceExcludedFiles: true, skippedFileCategories: equivalentSelection));
 
-        Assert.Equal(
-            legacyEditor.BuildPreviewProfileSnapshot(),
-            explicitEditor.BuildPreviewProfileSnapshot());
+        Assert.Equal(legacyEditor.BuildPreviewProfileSnapshot(), explicitEditor.BuildPreviewProfileSnapshot());
     }
 
     [Fact]
     public void BuildPreviewProfileSnapshot_Should_Return_To_Equivalent_State_When_Category_Edit_Is_Reverted()
     {
         ProfileEditorViewModel editor = CreateEditor();
-        editor.ApplyProfile(CreateProfile(
-            includeSourceExcludedFiles: false,
-            skippedFileCategories: null));
+        editor.ApplyProfile(CreateProfile(includeSourceExcludedFiles: false, skippedFileCategories: null));
 
         PreviewProfileStateSnapshot before = editor.BuildPreviewProfileSnapshot();
 
@@ -764,8 +971,7 @@ public sealed class ProfileEditorViewModelTests
         ProfileFileTypeGroupViewModel sourceCodeGroup =
             editor.FileTypeGroups.Single(x => x.FileTypes.Any(y => y.Extension == ".cs"));
 
-        FileTypeOptionViewModel csharpFileType =
-            sourceCodeGroup.FileTypes.Single(x => x.Extension == ".cs");
+        FileTypeOptionViewModel csharpFileType = sourceCodeGroup.FileTypes.Single(x => x.Extension == ".cs");
 
         int initialEnabledCount = sourceCodeGroup.EnabledCount;
 
@@ -793,9 +999,10 @@ public sealed class ProfileEditorViewModelTests
 
         foreach (FileTypeOptionViewModel fileType in sourceCodeGroup.FileTypes)
         {
-            Assert.Contains(runtimeProfile.FileTypes, x =>
-                string.Equals(x.Extension, fileType.Extension, StringComparison.OrdinalIgnoreCase) &&
-                !x.IsEnabled);
+            Assert.Contains(
+                runtimeProfile.FileTypes,
+                x => string.Equals(x.Extension, fileType.Extension, StringComparison.OrdinalIgnoreCase) &&
+                     !x.IsEnabled);
         }
     }
 
@@ -806,8 +1013,7 @@ public sealed class ProfileEditorViewModelTests
 
         editor.ApplyProfile(CreateProfile());
 
-        ProfileFileTypeGroupViewModel sourceCodeGroup =
-            editor.FileTypeGroups.Single(x => x.Title == "Source code");
+        ProfileFileTypeGroupViewModel sourceCodeGroup = editor.FileTypeGroups.Single(x => x.Title == "Source code");
 
         ProfileFileTypeGroupViewModel dataGroup =
             editor.FileTypeGroups.Single(x => x.Title == "Data and configuration");
@@ -825,29 +1031,30 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            fileTypes:
-            [
-                new WorkspaceFileTypeDto(
-                    Extension: ".cs",
-                    DisplayName: "C# source",
-                    Kind: FileKind.CSharp,
-                    IsEnabled: true,
-                    SupportsLanguageSpecificProcessing: true),
+        editor.ApplyProfile(
+            CreateProfile(
+                fileTypes:
+                [
+                    new WorkspaceFileTypeDto(
+                        Extension: ".cs",
+                        DisplayName: "C# source",
+                        Kind: FileKind.CSharp,
+                        IsEnabled: true,
+                        SupportsLanguageSpecificProcessing: true),
 
-                new WorkspaceFileTypeDto(
-                    Extension: ".custom",
-                    DisplayName: "Custom file",
-                    Kind: FileKind.Text,
-                    IsEnabled: true,
-                    SupportsLanguageSpecificProcessing: false)
-            ]));
+                    new WorkspaceFileTypeDto(
+                        Extension: ".custom",
+                        DisplayName: "Custom file",
+                        Kind: FileKind.Text,
+                        IsEnabled: true,
+                        SupportsLanguageSpecificProcessing: false)
+                ]));
 
-        ProfileFileTypeGroupViewModel otherGroup =
-            editor.FileTypeGroups.Single(x => x.Title == "Other / custom");
+        ProfileFileTypeGroupViewModel otherGroup = editor.FileTypeGroups.Single(x => x.Title == "Other / custom");
 
-        Assert.Contains(otherGroup.FileTypes, x =>
-            x is { Extension: ".custom", DisplayName: "Custom file", IsEnabled: true });
+        Assert.Contains(
+            otherGroup.FileTypes,
+            x => x is { Extension: ".custom", DisplayName: "Custom file", IsEnabled: true });
     }
 
     [Fact]
@@ -863,8 +1070,7 @@ public sealed class ProfileEditorViewModelTests
         ];
 
         Assert.NotEmpty(visibleFileTypes);
-        Assert.All(visibleFileTypes, x =>
-            Assert.Contains(".json", x.Extension, StringComparison.OrdinalIgnoreCase));
+        Assert.All(visibleFileTypes, x => Assert.Contains(".json", x.Extension, StringComparison.OrdinalIgnoreCase));
 
         Assert.Equal(
             $"{visibleFileTypes.Count} of {editor.FileTypes.Count} file types shown",
@@ -903,9 +1109,7 @@ public sealed class ProfileEditorViewModelTests
 
         Assert.Equal(string.Empty, editor.FileTypeFilters.SearchText);
         Assert.Equal(ProfileFileTypeFilterMode.All, editor.FileTypeFilters.Mode);
-        Assert.Equal(
-            editor.FileTypes.Count,
-            editor.FileTypeGroups.Sum(x => x.VisibleFileTypes.Count));
+        Assert.Equal(editor.FileTypes.Count, editor.FileTypeGroups.Sum(x => x.VisibleFileTypes.Count));
     }
 
     [Fact]
@@ -943,12 +1147,13 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library"),
-                ExcludeDirectoryRule("Temp")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library"),
+                    ExcludeDirectoryRule("Temp")
+                ]));
 
         editor.FilterRuleFilters.SearchText = "Library";
 
@@ -959,16 +1164,67 @@ public sealed class ProfileEditorViewModelTests
     }
 
     [Fact]
+    public void FilterRule_Pattern_Change_Should_Not_Reset_VisibleRules_When_Membership_Is_Unchanged()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library"),
+                    ExcludeDirectoryRule("Temp")
+                ]));
+
+        ProfileFilterRuleItemViewModel rule = editor.VisibleFilterRules[0];
+        int collectionChangeCount = 0;
+        editor.VisibleFilterRules.CollectionChanged += (_, _) => collectionChangeCount++;
+
+        rule.Pattern = "Libraries";
+
+        Assert.Equal(0, collectionChangeCount);
+        Assert.Equal(2, editor.VisibleFilterRules.Count);
+        Assert.Same(rule, editor.VisibleFilterRules[0]);
+        Assert.Equal("Libraries", editor.VisibleFilterRules[0].Pattern);
+    }
+
+    [Fact]
+    public void FilterRule_Pattern_Change_Should_Refresh_VisibleRules_When_Filter_Membership_Changes()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library") with { Description = null },
+                    ExcludeDirectoryRule("Temp")
+                ]));
+
+        editor.FilterRuleFilters.SearchText = "Library";
+        ProfileFilterRuleItemViewModel rule = Assert.Single(editor.VisibleFilterRules);
+        int collectionChangeCount = 0;
+        editor.VisibleFilterRules.CollectionChanged += (_, _) => collectionChangeCount++;
+
+        rule.Pattern = "Temp";
+
+        Assert.True(collectionChangeCount > 0);
+        Assert.Empty(editor.VisibleFilterRules);
+        Assert.Null(editor.SelectedFilterRule);
+    }
+
+    [Fact]
     public void FilterRuleFilters_Should_Filter_By_Status()
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library", isEnabled: true),
-                ExcludeDirectoryRule("Temp", isEnabled: false)
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library", isEnabled: true),
+                    ExcludeDirectoryRule("Temp", isEnabled: false)
+                ]));
 
         editor.FilterRuleFilters.Status = ProfileFilterRuleStatusFilterMode.Disabled;
 
@@ -983,19 +1239,20 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library"),
-                new WorkspaceFileFilterRuleDto(
-                    Mode: FilterMode.Exclude,
-                    Target: FilterTarget.DirectorySegment,
-                    PatternType: RulePatternType.Exact,
-                    Pattern: string.Empty,
-                    IsEnabled: true,
-                    Description: "Invalid empty rule",
-                    IsUserEditable: true)
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library"),
+                    new WorkspaceFileFilterRuleDto(
+                        Mode: FilterMode.Exclude,
+                        Target: FilterTarget.DirectorySegment,
+                        PatternType: RulePatternType.Exact,
+                        Pattern: string.Empty,
+                        IsEnabled: true,
+                        Description: "Invalid empty rule",
+                        IsUserEditable: true)
+                ]));
 
         editor.FilterRuleFilters.Status = ProfileFilterRuleStatusFilterMode.Invalid;
 
@@ -1010,12 +1267,13 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library"),
-                ExcludeDirectoryRule("Temp")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library"),
+                    ExcludeDirectoryRule("Temp")
+                ]));
 
         ProfileFilterRuleItemViewModel libraryRule = editor.FilterRules.Single(x => x.Pattern == "Library");
         editor.SelectedFilterRule = libraryRule;
@@ -1031,12 +1289,13 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library"),
-                ExcludeDirectoryRule("Temp")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library"),
+                    ExcludeDirectoryRule("Temp")
+                ]));
 
         editor.FilterRuleFilters.SearchText = "Library";
         editor.FilterRuleFilters.Status = ProfileFilterRuleStatusFilterMode.Enabled;
@@ -1055,12 +1314,13 @@ public sealed class ProfileEditorViewModelTests
     {
         ProfileEditorViewModel editor = CreateEditor();
 
-        editor.ApplyProfile(CreateProfile(
-            filterRules:
-            [
-                ExcludeDirectoryRule("Library"),
-                ExcludeDirectoryRule("Temp")
-            ]));
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule("Library"),
+                    ExcludeDirectoryRule("Temp")
+                ]));
 
         editor.FilterRuleFilters.SearchText = "Library";
 
@@ -1103,9 +1363,163 @@ public sealed class ProfileEditorViewModelTests
         Assert.NotEqual(before, after);
     }
 
-    private static ProfileEditorViewModel CreateEditor()
+    [Theory]
+    [InlineData(FilterTarget.DirectorySegment, RulePatternType.Exact, "")]
+    [InlineData(FilterTarget.DirectorySegment, RulePatternType.Exact, "   ")]
+    [InlineData(FilterTarget.DirectorySegment, RulePatternType.Exact, "src/bin")]
+    [InlineData(FilterTarget.DirectorySegment, RulePatternType.Exact, @"src\bin")]
+    [InlineData(FilterTarget.Extension, RulePatternType.Exact, "cs")]
+    [InlineData(FilterTarget.FileName, RulePatternType.Regex, "[")]
+    public void BuildProfile_Should_Reject_Invalid_Rules_Without_Changing_Draft(
+        FilterTarget target,
+        RulePatternType patternType,
+        string pattern)
     {
-        return new ProfileEditorViewModel(new BuiltInFileTypeCatalog());
+        ProfileEditorViewModel editor = CreateEditor();
+        WorkspaceFileFilterRuleDto invalidRule = ExcludeDirectoryRule(pattern) with
+        {
+            Target = target,
+            PatternType = patternType
+        };
+        editor.ApplyProfile(
+            CreateProfile(filterRules: [ExcludeDirectoryRule("Library"), invalidRule, ExcludeDirectoryRule("Temp")]));
+
+        ProfileFilterRuleItemViewModel[] originalRules = [.. editor.FilterRules];
+        WorkspaceFileFilterRuleDto[] originalValues = [.. editor.FilterRules.Select(x => x.ToDto())];
+        PreviewProfileStateSnapshot originalSnapshot = editor.BuildPreviewProfileSnapshot();
+        List<string?> changedProperties = [];
+        editor.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName);
+
+        Assert.False(editor.CanUseProfile);
+        string? message = editor.DraftValidationMessage;
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(editor.BuildProfile);
+
+        Assert.Equal(message, exception.Message);
+        Assert.Equal(originalRules, editor.FilterRules.ToArray());
+        Assert.Equal(originalValues, editor.FilterRules.Select(x => x.ToDto()).ToArray());
+        Assert.Equal(pattern, editor.FilterRules[1].Pattern);
+        Assert.Equal(originalSnapshot, editor.BuildPreviewProfileSnapshot());
+        Assert.Empty(changedProperties);
+    }
+
+    [Theory]
+    [InlineData(true, true, ProfileFilterRuleStatusFilterMode.All)]
+    [InlineData(false, false, ProfileFilterRuleStatusFilterMode.Enabled)]
+    [InlineData(false, false, ProfileFilterRuleStatusFilterMode.All)]
+    [InlineData(true, false, ProfileFilterRuleStatusFilterMode.Disabled)]
+    public void BuildProfile_Should_Reject_Invalid_Rules_Regardless_Of_Visibility_Or_Enabled_State(
+        bool isEnabled,
+        bool hideBySearch,
+        ProfileFilterRuleStatusFilterMode status)
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules: [ExcludeDirectoryRule("Library"), ExcludeDirectoryRule(string.Empty, isEnabled)]));
+
+        ProfileFilterRuleItemViewModel invalidRule = editor.FilterRules[1];
+        editor.FilterRuleFilters.SearchText = hideBySearch ? "Library" : string.Empty;
+        editor.FilterRuleFilters.Status = status;
+
+        if (hideBySearch || status != ProfileFilterRuleStatusFilterMode.All)
+            Assert.DoesNotContain(invalidRule, editor.VisibleFilterRules);
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(editor.BuildProfile);
+
+        Assert.Equal(editor.DraftValidationMessage, exception.Message);
+        Assert.Equal(2, editor.FilterRules.Count);
+        Assert.Same(invalidRule, editor.FilterRules[1]);
+        Assert.Equal(isEnabled, invalidRule.IsEnabled);
+        Assert.Equal(string.Empty, invalidRule.Pattern);
+    }
+
+    [Fact]
+    public void BuildProfile_Should_Preserve_Valid_Rule_Order_Normalization_And_Disabled_Rules()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        editor.ApplyProfile(
+            CreateProfile(
+                filterRules:
+                [
+                    ExcludeDirectoryRule(" bin ") with { Description = "  Exclude build output  " },
+                    ExcludeDirectoryRule("BIN") with { Description = "Duplicate identity" },
+                    ExcludeDirectoryRule("Temp", isEnabled: false),
+                    ExcludeDirectoryRule("Cache") with { Description = "   " }
+                ]));
+
+        MergeProfile profile = editor.BuildProfile();
+
+        FileFilterRule[] rules = [.. profile.FilterRules];
+        Assert.Equal(3, rules.Length);
+        Assert.Equal("bin", rules[0].Pattern);
+        Assert.Equal("Exclude build output", rules[0].Description);
+        Assert.True(rules[0].IsEnabled);
+        Assert.Equal("Temp", rules[1].Pattern);
+        Assert.False(rules[1].IsEnabled);
+        Assert.Equal("Cache", rules[2].Pattern);
+        Assert.Null(rules[2].Description);
+        Assert.Equal(4, editor.FilterRules.Count);
+        Assert.Equal(" bin ", editor.FilterRules[0].Pattern);
+    }
+
+    [Fact]
+    public void BuildProfile_Should_Accept_An_Empty_FilterRule_Collection()
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        editor.ApplyProfile(CreateProfile(filterRules: []));
+
+        MergeProfile profile = editor.BuildProfile();
+
+        Assert.Empty(profile.FilterRules);
+        Assert.True(editor.CanUseProfile);
+        Assert.Null(editor.DraftValidationMessage);
+    }
+
+    [Theory]
+    [InlineData(RulePatternType.Exact, "")]
+    [InlineData(RulePatternType.Regex, "[")]
+    public void Capture_And_Preview_Snapshot_Should_Preserve_Invalid_Rules_For_Correction(
+        RulePatternType patternType,
+        string pattern)
+    {
+        ProfileEditorViewModel editor = CreateEditor();
+        editor.ApplyProfile(CreateProfile(filterRules: [ExcludeDirectoryRule("Library"), ExcludeDirectoryRule("bin")]));
+        PreviewProfileStateSnapshot validSnapshot = editor.BuildPreviewProfileSnapshot();
+
+        ProfileFilterRuleItemViewModel rule = editor.FilterRules[1];
+        rule.PatternType = patternType;
+        rule.Pattern = pattern;
+
+        WorkspaceProfileDto captured = editor.CaptureProfile();
+        PreviewProfileStateSnapshot invalidSnapshot = editor.BuildPreviewProfileSnapshot();
+
+        Assert.Equal(2, captured.FilterRules!.Count);
+        Assert.Equal(pattern, captured.FilterRules[1].Pattern);
+        Assert.Equal(patternType, captured.FilterRules[1].PatternType);
+        Assert.Equal(2, invalidSnapshot.FilterRules.Count);
+        Assert.Contains(invalidSnapshot.FilterRules, x => x.Pattern == pattern && x.PatternType == patternType);
+        Assert.NotEqual(validSnapshot, invalidSnapshot);
+        Assert.Throws<InvalidOperationException>(editor.BuildProfile);
+
+        ProfileEditorViewModel reloaded = CreateEditor();
+        reloaded.ApplyProfile(captured);
+
+        Assert.False(reloaded.CanUseProfile);
+        Assert.Equal(invalidSnapshot, reloaded.BuildPreviewProfileSnapshot());
+        Assert.Equal(pattern, reloaded.FilterRules[1].Pattern);
+        Assert.Throws<InvalidOperationException>(reloaded.BuildProfile);
+
+        reloaded.FilterRules[1].Pattern = "bin";
+        Assert.True(reloaded.CanUseProfile);
+        Assert.Equal(2, reloaded.BuildProfile().FilterRules.Count);
+    }
+
+    private static ProfileEditorViewModel CreateEditor(IProfileFilterRulesDialogService? dialogService = null)
+    {
+        return new ProfileEditorViewModel(
+            new BuiltInFileTypeCatalog(),
+            dialogService ?? new FakeProfileFilterRulesDialogService());
     }
 
     private static WorkspaceProfileDto CreateProfile(
@@ -1145,7 +1559,6 @@ public sealed class ProfileEditorViewModelTests
             IncludeFileSeparators: true,
             IncludeRelativePathInSeparator: true,
             TrimTrailingEmptyLines: true,
-            RemoveUsingDirectives: false,
             FileTypes: fileTypes,
             LineEndingMode: LineEndingMode.Preserve,
             SortMode: SortMode.ByRelativePathAscending,
@@ -1178,9 +1591,7 @@ public sealed class ProfileEditorViewModelTests
             IncludeOther: false);
     }
 
-    private static WorkspaceFileFilterRuleDto ExcludeDirectoryRule(
-        string pattern,
-        bool isEnabled = true)
+    private static WorkspaceFileFilterRuleDto ExcludeDirectoryRule(string pattern, bool isEnabled = true)
     {
         return new WorkspaceFileFilterRuleDto(
             Mode: FilterMode.Exclude,
@@ -1190,5 +1601,18 @@ public sealed class ProfileEditorViewModelTests
             IsEnabled: isEnabled,
             Description: $"Exclude {pattern}",
             IsUserEditable: true);
+    }
+
+    private sealed class FakeProfileFilterRulesDialogService : IProfileFilterRulesDialogService
+    {
+        public int ShowCallCount { get; private set; }
+
+        public ProfileEditorViewModel? LastEditor { get; private set; }
+
+        public void Show(ProfileEditorViewModel editor)
+        {
+            ShowCallCount++;
+            LastEditor = editor;
+        }
     }
 }

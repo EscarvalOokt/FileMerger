@@ -11,6 +11,12 @@ public sealed class CrashLogWriterTests : IDisposable
         nameof(CrashLogWriterTests),
         Guid.NewGuid().ToString("N"));
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempRoot))
+            Directory.Delete(_tempRoot, recursive: true);
+    }
+
     [Fact]
     public void Write_Should_Create_Directory_And_Write_Formatted_Log()
     {
@@ -78,11 +84,5 @@ public sealed class CrashLogWriterTests : IDisposable
         {
             return ex;
         }
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_tempRoot))
-            Directory.Delete(_tempRoot, recursive: true);
     }
 }

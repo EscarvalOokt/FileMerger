@@ -40,7 +40,8 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
             CreateBuiltInEntry(
                 id: "builtin.javascript-project",
                 name: "JavaScript Project",
-                description: "JavaScript/Node project files with dependency folders, caches and build outputs excluded.",
+                description:
+                "JavaScript/Node project files with dependency folders, caches and build outputs excluded.",
                 profile: BuildJavaScriptProjectProfile()),
 
             CreateBuiltInEntry(
@@ -58,7 +59,8 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
             CreateBuiltInEntry(
                 id: "builtin.unity-project",
                 name: "Unity Project",
-                description: "Unity C#, project settings and serialized asset files. Use source exclusions for Library, Temp and build output folders.",
+                description:
+                "Unity C#, project settings and serialized asset files. Use source exclusions for Library, Temp and build output folders.",
                 profile: BuildUnityProjectProfile()),
 
             CreateBuiltInEntry(
@@ -99,7 +101,6 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
             includeFileSeparators: true,
             includeRelativePathInSeparator: true,
             trimTrailingEmptyLines: true,
-            removeUsingDirectives: false,
             lineEndingMode: LineEndingMode.Preserve,
             sortMode: SortMode.ByRelativePathAscending,
             inputEncodingMode: InputEncodingMode.Auto,
@@ -116,7 +117,6 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
             includeFileSeparators: true,
             includeRelativePathInSeparator: true,
             trimTrailingEmptyLines: true,
-            removeUsingDirectives: false,
             lineEndingMode: LineEndingMode.Preserve,
             sortMode: SortMode.ByRelativePathAscending,
             inputEncodingMode: InputEncodingMode.Auto,
@@ -151,7 +151,6 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
             includeFileSeparators: true,
             includeRelativePathInSeparator: true,
             trimTrailingEmptyLines: true,
-            removeUsingDirectives: false,
             lineEndingMode: LineEndingMode.Preserve,
             sortMode: SortMode.ByRelativePathAscending,
             inputEncodingMode: InputEncodingMode.Auto,
@@ -187,7 +186,6 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
             includeFileSeparators: true,
             includeRelativePathInSeparator: true,
             trimTrailingEmptyLines: true,
-            removeUsingDirectives: false,
             lineEndingMode: LineEndingMode.Preserve,
             sortMode: SortMode.ByRelativePathAscending,
             inputEncodingMode: InputEncodingMode.Auto,
@@ -228,7 +226,6 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
             includeFileSeparators: true,
             includeRelativePathInSeparator: true,
             trimTrailingEmptyLines: true,
-            removeUsingDirectives: false,
             lineEndingMode: LineEndingMode.Preserve,
             sortMode: SortMode.ByRelativePathAscending,
             inputEncodingMode: InputEncodingMode.Auto,
@@ -245,15 +242,12 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
             includeFileSeparators: true,
             includeRelativePathInSeparator: true,
             trimTrailingEmptyLines: true,
-            removeUsingDirectives: false,
             lineEndingMode: LineEndingMode.Preserve,
             sortMode: SortMode.ByRelativePathAscending,
             inputEncodingMode: InputEncodingMode.Auto,
             preferredInputEncodingName: null,
             fallbackInputEncodingName: "windows-1251",
-            filterRules: CombineFilterRules(
-                BuildCSharpFilterRules(),
-                BuildWpfApplicationFilterRules()));
+            filterRules: CombineFilterRules(BuildCSharpFilterRules(), BuildWpfApplicationFilterRules()));
     }
 
     private WorkspaceProfileDto BuildUnityProjectProfile()
@@ -264,15 +258,12 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
             includeFileSeparators: true,
             includeRelativePathInSeparator: true,
             trimTrailingEmptyLines: true,
-            removeUsingDirectives: false,
             lineEndingMode: LineEndingMode.Preserve,
             sortMode: SortMode.ByRelativePathAscending,
             inputEncodingMode: InputEncodingMode.Auto,
             preferredInputEncodingName: null,
             fallbackInputEncodingName: "windows-1251",
-            filterRules: CombineFilterRules(
-                BuildCSharpFilterRules(),
-                BuildUnityProjectFilterRules()));
+            filterRules: CombineFilterRules(BuildCSharpFilterRules(), BuildUnityProjectFilterRules()));
     }
 
     private WorkspaceProfileDto BuildFullSourceDumpProfile()
@@ -283,7 +274,6 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
             includeFileSeparators: true,
             includeRelativePathInSeparator: true,
             trimTrailingEmptyLines: true,
-            removeUsingDirectives: false,
             lineEndingMode: LineEndingMode.Preserve,
             sortMode: SortMode.ByRelativePathAscending,
             inputEncodingMode: InputEncodingMode.Auto,
@@ -297,7 +287,6 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
         bool includeFileSeparators,
         bool includeRelativePathInSeparator,
         bool trimTrailingEmptyLines,
-        bool removeUsingDirectives,
         LineEndingMode lineEndingMode,
         SortMode sortMode,
         InputEncodingMode inputEncodingMode,
@@ -318,15 +307,13 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
                     SupportsLanguageSpecificProcessing: x.SupportsLanguageSpecificProcessing))
         ];
 
-        List<WorkspaceFileFilterRuleDto> normalizedFilterRules =
-            filterRules is null ? [] : [.. filterRules];
+        List<WorkspaceFileFilterRuleDto> normalizedFilterRules = filterRules is null ? [] : [.. filterRules];
 
         return new WorkspaceProfileDto(
             IncludeHeaderComment: includeHeaderComment,
             IncludeFileSeparators: includeFileSeparators,
             IncludeRelativePathInSeparator: includeRelativePathInSeparator,
             TrimTrailingEmptyLines: trimTrailingEmptyLines,
-            RemoveUsingDirectives: removeUsingDirectives,
             FileTypes: fileTypes,
             LineEndingMode: lineEndingMode,
             SortMode: sortMode,
@@ -415,9 +402,7 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
         return result;
     }
 
-    private static bool HasSameRuleIdentity(
-        WorkspaceFileFilterRuleDto left,
-        WorkspaceFileFilterRuleDto right)
+    private static bool HasSameRuleIdentity(WorkspaceFileFilterRuleDto left, WorkspaceFileFilterRuleDto right)
     {
         return left.Mode == right.Mode &&
                left.Target == right.Target &&
@@ -426,9 +411,7 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
                string.Equals(left.Pattern, right.Pattern, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static WorkspaceFileFilterRuleDto ExcludeDirectory(
-        string pattern,
-        string description)
+    private static WorkspaceFileFilterRuleDto ExcludeDirectory(string pattern, string description)
     {
         return new WorkspaceFileFilterRuleDto(
             Mode: FilterMode.Exclude,
@@ -440,9 +423,7 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
             IsUserEditable: true);
     }
 
-    private static WorkspaceFileFilterRuleDto ExcludeFileNameExact(
-        string pattern,
-        string description)
+    private static WorkspaceFileFilterRuleDto ExcludeFileNameExact(string pattern, string description)
     {
         return new WorkspaceFileFilterRuleDto(
             Mode: FilterMode.Exclude,
@@ -454,9 +435,7 @@ public sealed class BuiltInProfilePresetProvider : IBuiltInProfilePresetProvider
             IsUserEditable: true);
     }
 
-    private static WorkspaceFileFilterRuleDto ExcludeFileNameWildcard(
-        string pattern,
-        string description)
+    private static WorkspaceFileFilterRuleDto ExcludeFileNameWildcard(string pattern, string description)
     {
         return new WorkspaceFileFilterRuleDto(
             Mode: FilterMode.Exclude,

@@ -92,7 +92,9 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
         Assert.Equal(@"D:\Workspaces\existing.filemerger.workspace.json", originalDocument.WorkspaceFilePath);
 
         Assert.Equal("Loaded Workspace", context.ViewModel.CurrentDocument.SessionSettings.SessionName);
-        Assert.Equal(@"D:\Workspaces\loaded.filemerger.workspace.json", context.ViewModel.CurrentDocument.WorkspaceFilePath);
+        Assert.Equal(
+            @"D:\Workspaces\loaded.filemerger.workspace.json",
+            context.ViewModel.CurrentDocument.WorkspaceFilePath);
     }
 
     [Fact]
@@ -148,11 +150,7 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
         firstDocument.SessionSettings.OutputPath = @"D:\Output\first.txt";
         firstDocument.SourcesPane.LoadSources(
         [
-            new MergeSource(
-                @"D:\First",
-                MergeSourceType.Directory,
-                isRecursive: true,
-                isEnabled: true)
+            new MergeSource(@"D:\First", MergeSourceType.Directory, isRecursive: true, isEnabled: true)
         ]);
         firstDocument.ProfileEditor.WorkingProfileName = "First Profile";
         firstDocument.CurrentProfileEntryId = "first-profile";
@@ -163,11 +161,7 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
         secondDocument.SessionSettings.OutputPath = @"D:\Output\second.txt";
         secondDocument.SourcesPane.LoadSources(
         [
-            new MergeSource(
-                @"D:\Second",
-                MergeSourceType.File,
-                isRecursive: false,
-                isEnabled: true)
+            new MergeSource(@"D:\Second", MergeSourceType.File, isRecursive: false, isEnabled: true)
         ]);
         secondDocument.ProfileEditor.WorkingProfileName = "Second Profile";
         secondDocument.CurrentProfileEntryId = "second-profile";
@@ -301,16 +295,10 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
 
         secondDocument.ProfileEditor.IncludeUnsupportedFilesInSkippedMetadata = false;
 
-        Assert.True(
-            context.DirtyStateService.WorkspaceRefreshedDocuments.Count > workspaceRefreshCount);
-        Assert.True(
-            context.DirtyStateService.PreviewRefreshedDocuments.Count > previewRefreshCount);
-        Assert.Same(
-            secondDocument,
-            context.DirtyStateService.WorkspaceRefreshedDocuments[^1]);
-        Assert.Same(
-            secondDocument,
-            context.DirtyStateService.PreviewRefreshedDocuments[^1]);
+        Assert.True(context.DirtyStateService.WorkspaceRefreshedDocuments.Count > workspaceRefreshCount);
+        Assert.True(context.DirtyStateService.PreviewRefreshedDocuments.Count > previewRefreshCount);
+        Assert.Same(secondDocument, context.DirtyStateService.WorkspaceRefreshedDocuments[^1]);
+        Assert.Same(secondDocument, context.DirtyStateService.PreviewRefreshedDocuments[^1]);
         Assert.NotSame(firstDocument, secondDocument);
     }
 
@@ -333,6 +321,93 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
 
         secondTab.Document.SessionSettings.OutputPath = string.Empty;
         Assert.False(context.ViewModel.SaveCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void SaveOutputAction_Should_Describe_Fresh_Applied_Preview()
+    {
+        TestContext context = CreateContext();
+        WorkspaceDocumentViewModel document = context.ViewModel.CurrentDocument;
+
+        PrepareAppliedPreview(document);
+
+        Assert.True(document.PreviewDirtyTracker.HasAppliedPreview);
+        Assert.False(document.PreviewDirtyTracker.IsPreviewDirty);
+        Assert.Equal("Save", context.ViewModel.SaveOutputActionText);
+        Assert.Equal("Save the latest built output.", context.ViewModel.SaveOutputActionTooltip);
+        Assert.True(context.ViewModel.SaveCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void SaveOutputAction_Should_Explain_Stale_Applied_Preview()
+    {
+        TestContext context = CreateContext();
+        WorkspaceDocumentViewModel document = context.ViewModel.CurrentDocument;
+        PrepareAppliedPreview(document);
+
+        List<string?> changedProperties = [];
+        context.ViewModel.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName);
+
+        MakePreviewStale(document);
+
+        Assert.True(document.PreviewDirtyTracker.HasAppliedPreview);
+        Assert.True(document.PreviewDirtyTracker.IsPreviewDirty);
+        Assert.Equal("Save Last Build", context.ViewModel.SaveOutputActionText);
+        Assert.Equal(
+            "Save the last successfully built output. Changes made since that build are not included in its content; run Build Preview to rebuild it first.",
+            context.ViewModel.SaveOutputActionTooltip);
+        Assert.Contains(nameof(MainViewModel.SaveOutputActionText), changedProperties);
+        Assert.Contains(nameof(MainViewModel.SaveOutputActionTooltip), changedProperties);
+        Assert.True(context.ViewModel.SaveCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void SaveOutputAction_Should_Return_To_Fresh_State_After_New_Applied_Preview()
+    {
+        TestContext context = CreateContext();
+        WorkspaceDocumentViewModel document = context.ViewModel.CurrentDocument;
+        PrepareAppliedPreview(document);
+        MakePreviewStale(document);
+
+        document.SetLastOutput(CreateOutput("rebuilt output"));
+        ApplyPreviewBaseline(document);
+
+        Assert.False(document.PreviewDirtyTracker.IsPreviewDirty);
+        Assert.Equal("Save", context.ViewModel.SaveOutputActionText);
+        Assert.Equal("Save the latest built output.", context.ViewModel.SaveOutputActionTooltip);
+    }
+
+    [Fact]
+    public void SaveOutputAction_Should_Follow_ActiveTab_Stale_State()
+    {
+        TestContext context = CreateContext();
+        WorkspaceTabViewModel firstTab = context.WorkspaceTabs.ActiveTab;
+        WorkspaceTabViewModel secondTab = context.WorkspaceTabs.CreateNewTab();
+
+        PrepareAppliedPreview(firstTab.Document);
+        PrepareAppliedPreview(secondTab.Document);
+        MakePreviewStale(secondTab.Document);
+
+        context.WorkspaceTabs.SelectTab(firstTab);
+
+        Assert.Equal("Save", context.ViewModel.SaveOutputActionText);
+        Assert.Equal("Save the latest built output.", context.ViewModel.SaveOutputActionTooltip);
+
+        List<string?> changedProperties = [];
+        context.ViewModel.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName);
+
+        context.WorkspaceTabs.SelectTab(secondTab);
+
+        Assert.Equal("Save Last Build", context.ViewModel.SaveOutputActionText);
+        Assert.Equal(
+            "Save the last successfully built output. Changes made since that build are not included in its content; run Build Preview to rebuild it first.",
+            context.ViewModel.SaveOutputActionTooltip);
+        Assert.Contains(nameof(MainViewModel.SaveOutputActionText), changedProperties);
+        Assert.Contains(nameof(MainViewModel.SaveOutputActionTooltip), changedProperties);
+
+        context.WorkspaceTabs.SelectTab(firstTab);
+
+        Assert.Equal("Save", context.ViewModel.SaveOutputActionText);
     }
 
     [Fact]
@@ -622,8 +697,7 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
     {
         TestContext context = CreateContext();
 
-        context.ViewModel.CurrentDocument.WorkspaceFilePath =
-            @"D:\Workspaces\source.filemerger.workspace.json";
+        context.ViewModel.CurrentDocument.WorkspaceFilePath = @"D:\Workspaces\source.filemerger.workspace.json";
 
         bool result = context.ViewModel.RenameCurrentWorkspaceTab("Renamed Workspace");
 
@@ -715,8 +789,7 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
     {
         TestContext context = CreateContext();
 
-        context.ViewModel.CurrentDocument.WorkspaceFilePath =
-            @"D:\Workspaces\source.filemerger.workspace.json";
+        context.ViewModel.CurrentDocument.WorkspaceFilePath = @"D:\Workspaces\source.filemerger.workspace.json";
 
         context.RenameDialogService.NextName = "Renamed Workspace";
 
@@ -1335,27 +1408,20 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
             crashLogRetentionLimit: 50);
         context.ApplicationPreferencesStore.SetCurrent(original);
         bool wasWorkspaceDirty = context.ViewModel.CurrentDocument.IsWorkspaceDirty;
-        bool wasPreviewDirty =
-            context.ViewModel.CurrentDocument.PreviewDirtyTracker.IsPreviewDirty;
+        bool wasPreviewDirty = context.ViewModel.CurrentDocument.PreviewDirtyTracker.IsPreviewDirty;
 
         context.ViewModel.IsPreviewLineWrapEnabled = true;
 
         Assert.True(context.ViewModel.CurrentDocument.IsPreviewLineWrapEnabled);
-        Assert.True(
-            context.ApplicationPreferencesStore.Current
-                .IsPreviewLineWrapEnabledByDefault);
+        Assert.True(context.ApplicationPreferencesStore.Current.IsPreviewLineWrapEnabledByDefault);
         Assert.Equal(
             original.PreviewDisplayCharacterLimit,
             context.ApplicationPreferencesStore.Current.PreviewDisplayCharacterLimit);
         Assert.Equal(
             original.CrashLogRetentionLimit,
             context.ApplicationPreferencesStore.Current.CrashLogRetentionLimit);
-        Assert.Equal(
-            wasWorkspaceDirty,
-            context.ViewModel.CurrentDocument.IsWorkspaceDirty);
-        Assert.Equal(
-            wasPreviewDirty,
-            context.ViewModel.CurrentDocument.PreviewDirtyTracker.IsPreviewDirty);
+        Assert.Equal(wasWorkspaceDirty, context.ViewModel.CurrentDocument.IsWorkspaceDirty);
+        Assert.Equal(wasPreviewDirty, context.ViewModel.CurrentDocument.PreviewDirtyTracker.IsPreviewDirty);
     }
 
     [Fact]
@@ -1390,6 +1456,20 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
         context.ViewModel.OpenKeyboardShortcutsCommand.Execute(null);
 
         Assert.Equal(1, context.KeyboardShortcutsDialogService.ShowDialogCalls);
+    }
+
+    [Fact]
+    public void OpenUpdateCheckCommand_Should_Show_ApplicationLevel_Dialog()
+    {
+        TestContext context = CreateContext();
+        WorkspaceDocumentViewModel document = context.ViewModel.CurrentDocument;
+
+        Assert.True(context.ViewModel.OpenUpdateCheckCommand.CanExecute(null));
+
+        context.ViewModel.OpenUpdateCheckCommand.Execute(null);
+
+        Assert.Equal(1, context.UpdateCheckDialogService.ShowDialogCalls);
+        Assert.Same(document, context.ViewModel.CurrentDocument);
     }
 
     [Fact]
@@ -1500,12 +1580,8 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
 
         context.ViewModel.OpenPreferencesCommand.Execute(null);
 
-        Assert.Equal(
-            "Preferences saved.",
-            context.ViewModel.OperationStatus.StatusMessage);
-        Assert.Equal(
-            StatusSeverity.Success,
-            context.ViewModel.OperationStatus.StatusSeverity);
+        Assert.Equal("Preferences saved.", context.ViewModel.OperationStatus.StatusMessage);
+        Assert.Equal(StatusSeverity.Success, context.ViewModel.OperationStatus.StatusSeverity);
     }
 
     [Fact]
@@ -1517,9 +1593,7 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
 
         context.ViewModel.OpenPreferencesCommand.Execute(null);
 
-        Assert.Equal(
-            wasWorkspaceDirty,
-            context.ViewModel.CurrentDocument.IsWorkspaceDirty);
+        Assert.Equal(wasWorkspaceDirty, context.ViewModel.CurrentDocument.IsWorkspaceDirty);
     }
 
     [Fact]
@@ -1527,14 +1601,11 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
     {
         TestContext context = CreateContext();
         context.PreferencesDialogService.Result = true;
-        bool wasPreviewDirty =
-            context.ViewModel.CurrentDocument.PreviewDirtyTracker.IsPreviewDirty;
+        bool wasPreviewDirty = context.ViewModel.CurrentDocument.PreviewDirtyTracker.IsPreviewDirty;
 
         context.ViewModel.OpenPreferencesCommand.Execute(null);
 
-        Assert.Equal(
-            wasPreviewDirty,
-            context.ViewModel.CurrentDocument.PreviewDirtyTracker.IsPreviewDirty);
+        Assert.Equal(wasPreviewDirty, context.ViewModel.CurrentDocument.PreviewDirtyTracker.IsPreviewDirty);
     }
 
     private static TestContext CreateContext()
@@ -1544,9 +1615,7 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
         FakeWorkspaceDocumentDirtyStateService dirtyStateService = new();
         FakeUserPromptService promptService = new();
 
-        WorkspaceDocumentCloneService cloneService = new(
-            documentFactory,
-            dirtyStateService);
+        WorkspaceDocumentCloneService cloneService = new(documentFactory, dirtyStateService);
 
         WorkspaceTabManagerViewModel workspaceTabs = new(
             documentFactory,
@@ -1562,6 +1631,7 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
         FakeWorkspaceTabRenameDialogService renameDialogService = new();
         FakeClipboardService clipboardService = new();
         FakeKeyboardShortcutsDialogService keyboardShortcutsDialogService = new();
+        FakeUpdateCheckDialogService updateCheckDialogService = new();
         FakeRecentWorkspacesService recentWorkspacesService = new();
         FakeApplicationPreferencesStore applicationPreferencesStore = new();
 
@@ -1576,6 +1646,7 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
             renameDialogService,
             clipboardService,
             keyboardShortcutsDialogService,
+            updateCheckDialogService,
             promptService,
             recentWorkspacesService,
             applicationPreferencesStore,
@@ -1594,6 +1665,7 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
             workspaceConfigurationDialogService,
             renameDialogService,
             keyboardShortcutsDialogService,
+            updateCheckDialogService,
             applicationPreferencesStore);
     }
 
@@ -1604,13 +1676,33 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
             IncludeFileSeparators: true,
             IncludeRelativePathInSeparator: true,
             TrimTrailingEmptyLines: true,
-            RemoveUsingDirectives: false,
             FileTypes: [],
             LineEndingMode: LineEndingMode.Preserve,
             SortMode: SortMode.ByRelativePathAscending,
             InputEncodingMode: InputEncodingMode.Auto,
             PreferredInputEncodingName: null,
             FallbackInputEncodingName: "windows-1251");
+    }
+
+    private static void PrepareAppliedPreview(WorkspaceDocumentViewModel document)
+    {
+        document.SessionSettings.OutputPath = WorkspaceDocumentTestFactory.DefaultOutputPath;
+        document.SetLastOutput(CreateOutput());
+        ApplyPreviewBaseline(document);
+    }
+
+    private static void MakePreviewStale(WorkspaceDocumentViewModel document)
+    {
+        document.SessionSettings.SessionName += " edited";
+
+        MainStateFactory stateFactory = new();
+        document.PreviewDirtyTracker.Refresh(stateFactory.BuildPreviewState(document));
+    }
+
+    private static void ApplyPreviewBaseline(WorkspaceDocumentViewModel document)
+    {
+        MainStateFactory stateFactory = new();
+        document.PreviewDirtyTracker.MarkPreviewApplied(stateFactory.BuildPreviewState(document));
     }
 
     private static MergeOutput CreateOutput(string content = "merged")
@@ -1647,6 +1739,7 @@ public sealed class MainViewModelWorkspaceTabRoutingTests
         FakeWorkspaceConfigurationDialogService WorkspaceConfigurationDialogService,
         FakeWorkspaceTabRenameDialogService RenameDialogService,
         FakeKeyboardShortcutsDialogService KeyboardShortcutsDialogService,
+        FakeUpdateCheckDialogService UpdateCheckDialogService,
         FakeApplicationPreferencesStore ApplicationPreferencesStore);
 
     private sealed class FakeWorkspaceDocumentLifecycleService : IWorkspaceDocumentLifecycleService

@@ -20,9 +20,7 @@ public sealed class WorkspaceDocumentCloneServiceTests
         source.SessionSettings.OutputPath = @"D:\Output\source.txt";
         source.WorkspaceFilePath = @"D:\Workspaces\source.filemerger.workspace.json";
 
-        WorkspaceDocumentViewModel duplicate = service.CloneAsDuplicate(
-            source,
-            "Source Workspace Copy");
+        WorkspaceDocumentViewModel duplicate = service.CloneAsDuplicate(source, "Source Workspace Copy");
 
         Assert.NotSame(source, duplicate);
         Assert.Equal("Source Workspace Copy", duplicate.SessionSettings.SessionName);
@@ -48,15 +46,10 @@ public sealed class WorkspaceDocumentCloneServiceTests
         source.PreviewNotice = "notice";
         source.ValidationPane.Load(
         [
-            new ValidationIssue(
-                ValidationSeverity.Warning,
-                "test.warning",
-                "Test warning.")
+            new ValidationIssue(ValidationSeverity.Warning, "test.warning", "Test warning.")
         ]);
 
-        WorkspaceDocumentViewModel duplicate = service.CloneAsDuplicate(
-            source,
-            "Source Workspace Copy");
+        WorkspaceDocumentViewModel duplicate = service.CloneAsDuplicate(source, "Source Workspace Copy");
 
         Assert.Null(duplicate.LastOutput);
         Assert.Equal(string.Empty, duplicate.PreviewContent);
@@ -73,9 +66,7 @@ public sealed class WorkspaceDocumentCloneServiceTests
 
         WorkspaceDocumentViewModel source = CreateDocument("Source Workspace");
 
-        WorkspaceDocumentViewModel duplicate = service.CloneAsDuplicate(
-            source,
-            "Source Workspace Copy");
+        WorkspaceDocumentViewModel duplicate = service.CloneAsDuplicate(source, "Source Workspace Copy");
 
         Assert.Same(duplicate, dirtyStateService.LastWorkspaceRefreshedDocument);
         Assert.True(duplicate.IsWorkspaceDirty);
@@ -94,9 +85,7 @@ public sealed class WorkspaceDocumentCloneServiceTests
         source.ProfileOriginEntryId = "profile-repository";
         source.ProfileOriginDisplayName = "Repository Profile";
 
-        WorkspaceDocumentViewModel duplicate = service.CloneAsDuplicate(
-            source,
-            "Source Workspace Copy");
+        WorkspaceDocumentViewModel duplicate = service.CloneAsDuplicate(source, "Source Workspace Copy");
 
         Assert.Null(duplicate.CurrentProfileEntryId);
         Assert.Equal("profile-repository", duplicate.ProfileOriginEntryId);
@@ -136,9 +125,7 @@ public sealed class WorkspaceDocumentCloneServiceTests
 
     private static WorkspaceDocumentViewModel CreateDocument(string sessionName)
     {
-        return WorkspaceDocumentTestFactory.CreateSavedDocument(
-            sessionName: sessionName,
-            outputPath: string.Empty);
+        return WorkspaceDocumentTestFactory.CreateSavedDocument(sessionName: sessionName, outputPath: string.Empty);
     }
 
     private static MergeOutput CreateOutput()

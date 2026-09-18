@@ -6,26 +6,14 @@ namespace FileMerger.Wpf.Features.Workspace.Tabs.Layout;
 
 public sealed class TabWidthToTitleVisibilityConverter : IValueConverter
 {
-    public object Convert(
-        object value,
-        Type targetType,
-        object parameter,
-        CultureInfo culture)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        double actualWidth = value is double width
-            ? width
-            : double.PositiveInfinity;
+        double actualWidth = value is double width ? width : double.PositiveInfinity;
 
-        return actualWidth <= WorkspaceTabLayoutConstants.MinimalStateWidth
-            ? Visibility.Collapsed
-            : Visibility.Visible;
+        return actualWidth <= WorkspaceTabLayoutConstants.MinimalStateWidth ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    public object ConvertBack(
-        object value,
-        Type targetType,
-        object parameter,
-        CultureInfo culture)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotSupportedException();
     }

@@ -6,17 +6,16 @@ namespace FileMerger.Wpf.Shared.Status;
 
 public sealed class OperationStatusViewModel : ViewModelBase
 {
-    private string _statusMessage = "Ready.";
-    private StatusSeverity _statusSeverity = StatusSeverity.Info;
+    private readonly Action _cancelAction;
 
     private bool _isBusy;
     private bool _isCancelable;
-    private bool _isProgressVisible;
     private bool _isProgressIndeterminate = true;
-    private double _progressValue;
+    private bool _isProgressVisible;
     private string _progressMessage = string.Empty;
-
-    private readonly Action _cancelAction;
+    private double _progressValue;
+    private string _statusMessage = "Ready.";
+    private StatusSeverity _statusSeverity = StatusSeverity.Info;
 
     public OperationStatusViewModel(Action cancelAction)
     {
@@ -24,9 +23,7 @@ public sealed class OperationStatusViewModel : ViewModelBase
 
         _cancelAction = cancelAction;
 
-        CancelCommand = new RelayCommand(
-            execute: () => _cancelAction(),
-            canExecute: () => IsCancelable);
+        CancelCommand = new RelayCommand(execute: () => _cancelAction(), canExecute: () => IsCancelable);
     }
 
     public string StatusMessage

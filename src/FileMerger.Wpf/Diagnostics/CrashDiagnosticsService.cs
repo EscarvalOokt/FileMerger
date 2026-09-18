@@ -45,29 +45,22 @@ public sealed class CrashDiagnosticsService
         return _writer.Write(exception, context);
     }
 
-    private void OnDispatcherUnhandledException(
-        object sender,
-        DispatcherUnhandledExceptionEventArgs e)
+    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         WriteCrashLog(e.Exception, "WPF DispatcherUnhandledException");
 
         e.Handled = false;
     }
 
-    private void OnAppDomainUnhandledException(
-        object sender,
-        UnhandledExceptionEventArgs e)
+    private void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
-        Exception exception = e.ExceptionObject as Exception
-                              ?? new InvalidOperationException(
-                                  $"Unhandled non-exception object: {e.ExceptionObject}");
+        Exception exception = e.ExceptionObject as Exception ??
+                              new InvalidOperationException($"Unhandled non-exception object: {e.ExceptionObject}");
 
         WriteCrashLog(exception, "AppDomain.UnhandledException");
     }
 
-    private void OnUnobservedTaskException(
-        object? sender,
-        UnobservedTaskExceptionEventArgs e)
+    private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
         WriteCrashLog(e.Exception, "TaskScheduler.UnobservedTaskException");
     }

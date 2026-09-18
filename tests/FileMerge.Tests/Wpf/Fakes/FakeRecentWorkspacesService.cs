@@ -23,22 +23,17 @@ public sealed class FakeRecentWorkspacesService : IRecentWorkspacesService
         return Task.FromResult(result);
     }
 
-    public Task AddOrUpdateAsync(
-        string workspaceFilePath,
-        CancellationToken cancellationToken = default)
+    public Task AddOrUpdateAsync(string workspaceFilePath, CancellationToken cancellationToken = default)
     {
         AddedPaths.Add(workspaceFilePath);
         return Task.CompletedTask;
     }
 
-    public Task RemoveAsync(
-        string workspaceFilePath,
-        CancellationToken cancellationToken = default)
+    public Task RemoveAsync(string workspaceFilePath, CancellationToken cancellationToken = default)
     {
         RemovedPaths.Add(workspaceFilePath);
 
-        Entries.RemoveAll(x =>
-            string.Equals(x.FilePath, workspaceFilePath, StringComparison.OrdinalIgnoreCase));
+        Entries.RemoveAll(x => string.Equals(x.FilePath, workspaceFilePath, StringComparison.OrdinalIgnoreCase));
 
         return Task.CompletedTask;
     }

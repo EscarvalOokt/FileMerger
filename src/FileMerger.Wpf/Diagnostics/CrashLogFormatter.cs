@@ -13,7 +13,8 @@ public static class CrashLogFormatter
         StringBuilder builder = new();
 
         builder.AppendLine("FileMerger crash log");
-        builder.AppendLine($"Timestamp UTC: {context.OccurredAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture)}");
+        builder.AppendLine(
+            $"Timestamp UTC: {context.OccurredAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture)}");
         builder.AppendLine($"Source: {context.ExceptionSource}");
         builder.AppendLine();
 

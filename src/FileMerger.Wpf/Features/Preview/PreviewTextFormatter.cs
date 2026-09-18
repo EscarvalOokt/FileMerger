@@ -9,9 +9,7 @@ public static class PreviewTextFormatter
         return Format(fullContent, MaxPreviewCharacters);
     }
 
-    public static PreviewTextFormatResult Format(
-        string fullContent,
-        int maxPreviewCharacters)
+    public static PreviewTextFormatResult Format(string fullContent, int maxPreviewCharacters)
     {
         ArgumentNullException.ThrowIfNull(fullContent);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxPreviewCharacters);

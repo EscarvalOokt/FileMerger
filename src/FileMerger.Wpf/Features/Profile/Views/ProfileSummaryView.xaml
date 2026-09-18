@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="FileMerger.Wpf.Features.Profile.Views.ProfileSummaryView"
+<UserControl x:Class="FileMerger.Wpf.Features.Profile.Views.ProfileSummaryView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <UserControl.Resources>
@@ -22,11 +22,6 @@
                    Text="Formatting" />
         <TextBlock Style="{StaticResource SummaryValueTextStyle}"
                    Text="{Binding Formatting}" />
-        <TextBlock Margin="0,8,0,0"
-                   Style="{StaticResource SummaryCaptionTextStyle}"
-                   Text="C# options" />
-        <TextBlock Style="{StaticResource SummaryValueTextStyle}"
-                   Text="{Binding CSharpOptions}" />
         <TextBlock Margin="0,8,0,0"
                    Style="{StaticResource SummaryCaptionTextStyle}"
                    Text="Input encoding" />

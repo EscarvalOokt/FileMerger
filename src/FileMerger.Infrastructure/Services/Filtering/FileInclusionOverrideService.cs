@@ -14,12 +14,8 @@ public sealed class FileInclusionOverrideService : IFileInclusionOverrideService
         ArgumentNullException.ThrowIfNull(files);
         ArgumentNullException.ThrowIfNull(overrides);
 
-        var overrideMap = overrides
-            .GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                x => x.Key,
-                x => x.Last(),
-                StringComparer.OrdinalIgnoreCase);
+        var overrideMap = overrides.GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(x => x.Key, x => x.Last(), StringComparer.OrdinalIgnoreCase);
 
         List<InputFile> result = [];
 
@@ -43,9 +39,7 @@ public sealed class FileInclusionOverrideService : IFileInclusionOverrideService
             }
             else
             {
-                result.Add(file.Exclude(new SkipReason(
-                    "manual.exclude",
-                    "Excluded manually by user.")));
+                result.Add(file.Exclude(new SkipReason("manual.exclude", "Excluded manually by user.")));
             }
         }
 

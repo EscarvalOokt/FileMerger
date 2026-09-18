@@ -5,8 +5,7 @@ public sealed record CrashLogFileListResult(
     IReadOnlyCollection<CrashLogFileInfo> Files,
     Exception? Error)
 {
-    public static CrashLogFileListResult Success(
-        IReadOnlyCollection<CrashLogFileInfo> files)
+    public static CrashLogFileListResult Success(IReadOnlyCollection<CrashLogFileInfo> files)
     {
         ArgumentNullException.ThrowIfNull(files);
         return new CrashLogFileListResult(true, files, null);

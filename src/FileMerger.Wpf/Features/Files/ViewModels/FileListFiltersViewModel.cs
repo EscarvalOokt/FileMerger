@@ -73,14 +73,9 @@ public sealed class FileListFiltersViewModel : ViewModelBase
 
     public int SelectedFacetCount => AllFacets.Count(x => x.IsSelected);
 
-    public string FacetMenuLabel => SelectedFacetCount == 0
-        ? "Filters"
-        : $"Filters ({SelectedFacetCount})";
+    public string FacetMenuLabel => SelectedFacetCount == 0 ? "Filters" : $"Filters ({SelectedFacetCount})";
 
-    public bool HasActiveFilters =>
-        !string.IsNullOrWhiteSpace(SearchText) ||
-        HasActiveFacets ||
-        ShowOnlySelected;
+    public bool HasActiveFilters => !string.IsNullOrWhiteSpace(SearchText) || HasActiveFacets || ShowOnlySelected;
 
     public void Reset()
     {
@@ -91,9 +86,7 @@ public sealed class FileListFiltersViewModel : ViewModelBase
             facet.IsSelected = false;
     }
 
-    public bool Matches(
-        InputFileItemViewModel file,
-        IReadOnlyCollection<InputFileItemViewModel> selectedFiles)
+    public bool Matches(InputFileItemViewModel file, IReadOnlyCollection<InputFileItemViewModel> selectedFiles)
     {
         return MatchesCommonConstraints(file, selectedFiles) &&
                MatchesFacetGroup(file, InclusionFacets) &&
@@ -132,9 +125,7 @@ public sealed class FileListFiltersViewModel : ViewModelBase
                MatchesFacetGroupForCount(file, WorkflowFacets, facet);
     }
 
-    public static bool MatchesFacet(
-        InputFileItemViewModel file,
-        FileListFacet facet)
+    public static bool MatchesFacet(InputFileItemViewModel file, FileListFacet facet)
     {
         ArgumentNullException.ThrowIfNull(file);
 
@@ -142,18 +133,12 @@ public sealed class FileListFiltersViewModel : ViewModelBase
         {
             FileListFacet.Included => file.IsIncluded,
             FileListFacet.NotIncluded => file.IsNotIncluded,
-            FileListFacet.ExcludedByProfileRule =>
-                file.IsNotIncluded && HasSkipReasonCategory(
-                    file,
-                    SkippedFileCategory.ProfileExclusion),
-            FileListFacet.DisabledType =>
-                file.IsNotIncluded && HasSkipReasonCategory(
-                    file,
-                    SkippedFileCategory.DisabledFileType),
-            FileListFacet.Unsupported =>
-                file.IsNotIncluded && HasSkipReasonCategory(
-                    file,
-                    SkippedFileCategory.UnsupportedFile),
+            FileListFacet.ExcludedByProfileRule => file.IsNotIncluded &&
+                                                   HasSkipReasonCategory(file, SkippedFileCategory.ProfileExclusion),
+            FileListFacet.DisabledType => file.IsNotIncluded &&
+                                          HasSkipReasonCategory(file, SkippedFileCategory.DisabledFileType),
+            FileListFacet.Unsupported => file.IsNotIncluded &&
+                                         HasSkipReasonCategory(file, SkippedFileCategory.UnsupportedFile),
             FileListFacet.Fallback => file.HasFallbackStatus,
             FileListFacet.Overridden => file.HasOverrideStatus,
             FileListFacet.NotApplied => file.HasPendingPreviewState,
@@ -192,24 +177,19 @@ public sealed class FileListFiltersViewModel : ViewModelBase
         return MatchesFacetGroup(file, facets);
     }
 
-    private static bool HasSkipReasonCategory(
-        InputFileItemViewModel file,
-        SkippedFileCategory category)
+    private static bool HasSkipReasonCategory(InputFileItemViewModel file, SkippedFileCategory category)
     {
         return file.Model.SkipReason?.Category == category;
     }
 
-    private static bool MatchesSearch(
-        InputFileItemViewModel file,
-        string search)
+    private static bool MatchesSearch(InputFileItemViewModel file, string search)
     {
         return file.RelativePath.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                file.FullPath.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                file.Extension.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                file.Kind.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                file.SkipReason.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-               file.IsFallbackText &&
-               FallbackTextSearchLabel.Contains(search, StringComparison.OrdinalIgnoreCase);
+               file.IsFallbackText && FallbackTextSearchLabel.Contains(search, StringComparison.OrdinalIgnoreCase);
     }
 
     private void Facet_PropertyChanged(object? sender, PropertyChangedEventArgs e)

@@ -2,10 +2,7 @@ namespace FileMerger.Wpf.Shell.Help;
 
 public sealed class KeyboardShortcutItemViewModel
 {
-    public KeyboardShortcutItemViewModel(
-        string action,
-        string gesture,
-        string? description = null)
+    public KeyboardShortcutItemViewModel(string action, string gesture, string? description = null)
     {
         if (string.IsNullOrWhiteSpace(action))
             throw new ArgumentException("Action cannot be empty.", nameof(action));

@@ -17,9 +17,7 @@ public static class WorkspaceConfigurationMapper
             ProfileOriginDisplayName: document.ProfileOriginDisplayName);
     }
 
-    public static void Apply(
-        WorkspaceDocumentViewModel document,
-        WorkspaceConfigurationSnapshot configuration)
+    public static void Apply(WorkspaceDocumentViewModel document, WorkspaceConfigurationSnapshot configuration)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(configuration);

@@ -6,8 +6,7 @@ public sealed class FakeUserPromptService : IUserPromptService
 {
     private readonly Queue<UnsavedChangesDecision> _unsavedChangesDecisions = [];
 
-    public UnsavedChangesDecision UnsavedChangesDecision { get; set; } =
-        UnsavedChangesDecision.Cancel;
+    public UnsavedChangesDecision UnsavedChangesDecision { get; set; } = UnsavedChangesDecision.Cancel;
 
     public bool ConfirmResult { get; set; } = true;
 
@@ -23,29 +22,19 @@ public sealed class FakeUserPromptService : IUserPromptService
 
     public string? LastConfirmMessage { get; private set; }
 
-    public List<string> UnsavedChangesTitles { get; } = [];
+    public string? LastConfirmButtonText { get; private set; }
+
+    public string? LastCancelButtonText { get; private set; }
 
     public List<string> UnsavedChangesMessages { get; } = [];
 
-    public List<string> ConfirmTitles { get; } = [];
-
-    public List<string> ConfirmMessages { get; } = [];
-
-    public void EnqueueUnsavedChangesDecision(UnsavedChangesDecision decision)
-    {
-        _unsavedChangesDecisions.Enqueue(decision);
-    }
-
-    public UnsavedChangesDecision ConfirmUnsavedChanges(
-        string title,
-        string message)
+    public UnsavedChangesDecision ConfirmUnsavedChanges(string title, string message)
     {
         ConfirmUnsavedChangesCalls++;
 
         LastUnsavedChangesTitle = title;
         LastUnsavedChangesMessage = message;
 
-        UnsavedChangesTitles.Add(title);
         UnsavedChangesMessages.Add(message);
 
         if (_unsavedChangesDecisions.Count > 0)
@@ -54,18 +43,20 @@ public sealed class FakeUserPromptService : IUserPromptService
         return UnsavedChangesDecision;
     }
 
-    public bool Confirm(
-        string title,
-        string message)
+    public bool Confirm(string title, string message, string confirmButtonText = "Yes", string cancelButtonText = "No")
     {
         ConfirmCalls++;
 
         LastConfirmTitle = title;
         LastConfirmMessage = message;
-
-        ConfirmTitles.Add(title);
-        ConfirmMessages.Add(message);
+        LastConfirmButtonText = confirmButtonText;
+        LastCancelButtonText = cancelButtonText;
 
         return ConfirmResult;
+    }
+
+    public void EnqueueUnsavedChangesDecision(UnsavedChangesDecision decision)
+    {
+        _unsavedChangesDecisions.Enqueue(decision);
     }
 }

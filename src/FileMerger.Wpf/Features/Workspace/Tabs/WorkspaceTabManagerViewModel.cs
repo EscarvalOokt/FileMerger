@@ -7,11 +7,11 @@ namespace FileMerger.Wpf.Features.Workspace.Tabs;
 
 public sealed class WorkspaceTabManagerViewModel : ViewModelBase
 {
-    private readonly IWorkspaceDocumentFactory _workspaceDocumentFactory;
-    private readonly IWorkspaceDocumentLifecycleService? _workspaceDocumentLifecycleService;
+    private readonly ObservableCollection<WorkspaceTabViewModel> _tabs = [];
     private readonly IUserPromptService? _userPromptService;
     private readonly IWorkspaceDocumentCloneService? _workspaceDocumentCloneService;
-    private readonly ObservableCollection<WorkspaceTabViewModel> _tabs = [];
+    private readonly IWorkspaceDocumentFactory _workspaceDocumentFactory;
+    private readonly IWorkspaceDocumentLifecycleService? _workspaceDocumentLifecycleService;
 
     private WorkspaceTabViewModel? _activeTab;
 
@@ -86,9 +86,7 @@ public sealed class WorkspaceTabManagerViewModel : ViewModelBase
         return RenameTab(ActiveTab, newName);
     }
 
-    public bool RenameTab(
-        WorkspaceTabViewModel tab,
-        string newName)
+    public bool RenameTab(WorkspaceTabViewModel tab, string newName)
     {
         ArgumentNullException.ThrowIfNull(tab);
         EnsureTabBelongsToManager(tab);
@@ -101,8 +99,7 @@ public sealed class WorkspaceTabManagerViewModel : ViewModelBase
 
         tab.Document.SessionSettings.SessionName = newName.Trim();
 
-        tab.Document.WorkspaceDirtyTracker.Refresh(
-            WorkspaceDocumentStateSnapshotFactory.Capture(tab.Document));
+        tab.Document.WorkspaceDirtyTracker.Refresh(WorkspaceDocumentStateSnapshotFactory.Capture(tab.Document));
 
         return true;
     }
@@ -137,25 +134,40 @@ public sealed class WorkspaceTabManagerViewModel : ViewModelBase
 
     public bool CanDuplicateTab(WorkspaceTabViewModel? tab)
     {
-        return tab is not null &&
-               _tabs.Contains(tab) &&
-               !IsTabBusy(tab) &&
-               _workspaceDocumentCloneService is not null;
+        return tab is not null && _tabs.Contains(tab) && !IsTabBusy(tab) && _workspaceDocumentCloneService is not null;
     }
 
     public bool CanRenameTab(WorkspaceTabViewModel? tab)
     {
-        return tab is not null &&
-               _tabs.Contains(tab) &&
-               !IsTabBusy(tab);
+        return tab is not null && _tabs.Contains(tab) && !IsTabBusy(tab);
     }
 
     public bool CanCloseTab(WorkspaceTabViewModel? tab)
     {
-        return tab is not null &&
-               _tabs.Contains(tab) &&
-               _tabs.Count > 1 &&
-               !IsTabBusy(tab);
+        return tab is not null && _tabs.Contains(tab) && _tabs.Count > 1 && !IsTabBusy(tab);
+    }
+
+    public bool HasBusyTabs()
+    {
+        return _tabs.Any(IsTabBusy);
+    }
+
+    public async Task<bool> TryPrepareForApplicationShutdownAsync(CancellationToken cancellationToken = default)
+    {
+        if (HasBusyTabs())
+            return false;
+
+        foreach (WorkspaceTabViewModel tab in _tabs)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            bool canAbandon = await EnsureWorkspaceCanBeAbandonedAsync(tab, "closing FileMerger", cancellationToken);
+
+            if (!canAbandon)
+                return false;
+        }
+
+        return true;
     }
 
     public bool CanCloseOtherTabs()
@@ -166,9 +178,7 @@ public sealed class WorkspaceTabManagerViewModel : ViewModelBase
         if (IsTabBusy(ActiveTab))
             return false;
 
-        return _tabs
-            .Where(tab => !ReferenceEquals(tab, ActiveTab))
-            .All(tab => !IsTabBusy(tab));
+        return _tabs.Where(tab => !ReferenceEquals(tab, ActiveTab)).All(tab => !IsTabBusy(tab));
     }
 
     public async Task<bool> TryCloseOtherTabsAsync()
@@ -228,18 +238,13 @@ public sealed class WorkspaceTabManagerViewModel : ViewModelBase
         return true;
     }
 
-    public Task<bool> OpenWorkspaceAsync(
-        Action? stateChanged = null,
-        CancellationToken cancellationToken = default)
+    public Task<bool> OpenWorkspaceAsync(Action? stateChanged = null, CancellationToken cancellationToken = default)
     {
         if (_workspaceDocumentLifecycleService is null)
             throw new InvalidOperationException("Open workspace flow requires lifecycle service.");
 
         return OpenWorkspaceCoreAsync(
-            (document, token) => _workspaceDocumentLifecycleService.LoadWorkspaceAsync(
-                document,
-                stateChanged,
-                token),
+            (document, token) => _workspaceDocumentLifecycleService.LoadWorkspaceAsync(document, stateChanged, token),
             cancellationToken);
     }
 
@@ -270,9 +275,7 @@ public sealed class WorkspaceTabManagerViewModel : ViewModelBase
         WorkspaceTabViewModel previousActiveTab = ActiveTab;
 
         bool replaceActiveTab = CanReplaceWithOpenedWorkspace(previousActiveTab);
-        WorkspaceTabViewModel targetTab = replaceActiveTab
-            ? previousActiveTab
-            : CreateNewTab();
+        WorkspaceTabViewModel targetTab = replaceActiveTab ? previousActiveTab : CreateNewTab();
 
         bool loaded = false;
 
@@ -302,32 +305,38 @@ public sealed class WorkspaceTabManagerViewModel : ViewModelBase
         if (!CanCloseTab(tab))
             return false;
 
+        bool canAbandon = await EnsureWorkspaceCanBeAbandonedAsync(tab, "closing this tab", CancellationToken.None);
+
+        return canAbandon && CloseTab(tab);
+    }
+
+    private async Task<bool> EnsureWorkspaceCanBeAbandonedAsync(
+        WorkspaceTabViewModel tab,
+        string actionDescription,
+        CancellationToken cancellationToken)
+    {
         if (!tab.IsWorkspaceDirty)
-            return CloseTab(tab);
+            return true;
 
         if (_workspaceDocumentLifecycleService is null || _userPromptService is null)
             throw new InvalidOperationException("Dirty workspace close flow requires lifecycle and prompt services.");
 
         UnsavedChangesDecision decision = _userPromptService.ConfirmUnsavedChanges(
             title: "Unsaved workspace",
-            message:
-            $"Workspace tab \"{tab.Title}\" has unsaved changes.{Environment.NewLine}" +
-            "Save changes before closing this tab?");
+            message: $"Workspace tab \"{tab.Title}\" has unsaved changes.{Environment.NewLine}" +
+                     $"Save changes before {actionDescription}?");
 
         if (decision == UnsavedChangesDecision.Cancel)
             return false;
 
         if (decision == UnsavedChangesDecision.Discard)
-            return CloseTab(tab);
+            return true;
 
-        bool saved = await _workspaceDocumentLifecycleService.SaveWorkspaceAsync(tab.Document);
-        if (!saved)
-            return false;
+        bool saved = await _workspaceDocumentLifecycleService.SaveWorkspaceAsync(
+            tab.Document,
+            cancellationToken: cancellationToken);
 
-        if (tab.IsWorkspaceDirty)
-            return false;
-
-        return CloseTab(tab);
+        return saved && !tab.IsWorkspaceDirty;
     }
 
     private bool SelectRelativeTab(int offset)
@@ -381,18 +390,15 @@ public sealed class WorkspaceTabManagerViewModel : ViewModelBase
 
     private bool TabTitleExists(string title)
     {
-        return _tabs.Any(tab =>
-            string.Equals(
-                NormalizeTabTitle(tab.Title),
-                NormalizeTabTitle(title),
-                StringComparison.OrdinalIgnoreCase));
+        return _tabs.Any(tab => string.Equals(
+            NormalizeTabTitle(tab.Title),
+            NormalizeTabTitle(title),
+            StringComparison.OrdinalIgnoreCase));
     }
 
     private static string NormalizeTabTitle(string? title)
     {
-        return string.IsNullOrWhiteSpace(title)
-            ? "Untitled Workspace"
-            : title.Trim();
+        return string.IsNullOrWhiteSpace(title) ? "Untitled Workspace" : title.Trim();
     }
 
     private void SetActiveTab(WorkspaceTabViewModel tab)

@@ -89,7 +89,7 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
-    <Style x:Key="FileStateSkipCodeTextStyle"
+    <Style x:Key="FileStateSkipReasonTextStyle"
            TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource Brush.TextSecondary}" />
         <Setter Property="VerticalAlignment" Value="Center" />

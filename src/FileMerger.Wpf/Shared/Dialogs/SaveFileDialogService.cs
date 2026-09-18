@@ -7,8 +7,7 @@ public sealed class SaveFileDialogService : ISaveFileDialogService
 {
     private readonly ISaveOutputDialogFilterBuilder _saveOutputDialogFilterBuilder;
 
-    public SaveFileDialogService(
-        ISaveOutputDialogFilterBuilder saveOutputDialogFilterBuilder)
+    public SaveFileDialogService(ISaveOutputDialogFilterBuilder saveOutputDialogFilterBuilder)
     {
         ArgumentNullException.ThrowIfNull(saveOutputDialogFilterBuilder);
         _saveOutputDialogFilterBuilder = saveOutputDialogFilterBuilder;
@@ -20,18 +19,14 @@ public sealed class SaveFileDialogService : ISaveFileDialogService
 
         SaveFileDialog dialog = new()
         {
-            Filter = useDefaultFilter
-                ? _saveOutputDialogFilterBuilder.BuildDefaultSaveFileFilter()
-                : filter!,
+            Filter = useDefaultFilter ? _saveOutputDialogFilterBuilder.BuildDefaultSaveFileFilter() : filter!,
             AddExtension = true,
             OverwritePrompt = true
         };
 
         if (useDefaultFilter)
         {
-            dialog.DefaultExt = _saveOutputDialogFilterBuilder
-                .GetDefaultExtension()
-                .TrimStart('.');
+            dialog.DefaultExt = _saveOutputDialogFilterBuilder.GetDefaultExtension().TrimStart('.');
         }
 
         if (!string.IsNullOrWhiteSpace(initialPath))
@@ -44,8 +39,6 @@ public sealed class SaveFileDialogService : ISaveFileDialogService
         }
 
         bool? result = dialog.ShowDialog();
-        return result == true
-            ? dialog.FileName
-            : null;
+        return result == true ? dialog.FileName : null;
     }
 }

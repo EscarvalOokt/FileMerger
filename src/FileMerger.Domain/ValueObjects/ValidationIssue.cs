@@ -4,10 +4,7 @@ namespace FileMerger.Domain.ValueObjects
 {
     public sealed record ValidationIssue
     {
-        public ValidationIssue(
-            ValidationSeverity severity,
-            string code,
-            string message)
+        public ValidationIssue(ValidationSeverity severity, string code, string message)
         {
             if (string.IsNullOrWhiteSpace(code))
                 throw new ArgumentException("Code cannot be empty.", nameof(code));

@@ -8,9 +8,9 @@ namespace FileMerger.Infrastructure.Services.Filtering;
 
 public sealed class FileFilterService : IFileFilterService
 {
-    public IReadOnlyCollection<InputFile> ApplyFilters(
-        IReadOnlyCollection<InputFile> files,
-        MergeProfile profile)
+    private static readonly TimeSpan _regexMatchTimeout = TimeSpan.FromMilliseconds(250);
+
+    public IReadOnlyCollection<InputFile> ApplyFilters(IReadOnlyCollection<InputFile> files, MergeProfile profile)
     {
         ArgumentNullException.ThrowIfNull(files);
         ArgumentNullException.ThrowIfNull(profile);
@@ -44,9 +44,7 @@ public sealed class FileFilterService : IFileFilterService
         return ApplySorting(result, profile.GeneralOptions.SortMode);
     }
 
-    private static InputFile[] ApplySorting(
-        IEnumerable<InputFile> files,
-        SortMode sortMode)
+    private static InputFile[] ApplySorting(IEnumerable<InputFile> files, SortMode sortMode)
     {
         return sortMode switch
         {
@@ -78,9 +76,11 @@ public sealed class FileFilterService : IFileFilterService
 
     private static bool MatchDirectorySegment(string fullPath, FileFilterRule rule)
     {
-        string[] segments = fullPath
-            .Replace('/', '\\')
-            .Split('\\', StringSplitOptions.RemoveEmptyEntries);
+        string? directoryPath = Path.GetDirectoryName(fullPath);
+        if (string.IsNullOrWhiteSpace(directoryPath))
+            return false;
+
+        string[] segments = directoryPath.Replace('/', '\\').Split('\\', StringSplitOptions.RemoveEmptyEntries);
 
         return segments.Any(segment => MatchValue(segment, rule.Pattern, rule.PatternType));
     }
@@ -89,17 +89,17 @@ public sealed class FileFilterService : IFileFilterService
     {
         return patternType switch
         {
-            RulePatternType.Exact =>
-                string.Equals(value, pattern, StringComparison.OrdinalIgnoreCase),
+            RulePatternType.Exact => string.Equals(value, pattern, StringComparison.OrdinalIgnoreCase),
 
-            RulePatternType.Contains =>
-                value.Contains(pattern, StringComparison.OrdinalIgnoreCase),
+            RulePatternType.Contains => value.Contains(pattern, StringComparison.OrdinalIgnoreCase),
 
-            RulePatternType.Wildcard =>
-                Regex.IsMatch(value, WildcardToRegex(pattern), RegexOptions.IgnoreCase),
+            RulePatternType.Wildcard => Regex.IsMatch(
+                value,
+                WildcardToRegex(pattern),
+                RegexOptions.IgnoreCase,
+                _regexMatchTimeout),
 
-            RulePatternType.Regex =>
-                Regex.IsMatch(value, pattern, RegexOptions.IgnoreCase),
+            RulePatternType.Regex => Regex.IsMatch(value, pattern, RegexOptions.IgnoreCase, _regexMatchTimeout),
 
             _ => false
         };
@@ -107,9 +107,7 @@ public sealed class FileFilterService : IFileFilterService
 
     private static string WildcardToRegex(string pattern)
     {
-        return "^" + Regex.Escape(pattern)
-            .Replace("\\*", ".*")
-            .Replace("\\?", ".") + "$";
+        return "^" + Regex.Escape(pattern).Replace("\\*", ".*").Replace("\\?", ".") + "$";
     }
 
     private static SkipReason CreateFilterRuleSkipReason(FileFilterRule rule)

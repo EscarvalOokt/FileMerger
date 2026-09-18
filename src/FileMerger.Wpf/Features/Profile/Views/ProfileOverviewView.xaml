@@ -20,76 +20,73 @@
                BasedOn="{StaticResource MutedWrapTextStyle}"
                TargetType="TextBlock" />
     </UserControl.Resources>
-    <StackPanel>
-        <TextBlock FontSize="16"
-                   FontWeight="SemiBold"
-                   Text="Profile overview" />
-        <TextBlock Margin="0,4,0,12"
-                   Foreground="{StaticResource Brush.TextSecondary}"
-                   Text="Review the important profile settings before applying or editing them."
-                   TextWrapping="Wrap" />
-        <UniformGrid Columns="2">
-            <Border Style="{StaticResource OverviewCardStyle}">
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  Style="{StaticResource FlatScrollViewerStyle}"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <TextBlock FontSize="16"
+                       FontWeight="SemiBold"
+                       Text="Profile overview" />
+            <TextBlock Margin="0,4,0,12"
+                       Foreground="{StaticResource Brush.TextSecondary}"
+                       Text="Review the important profile settings before applying or editing them."
+                       TextWrapping="Wrap" />
+            <UniformGrid Columns="2">
+                <Border Style="{StaticResource OverviewCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OverviewCaptionTextStyle}"
+                                   Text="File types" />
+                        <TextBlock Style="{StaticResource OverviewHeadlineTextStyle}"
+                                   Text="{Binding FileTypesHeadline}" />
+                        <TextBlock Style="{StaticResource OverviewValueTextStyle}"
+                                   Text="{Binding FileTypes}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource OverviewCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OverviewCaptionTextStyle}"
+                                   Text="Formatting" />
+                        <TextBlock Style="{StaticResource OverviewValueTextStyle}"
+                                   Text="{Binding Formatting}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource OverviewCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OverviewCaptionTextStyle}"
+                                   Text="Filter rules" />
+                        <TextBlock Style="{StaticResource OverviewHeadlineTextStyle}"
+                                   Text="{Binding FilterRulesHeadline}" />
+                        <TextBlock Style="{StaticResource OverviewValueTextStyle}"
+                                   Text="{Binding FilterRules}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource OverviewCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OverviewCaptionTextStyle}"
+                                   Text="Input encoding" />
+                        <TextBlock Style="{StaticResource OverviewValueTextStyle}"
+                                   Text="{Binding Encoding}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource OverviewCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource OverviewCaptionTextStyle}"
+                                   Text="Output metadata" />
+                        <TextBlock Style="{StaticResource OverviewValueTextStyle}"
+                                   Text="{Binding OutputMetadata}" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+            <Border Margin="0,0,8,0"
+                    Style="{StaticResource OverviewCardStyle}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource OverviewCaptionTextStyle}"
-                               Text="File types" />
-                    <TextBlock Style="{StaticResource OverviewHeadlineTextStyle}"
-                               Text="{Binding FileTypesHeadline}" />
+                               Text="Unsupported text fallback" />
                     <TextBlock Style="{StaticResource OverviewValueTextStyle}"
-                               Text="{Binding FileTypes}" />
+                               Text="{Binding UnsupportedTextFallback}" />
                 </StackPanel>
             </Border>
-            <Border Style="{StaticResource OverviewCardStyle}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource OverviewCaptionTextStyle}"
-                               Text="Formatting" />
-                    <TextBlock Style="{StaticResource OverviewValueTextStyle}"
-                               Text="{Binding Formatting}" />
-                </StackPanel>
-            </Border>
-            <Border Style="{StaticResource OverviewCardStyle}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource OverviewCaptionTextStyle}"
-                               Text="Filter rules" />
-                    <TextBlock Style="{StaticResource OverviewHeadlineTextStyle}"
-                               Text="{Binding FilterRulesHeadline}" />
-                    <TextBlock Style="{StaticResource OverviewValueTextStyle}"
-                               Text="{Binding FilterRules}" />
-                </StackPanel>
-            </Border>
-            <Border Style="{StaticResource OverviewCardStyle}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource OverviewCaptionTextStyle}"
-                               Text="C# transformations" />
-                    <TextBlock Style="{StaticResource OverviewValueTextStyle}"
-                               Text="{Binding CSharpOptions}" />
-                </StackPanel>
-            </Border>
-            <Border Style="{StaticResource OverviewCardStyle}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource OverviewCaptionTextStyle}"
-                               Text="Input encoding" />
-                    <TextBlock Style="{StaticResource OverviewValueTextStyle}"
-                               Text="{Binding Encoding}" />
-                </StackPanel>
-            </Border>
-            <Border Style="{StaticResource OverviewCardStyle}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource OverviewCaptionTextStyle}"
-                               Text="Output metadata" />
-                    <TextBlock Style="{StaticResource OverviewValueTextStyle}"
-                               Text="{Binding OutputMetadata}" />
-                </StackPanel>
-            </Border>
-        </UniformGrid>
-        <Border Margin="0,0,8,0"
-                Style="{StaticResource OverviewCardStyle}">
-            <StackPanel>
-                <TextBlock Style="{StaticResource OverviewCaptionTextStyle}"
-                           Text="Unsupported text fallback" />
-                <TextBlock Style="{StaticResource OverviewValueTextStyle}"
-                           Text="{Binding UnsupportedTextFallback}" />
-            </StackPanel>
-        </Border>
-    </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

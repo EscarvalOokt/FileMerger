@@ -13,9 +13,6 @@ public sealed class RecentWorkspacesStoragePathPolicy(string? localApplicationDa
 
     public string GetStorageFilePath()
     {
-        return Path.Combine(
-            _localApplicationDataRoot,
-            ApplicationDirectoryName,
-            StorageFileName);
+        return Path.Combine(_localApplicationDataRoot, ApplicationDirectoryName, StorageFileName);
     }
 }

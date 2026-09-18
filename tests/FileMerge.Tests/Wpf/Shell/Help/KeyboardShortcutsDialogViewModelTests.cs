@@ -7,8 +7,7 @@ public sealed class KeyboardShortcutsDialogViewModelTests
     [Fact]
     public void CreateDefault_Should_Expose_Real_Shortcut_Groups()
     {
-        var viewModel =
-            KeyboardShortcutsDialogViewModel.CreateDefault();
+        var viewModel = KeyboardShortcutsDialogViewModel.CreateDefault();
 
         Assert.Collection(
             viewModel.Groups,
@@ -31,13 +30,9 @@ public sealed class KeyboardShortcutsDialogViewModelTests
     [InlineData("Workspace", "Next Tab", "Ctrl+Tab")]
     [InlineData("Workspace", "Previous Tab", "Ctrl+Shift+Tab")]
     [InlineData("Help", "Keyboard Shortcuts", "F1")]
-    public void CreateDefault_Should_Include_Configured_Shortcuts(
-        string groupTitle,
-        string action,
-        string gesture)
+    public void CreateDefault_Should_Include_Configured_Shortcuts(string groupTitle, string action, string gesture)
     {
-        var viewModel =
-            KeyboardShortcutsDialogViewModel.CreateDefault();
+        var viewModel = KeyboardShortcutsDialogViewModel.CreateDefault();
 
         KeyboardShortcutGroupViewModel group = Assert.Single(viewModel.Groups, x => x.Title == groupTitle);
 
@@ -49,11 +44,9 @@ public sealed class KeyboardShortcutsDialogViewModelTests
     [Theory]
     [InlineData("Profile")]
     [InlineData("Preview")]
-    public void CreateDefault_Should_Show_Empty_State_For_Groups_Without_Shortcuts(
-        string groupTitle)
+    public void CreateDefault_Should_Show_Empty_State_For_Groups_Without_Shortcuts(string groupTitle)
     {
-        var viewModel =
-            KeyboardShortcutsDialogViewModel.CreateDefault();
+        var viewModel = KeyboardShortcutsDialogViewModel.CreateDefault();
 
         KeyboardShortcutGroupViewModel group = Assert.Single(viewModel.Groups, x => x.Title == groupTitle);
 

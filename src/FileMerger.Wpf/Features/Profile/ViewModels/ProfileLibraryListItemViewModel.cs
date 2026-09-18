@@ -5,14 +5,18 @@ namespace FileMerger.Wpf.Features.Profile.ViewModels;
 
 public sealed class ProfileLibraryListItemViewModel : ViewModelBase
 {
+    private readonly string _usageLabel;
     private ProfileLibraryEntry _entry;
-    private bool _isUsedByCurrentSession;
     private bool _isDirty;
+    private bool _isUsedByCurrentSession;
 
-    public ProfileLibraryListItemViewModel(ProfileLibraryEntry entry)
+    public ProfileLibraryListItemViewModel(ProfileLibraryEntry entry, string usageLabel = "Active")
     {
         ArgumentNullException.ThrowIfNull(entry);
+        ArgumentException.ThrowIfNullOrWhiteSpace(usageLabel);
+
         _entry = entry;
+        _usageLabel = usageLabel;
     }
 
     public ProfileLibraryEntry Entry => _entry;
@@ -44,9 +48,7 @@ public sealed class ProfileLibraryListItemViewModel : ViewModelBase
         }
     }
 
-    public string DirtyLabel => IsDirty
-        ? "Dirty"
-        : string.Empty;
+    public string DirtyLabel => IsDirty ? "Dirty" : string.Empty;
 
     public bool HasDirtyLabel => IsDirty;
 
@@ -63,9 +65,7 @@ public sealed class ProfileLibraryListItemViewModel : ViewModelBase
         }
     }
 
-    public string UsageLabel => IsUsedByCurrentSession
-        ? "Active"
-        : string.Empty;
+    public string UsageLabel => IsUsedByCurrentSession ? _usageLabel : string.Empty;
 
     public void SetUsedByCurrentSession(bool value)
     {

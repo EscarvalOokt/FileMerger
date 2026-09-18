@@ -4,8 +4,8 @@ namespace FileMerger.Wpf.Shared.Commands;
 
 public sealed class AsyncRelayCommand : ICommand
 {
-    private readonly Func<Task> _executeAsync;
     private readonly Func<bool>? _canExecute;
+    private readonly Func<Task> _executeAsync;
     private bool _isExecuting;
 
     public AsyncRelayCommand(Func<Task> executeAsync, Func<bool>? canExecute = null)

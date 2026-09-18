@@ -15,12 +15,12 @@ namespace FileMerger.Wpf.Features.Workspace;
 
 public sealed class WorkspaceDocumentFactory : IWorkspaceDocumentFactory
 {
-    private readonly IProfileEditorFactory _profileEditorFactory;
+    private readonly IApplicationPreferencesStore _applicationPreferencesStore;
+    private readonly IClipboardService _clipboardService;
     private readonly IFolderBrowserService _folderBrowserService;
     private readonly IOpenFileDialogService _openFileDialogService;
+    private readonly IProfileEditorFactory _profileEditorFactory;
     private readonly ISourceDetailsDialogService _sourceDetailsDialogService;
-    private readonly IClipboardService _clipboardService;
-    private readonly IApplicationPreferencesStore _applicationPreferencesStore;
 
     public WorkspaceDocumentFactory(
         IProfileEditorFactory profileEditorFactory,
@@ -75,12 +75,10 @@ public sealed class WorkspaceDocumentFactory : IWorkspaceDocumentFactory
             workspaceDirtyTracker,
             appliedPreviewFileStateStore)
         {
-            IsPreviewLineWrapEnabled =
-                _applicationPreferencesStore.Current.IsPreviewLineWrapEnabledByDefault
+            IsPreviewLineWrapEnabled = _applicationPreferencesStore.Current.IsPreviewLineWrapEnabledByDefault
         };
 
-        workspaceDirtyTracker.MarkWorkspaceSaved(
-            WorkspaceDocumentStateSnapshotFactory.Capture(document));
+        workspaceDirtyTracker.MarkWorkspaceSaved(WorkspaceDocumentStateSnapshotFactory.Capture(document));
 
         return document;
     }

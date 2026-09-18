@@ -13,6 +13,7 @@ It is intended for scenarios where you need to collect project files into one do
 * Build and review a preview before saving
 * Track when the current preview is outdated after source, session, profile, or file inclusion changes
 * Review validation issues before preview generation
+* Reject invalid filter-rule drafts before applying or saving them, or building a new preview
 * Inspect the full normal discovery inventory with path, type, size, inclusion state, fallback status, and skip reason
 * Override inclusion for eligible merge candidates
 * Filter the discovered files list with search, **Only selected**, and grouped multi-select facets
@@ -21,12 +22,13 @@ It is intended for scenarios where you need to collect project files into one do
 * Reopen recent workspaces
 * Manage reusable merge profiles through the Profile Manager
 * Import, export, duplicate, save, and apply profiles
-* Edit supported file types, filter rules, encoding options, metadata options, and C# options in profiles
+* Edit supported file types, filter rules, encoding options, and metadata options in profiles
 * Use built-in presets for common project types
 * Use guided first-workspace actions and empty states to get started faster
 * Configure preview display and diagnostics behavior through Preferences
 * Open and clean crash logs from the Preferences dialog
 * Monitor build progress and cancel a preview build while it is running
+* Check for newer compatible FileMerger versions, download and validate update packages, and install verified updates from the application UI
 
 ## Documentation
 
@@ -41,8 +43,23 @@ It is intended for scenarios where you need to collect project files into one do
 5. Select an output file path.
 6. Click **Build Preview**.
 7. Review validation issues, discovered files, file inclusion states, and preview content.
-8. Optionally override file inclusion for selected eligible merge candidates.
-9. Click **Save** to write the merged output to disk.
+8. Optionally override file inclusion for selected eligible merge candidates. After changing inclusion, click **Build Preview** again and review the updated result.
+9. Click **Save** to write the latest built output, or **Save Last Build** when the retained preview is outdated.
+
+## Application updates
+
+FileMerger exposes an explicit application update workflow through **Help > Check for Updates**. Update state belongs to the application as a whole and is independent of the active workspace.
+
+The update workflow is deliberately separated into user-controlled actions:
+
+1. **Check for Updates** reads the configured HTTPS release manifest and compares the running application version with the newer compatible release/package described by that manifest.
+2. **Download** downloads the selected package into update staging and validates its compatibility, exact size, SHA-256 digest, ZIP safety, and required application payload.
+3. **Install** is available only after the package reaches the verified state.
+4. Installation preparation revalidates the package and installation directory before any shutdown begins. Active merge/preview work blocks installation instead of being force-canceled.
+5. Unsaved workspaces and other guarded application windows keep their existing save/discard/cancel behavior. Canceling a guard leaves FileMerger running and does not start installation.
+6. After guarded shutdown is approved, a separate updater process replaces the application files, restarts FileMerger, and waits for the restarted application to complete startup, open its main window, and confirm the expected version. If replacement, restart, startup verification, or version verification fails, the updater attempts to restore the previous application installation.
+
+Checking does not start a download automatically, and downloading a package does not start installation automatically. The release manifest URI is supplied by build/release configuration rather than by a workspace or profile.
 
 ## Merge capabilities
 
@@ -68,6 +85,8 @@ Typical examples:
 ### File discovery and filtering
 
 FileMerger discovers files from enabled sources and retains the full normal discovery inventory. Supported enabled files can become merge candidates, while known-but-disabled and unsupported files remain visible with explicit reasons for not participating in the merge.
+
+For recursive folder discovery, nested directory reparse points, including junctions and symbolic links, are traversal boundaries and are not followed. An explicitly selected root folder may itself be a directory link/reparse point and is still scanned as the source root. Source-exclusion audit traversal likewise does not cross directory reparse points.
 
 The active merge profile is then applied to eligible merge candidates.
 
@@ -105,6 +124,8 @@ This makes it possible to keep profile rules broad and still fine-tune eligible 
 
 The application builds a merged preview before saving output.
 
+Invalid filter rules block a new preview before session creation, file discovery, or output building. The Validation pane and operation status report the rule error; the application does not silently omit the invalid rule and build a different result. An empty output path is likewise reported through the Validation pane and operation status before session creation. A Regex rule that exceeds the runtime evaluation timeout fails the preview explicitly during filtering. A failed preview does not replace the existing discovered-file state or pending manual inclusion overrides, and any previous successful result and preview remain retained.
+
 During preview generation, it reports progress for:
 
 * validation
@@ -116,11 +137,13 @@ During preview generation, it reports progress for:
 
 Unsupported-text probing reports discovery progress while unknown files are being classified.
 
-The generation summary reports discovered, included, and not-included files, with separate counts for disabled file types, unsupported files, profile exclusions, manual exclusions, processing failures, other exclusion reasons, included fallback text files, and source-excluded audit entries when available.
+The generation summary reports discovered, included, and not-included files, with separate counts for disabled file types, unsupported files, profile exclusions, manual exclusions, **Other**, included fallback text files, and source-excluded audit entries when available. Processing failures are included in **Other** in this summary; they do not have a separate summary counter. They remain a distinct category in skipped-file metadata and retain the validation issue for the read error.
 
 If the preview is very large, the UI shows a truncated preview for responsiveness. Saving still writes the full merged output.
 
-After changing sources, session settings, profile settings, or manual file overrides, the application marks the current preview as outdated until it is rebuilt.
+When source, session, profile, or file inclusion settings differ from those used for the last build, the application marks the retained preview as outdated.
+
+**Save writes the last successfully built output, not the current edited configuration or pending file selection.** It does not rebuild automatically. When the retained preview is outdated, the action is labeled **Save Last Build** and its tooltip explains that changes made since that build are not included. A successful stale save reports the same distinction in the operation status, and the preview remains outdated until **Build Preview** succeeds again. Run **Build Preview** to include pending changes in the saved result.
 
 Preview display settings do not affect generated output, copied preview content, or saved output.
 
@@ -150,14 +173,19 @@ Session settings, Sources, and the workspace-local Profile are edited through th
 The dialog uses a staged working copy:
 
 * changes do not affect the live workspace until **OK** is confirmed
+* invalid filter rules block **OK**; its tooltip explains the first rule error, including while the button is disabled
 * **Cancel** discards staged changes without changing workspace or preview dirty state
-* output path browsing, source changes, and workspace-local profile edits are performed against the staged copy
+* output path browsing and source changes are performed against the staged copy
+* the compact profile overview exposes **Edit local profile** and **Choose profile** as separate actions
+* **Edit local profile** opens a dedicated editor for a detached working copy; its **Cancel** leaves the staged workspace configuration unchanged, while its **OK** updates only the staged profile until the outer dialog is confirmed
+* **Choose profile** reuses the Profile Manager against the staged workspace configuration; a library profile applied there is shown as **Selected** and updates only the staged configuration until the outer **OK** is confirmed
 
 Workspace-local profile editing changes only the profile snapshot stored in that workspace. It does not implicitly write changes back to the corresponding Profile Library entry.
 
 Profile linkage and origin are tracked separately:
 
-* explicitly applying a library profile sets the active library linkage and records that profile as the current origin
+* applying an unchanged saved profile from the Profile Manager sets the active library linkage and records that profile as the current origin
+* applying an edited or unsaved Profile Manager draft copies it as a custom workspace profile without active library linkage and clears any previous origin; save the draft first to apply it as a saved library entry
 * confirming local changes that diverge from a linked library profile clears the active linkage but keeps the saved origin identifier and display name
 * a custom snapshot is not automatically relinked merely because its contents later match a library profile
 * duplicating a workspace clears the active library linkage while preserving saved origin/provenance metadata
@@ -175,7 +203,10 @@ The application supports:
 * close tab
 * close other tabs
 * next/previous tab shortcuts
-* dirty-state guards before destructive actions
+* dirty-state guards when closing workspace tabs, including **Close other tabs**
+* application-wide dirty-workspace protection during normal exit
+
+Normal application exit coordinates the existing workspace close guards across all tabs. Dirty workspaces use the same **Save / Discard / Cancel** flow as other guarded close operations; canceling a prompt or failing to save keeps FileMerger open instead of silently discarding changes.
 
 ## Recent workspaces
 
@@ -212,7 +243,7 @@ The current baseline includes these built-in presets:
 * **Unity Project** — Unity C#, project settings, and serialized asset files; source exclusions are intended for folders such as `Library`, `Temp`, and build outputs
 * **Full Source Dump** — all supported file types with minimal filtering
 
-Built-in profiles are read-only. To edit a built-in profile, duplicate it or save it as a user-defined profile.
+Built-in library entries are read-only, but their working copies can be edited in the Profile Manager. **Save** creates a user-defined copy instead of overwriting the built-in entry. **Duplicate** starts a separate draft, and **Save As** saves a new user profile.
 
 ### Profile operations
 
@@ -231,8 +262,11 @@ From the Profile Manager, you can:
 
 User-defined profiles are stored in the local application data folder.
 
+**Apply**, **Save**, **Save As**, and **Create** reject a draft with invalid filter rules. The same check is used when choosing **Save** in the unsaved-changes dialog. A rejected save leaves the draft in the editor and cancels the requested profile switch or close; **Discard** and **Cancel** retain their existing meanings. The current draft error is kept visible near the relevant actions, while Apply/OK tooltips also explain the first rule error; a rejected save through the dialog reports its reason in the Profile Manager status.
 
-The Profile Library and each workspace-local profile snapshot are separate. Applying a library profile copies its configuration into the current workspace and establishes the active linkage/origin described above. Later workspace-local edits are staged and stored with the workspace; they do not modify the reusable library profile unless the user explicitly edits and saves that library entry through the Profile Manager.
+The Profile Library and each workspace-local profile snapshot are separate. Applying a saved, unchanged library entry establishes the linkage/origin described above; applying an edited or unsaved draft does not. Later workspace-local edits are staged and stored with the workspace; they do not modify the reusable library profile unless the user explicitly edits and saves that library entry through the Profile Manager.
+
+Loading or importing structurally readable profile JSON is separate from validating an editable draft. A previously saved or imported profile with invalid rules can still be opened for correction. Its presence in the library does not mean it is ready to apply, save through the editor, or use for a new preview.
 
 For details about creating, importing, exporting, and manually editing profile JSON files, see [Profile Authoring Guide](docs/profile-authoring-guide.md).
 
@@ -392,14 +426,6 @@ Source exclusions remain a separate audit path rather than part of the normal di
 
 Output metadata changes generated output and is therefore profile-level behavior.
 
-### C# transformations
-
-Profiles can enable C#-specific processing:
-
-* remove `using` directives
-
-Line ending normalization and trailing-empty-line trimming are also represented as profile-driven transformations internally.
-
 ### Filter rules
 
 Profiles can contain ordered include/exclude rules applied after file discovery and file type selection.
@@ -434,11 +460,13 @@ Common examples:
 * exclude `*.Designer.cs`
 * exclude `AssemblyInfo.cs`
 
+Rule validation covers the entire rule collection, including disabled rules and rules hidden by the editor's search or filters. Fix invalid patterns rather than disabling or hiding the affected rows. The [Profile Authoring Guide](docs/profile-authoring-guide.md#filter-rules) describes the existing pattern constraints and how to correct older profiles.
+
 ## Encoding behavior
 
 When input encoding mode is set to **Auto**, the reader:
 
-1. tries to detect encoding from BOM;
+1. detects UTF-8, UTF-16 LE/BE, and UTF-32 LE/BE encodings from BOM when present;
 2. falls back to strict UTF-8 decoding;
 3. uses the configured fallback encoding if UTF-8 decoding fails.
 
@@ -458,7 +486,7 @@ Current preferences include:
 * preview display character limit
 * crash log retention limit
 
-Preview display preferences affect only the UI display of preview text. They do not affect generated output, copied preview content, or saved output.
+Preview display preferences affect only the UI display of preview text. They do not affect generated output, copied preview content, or saved output. **Wrap preview lines** in the preview toolbar changes the current active preview and saves the same choice as the default for new workspace tabs. Changing **Wrap preview lines by default** in Preferences changes the default for future tabs without retroactively changing already-open tabs. Invalid preview display limits are shown beside the affected setting and block saving Preferences until corrected.
 
 Preferences are stored locally in:
 
@@ -499,6 +527,7 @@ Important subpaths:
 ```text
 %LocalAppData%\FileMerger\Profiles
 %LocalAppData%\FileMerger\CrashLogs
+%LocalAppData%\FileMerger\Updates
 %LocalAppData%\FileMerger\application-preferences.json
 ```
 
@@ -506,11 +535,30 @@ Workspace files are saved wherever the user chooses and use the `.filemerger.wor
 
 ## Requirements
 
+### Running the application
+
 * Windows
-* .NET 10 SDK / runtime
+* .NET 10 Desktop Runtime for a framework-dependent build
+
+The existing folder publish profile is framework-dependent (`SelfContained=false`). A runtime installation is for running the application; it does not replace the SDK needed to build from source.
+The automatic updater replaces FileMerger application files only; it does not install or update the .NET Desktop Runtime.
+
+### Building from source
+
+* Windows
+* .NET 10 SDK
+* The external `Escarval.Wpf.Windowing` project at the path referenced by the solution and WPF project
+
+Relative to the FileMerger repository root, the external project is expected at:
+
+```text
+../Libs/Escarval.Wpf.Windowing/Escarval.Wpf.Windowing/Escarval.Wpf.Windowing.csproj
+```
+
+The projects target `net10.0-windows`. An older SDK that cannot target .NET 10 is not sufficient. The external project must be available when building the solution or its WPF-dependent tests.
 
 ## Notes and current limitations
 
-* Preview generation stops on validation errors; warnings can still be shown as part of a successful build.
+* Invalid filter rules block a new preview before its pipeline starts. Errors reported by session validation also stop generation; warnings can still be shown as part of a successful build.
 * Very large previews are truncated in the UI for readability, while saving still writes the full output.
-* After changing sources, session settings, profile settings, or manual file overrides, the application marks the preview as outdated until it is rebuilt.
+* A retained preview can become outdated after source, session, profile, or manual inclusion changes. **Save Last Build** still uses the last successful build; rebuild explicitly to include the changes.

@@ -16,18 +16,6 @@ public sealed class ProfileFileTypeSignature(
     public bool IsEnabled { get; } = isEnabled;
     public bool SupportsLanguageSpecificProcessing { get; } = supportsLanguageSpecificProcessing;
 
-    public static ProfileFileTypeSignature From(WorkspaceFileTypeDto dto)
-    {
-        ArgumentNullException.ThrowIfNull(dto);
-
-        return new ProfileFileTypeSignature(
-            dto.Extension,
-            dto.DisplayName,
-            dto.Kind,
-            dto.IsEnabled,
-            dto.SupportsLanguageSpecificProcessing);
-    }
-
     public bool Equals(ProfileFileTypeSignature? other)
     {
         if (ReferenceEquals(this, other))
@@ -41,6 +29,18 @@ public sealed class ProfileFileTypeSignature(
                Kind == other.Kind &&
                IsEnabled == other.IsEnabled &&
                SupportsLanguageSpecificProcessing == other.SupportsLanguageSpecificProcessing;
+    }
+
+    public static ProfileFileTypeSignature From(WorkspaceFileTypeDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+
+        return new ProfileFileTypeSignature(
+            dto.Extension,
+            dto.DisplayName,
+            dto.Kind,
+            dto.IsEnabled,
+            dto.SupportsLanguageSpecificProcessing);
     }
 
     public override bool Equals(object? obj)

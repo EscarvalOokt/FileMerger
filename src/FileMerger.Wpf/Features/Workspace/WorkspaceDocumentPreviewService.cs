@@ -1,5 +1,6 @@
 using FileMerger.Application.UseCases.BuildPreview;
 using FileMerger.Domain.Enums;
+using FileMerger.Domain.ValueObjects;
 using FileMerger.Wpf.Features.Preview;
 using FileMerger.Wpf.Features.Preview.ViewModels;
 using FileMerger.Wpf.Features.Settings;
@@ -16,10 +17,11 @@ public sealed class WorkspaceDocumentPreviewService : IWorkspaceDocumentPreviewS
     private const string CanceledPreviewNotice =
         "Preview build was canceled. Showing the last successfully built preview; it may be outdated.";
 
-    private readonly BuildMergePreviewUseCase _buildMergePreviewUseCase;
-    private readonly IMainStateFactory _mainStateFactory;
-    private readonly IWorkspaceDocumentDirtyStateService _dirtyStateService;
     private readonly IApplicationPreferencesStore _applicationPreferencesStore;
+
+    private readonly BuildMergePreviewUseCase _buildMergePreviewUseCase;
+    private readonly IWorkspaceDocumentDirtyStateService _dirtyStateService;
+    private readonly IMainStateFactory _mainStateFactory;
 
     public WorkspaceDocumentPreviewService(
         BuildMergePreviewUseCase buildMergePreviewUseCase,
@@ -55,9 +57,40 @@ public sealed class WorkspaceDocumentPreviewService : IWorkspaceDocumentPreviewS
             CancellationToken documentCancellationToken = document.BeginPreviewBuild();
 
             using var linkedCancellationTokenSource =
-                CancellationTokenSource.CreateLinkedTokenSource(
-                    documentCancellationToken,
-                    cancellationToken);
+                CancellationTokenSource.CreateLinkedTokenSource(documentCancellationToken, cancellationToken);
+
+            linkedCancellationTokenSource.Token.ThrowIfCancellationRequested();
+
+            if (!document.ProfileEditor.CanUseProfile)
+            {
+                string validationMessage = document.ProfileEditor.DraftValidationMessage!;
+
+                ApplyPreflightValidationFailure(
+                    document,
+                    new ValidationIssue(
+                        severity: ValidationSeverity.Error,
+                        code: "profile.filterRules.invalid",
+                        message: validationMessage));
+
+                stateChanged?.Invoke();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(document.SessionSettings.OutputPath))
+            {
+                const string validationMessage =
+                    "Output path cannot be empty. Choose an output file in Session settings.";
+
+                ApplyPreflightValidationFailure(
+                    document,
+                    new ValidationIssue(
+                        severity: ValidationSeverity.Error,
+                        code: "output.path.empty",
+                        message: validationMessage));
+
+                stateChanged?.Invoke();
+                return;
+            }
 
             BuildMergePreviewRequest request = new(
                 session: _mainStateFactory.BuildSession(document),
@@ -74,13 +107,6 @@ public sealed class WorkspaceDocumentPreviewService : IWorkspaceDocumentPreviewS
 
             if (!result.IsSuccessful || result.Output is null)
             {
-                document.FilesPane.ApplyFiles(
-                    result.AutomaticFiles,
-                    result.Session.Files,
-                    document.AppliedPreviewFileStateStore.HasAppliedState
-                        ? document.AppliedPreviewFileStateStore.Current
-                        : null);
-
                 _dirtyStateService.RefreshPreviewDirtyState(document);
 
                 if (!document.AppliedPreviewFileStateStore.HasAppliedState)
@@ -99,9 +125,7 @@ public sealed class WorkspaceDocumentPreviewService : IWorkspaceDocumentPreviewS
                     hasErrors
                         ? "Preview build failed due to validation errors."
                         : "Preview build completed with warnings.",
-                    hasErrors
-                        ? StatusSeverity.Error
-                        : StatusSeverity.Warning);
+                    hasErrors ? StatusSeverity.Error : StatusSeverity.Warning);
 
                 stateChanged?.Invoke();
                 return;
@@ -157,9 +181,19 @@ public sealed class WorkspaceDocumentPreviewService : IWorkspaceDocumentPreviewS
         }
     }
 
-    private static void UpdatePreviewNoticeForUnsuccessfulBuild(
-        WorkspaceDocumentViewModel document,
-        string notice)
+    private void ApplyPreflightValidationFailure(WorkspaceDocumentViewModel document, ValidationIssue issue)
+    {
+        document.ValidationPane.Load([issue]);
+
+        document.OperationStatus.SetStatus(
+            $"Preview build failed due to validation errors. {issue.Message}",
+            StatusSeverity.Error);
+
+        _dirtyStateService.RefreshPreviewDirtyState(document);
+        UpdatePreviewNoticeForUnsuccessfulBuild(document, OutdatedPreviewNotice);
+    }
+
+    private static void UpdatePreviewNoticeForUnsuccessfulBuild(WorkspaceDocumentViewModel document, string notice)
     {
         if (document.AppliedPreviewFileStateStore.HasAppliedState)
         {

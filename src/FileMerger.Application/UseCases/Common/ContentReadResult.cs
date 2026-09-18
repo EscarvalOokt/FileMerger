@@ -4,11 +4,7 @@ namespace FileMerger.Application.UseCases.Common;
 
 public sealed record ContentReadResult
 {
-    private ContentReadResult(
-        bool isSuccessful,
-        string? content,
-        string? encodingName,
-        ValidationIssue? issue)
+    private ContentReadResult(bool isSuccessful, string? content, string? encodingName, ValidationIssue? issue)
     {
         IsSuccessful = isSuccessful;
         Content = content;

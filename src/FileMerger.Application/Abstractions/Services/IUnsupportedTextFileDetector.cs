@@ -4,7 +4,5 @@ namespace FileMerger.Application.Abstractions.Services;
 
 public interface IUnsupportedTextFileDetector
 {
-    bool IsTextCandidate(
-        string filePath,
-        UnsupportedTextFallbackOptions options);
+    bool IsTextCandidate(string filePath, UnsupportedTextFallbackOptions options);
 }

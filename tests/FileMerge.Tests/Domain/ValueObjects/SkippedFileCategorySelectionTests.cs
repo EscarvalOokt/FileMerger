@@ -29,9 +29,7 @@ public sealed class SkippedFileCategorySelectionTests
     [Fact]
     public void ForCurrentBehavior_Should_Enable_Normal_Categories_And_Disable_Source_Exclusions_When_Requested()
     {
-        var selection =
-            SkippedFileCategorySelection.ForCurrentBehavior(
-                includeSourceExcludedFiles: false);
+        var selection = SkippedFileCategorySelection.ForCurrentBehavior(includeSourceExcludedFiles: false);
 
         Assert.True(selection.Includes(SkippedFileCategory.DisabledFileType));
         Assert.True(selection.Includes(SkippedFileCategory.UnsupportedFile));
@@ -45,9 +43,7 @@ public sealed class SkippedFileCategorySelectionTests
     [Fact]
     public void ForCurrentBehavior_Should_Enable_Source_Exclusions_When_Requested()
     {
-        var selection =
-            SkippedFileCategorySelection.ForCurrentBehavior(
-                includeSourceExcludedFiles: true);
+        var selection = SkippedFileCategorySelection.ForCurrentBehavior(includeSourceExcludedFiles: true);
 
         Assert.True(selection.Includes(SkippedFileCategory.SourceExclusion));
     }

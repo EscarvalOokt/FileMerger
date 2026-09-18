@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\FileMerger.Application\FileMerger.Application.csproj"/>
     <ProjectReference Include="..\FileMerger.Domain\FileMerger.Domain.csproj"/>
+    <ProjectReference Include="..\FileMerger.UpdateProtocol\FileMerger.UpdateProtocol.csproj"/>
   </ItemGroup>
 
 </Project>

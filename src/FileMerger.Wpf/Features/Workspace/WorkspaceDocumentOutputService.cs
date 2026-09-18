@@ -10,10 +10,10 @@ namespace FileMerger.Wpf.Features.Workspace;
 
 public sealed class WorkspaceDocumentOutputService : IWorkspaceDocumentOutputService
 {
-    private readonly SaveMergeOutputUseCase _saveMergeOutputUseCase;
-    private readonly ISaveFileDialogService _saveFileDialogService;
-    private readonly IMainStateFactory _mainStateFactory;
     private readonly IFileSystemLauncher _fileSystemLauncher;
+    private readonly IMainStateFactory _mainStateFactory;
+    private readonly ISaveFileDialogService _saveFileDialogService;
+    private readonly SaveMergeOutputUseCase _saveMergeOutputUseCase;
 
     public WorkspaceDocumentOutputService(
         SaveMergeOutputUseCase saveMergeOutputUseCase,
@@ -50,23 +50,22 @@ public sealed class WorkspaceDocumentOutputService : IWorkspaceDocumentOutputSer
             cancellationToken.ThrowIfCancellationRequested();
 
             OutputTarget target = document.SessionSettings.BuildOutputTarget();
+            bool isSavingStaleBuild = document.PreviewDirtyTracker is { HasAppliedPreview: true, IsPreviewDirty: true };
 
-            SaveMergeOutputRequest request = new(
-                output: document.LastOutput,
-                target: target);
+            SaveMergeOutputRequest request = new(output: document.LastOutput, target: target);
 
             SaveMergeOutputResult result = _saveMergeOutputUseCase.Execute(request);
 
             if (result.ValidationIssues.Count > 0)
                 document.ValidationPane.Load(result.ValidationIssues);
 
+            string successMessage = isSavingStaleBuild
+                ? "Last built output saved successfully. Changes made since that build are not included in the saved content; run Build Preview to rebuild it."
+                : "Merged output saved successfully.";
+
             document.OperationStatus.SetStatus(
-                result.IsSuccessful
-                    ? "Merged output saved successfully."
-                    : "Failed to save merged output.",
-                result.IsSuccessful
-                    ? StatusSeverity.Success
-                    : StatusSeverity.Error);
+                result.IsSuccessful ? successMessage : "Failed to save merged output.",
+                result.IsSuccessful ? StatusSeverity.Success : StatusSeverity.Error);
         }
         catch (OperationCanceledException)
         {

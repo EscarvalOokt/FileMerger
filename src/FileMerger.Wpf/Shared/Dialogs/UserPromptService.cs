@@ -13,9 +13,7 @@ public sealed class UserPromptService : IUserPromptService
         _ownerResolver = ownerResolver;
     }
 
-    public UnsavedChangesDecision ConfirmUnsavedChanges(
-        string title,
-        string message)
+    public UnsavedChangesDecision ConfirmUnsavedChanges(string title, string message)
     {
         UnsavedChangesDialogViewModel viewModel = new(title, message);
         UnsavedChangesDialogWindow window = new()
@@ -34,11 +32,9 @@ public sealed class UserPromptService : IUserPromptService
         return viewModel.Decision;
     }
 
-    public bool Confirm(
-        string title,
-        string message)
+    public bool Confirm(string title, string message, string confirmButtonText = "Yes", string cancelButtonText = "No")
     {
-        ConfirmDialogViewModel viewModel = new(title, message);
+        ConfirmDialogViewModel viewModel = new(title, message, confirmButtonText, cancelButtonText);
         ConfirmDialogWindow window = new()
         {
             DataContext = viewModel

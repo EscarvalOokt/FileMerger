@@ -12,11 +12,9 @@ public sealed class ProfileListFiltersViewModelTests
     {
         ProfileListFiltersViewModel filters = new();
 
-        ProfileLibraryListItemViewModel userProfile =
-            CreateProfile("User Profile", ProfileEntryKind.User);
+        ProfileLibraryListItemViewModel userProfile = CreateProfile("User Profile", ProfileEntryKind.User);
 
-        ProfileLibraryListItemViewModel builtInProfile =
-            CreateProfile("Built-in Profile", ProfileEntryKind.BuiltIn);
+        ProfileLibraryListItemViewModel builtInProfile = CreateProfile("Built-in Profile", ProfileEntryKind.BuiltIn);
 
         Assert.True(filters.Matches(userProfile));
         Assert.True(filters.Matches(builtInProfile));
@@ -31,11 +29,9 @@ public sealed class ProfileListFiltersViewModelTests
             Kind = ProfileListKindFilterMode.User
         };
 
-        ProfileLibraryListItemViewModel userProfile =
-            CreateProfile("User Profile", ProfileEntryKind.User);
+        ProfileLibraryListItemViewModel userProfile = CreateProfile("User Profile", ProfileEntryKind.User);
 
-        ProfileLibraryListItemViewModel builtInProfile =
-            CreateProfile("Built-in Profile", ProfileEntryKind.BuiltIn);
+        ProfileLibraryListItemViewModel builtInProfile = CreateProfile("Built-in Profile", ProfileEntryKind.BuiltIn);
 
         Assert.True(filters.Matches(userProfile));
         Assert.False(filters.Matches(builtInProfile));
@@ -50,11 +46,9 @@ public sealed class ProfileListFiltersViewModelTests
             Kind = ProfileListKindFilterMode.BuiltIn
         };
 
-        ProfileLibraryListItemViewModel userProfile =
-            CreateProfile("User Profile", ProfileEntryKind.User);
+        ProfileLibraryListItemViewModel userProfile = CreateProfile("User Profile", ProfileEntryKind.User);
 
-        ProfileLibraryListItemViewModel builtInProfile =
-            CreateProfile("Built-in Profile", ProfileEntryKind.BuiltIn);
+        ProfileLibraryListItemViewModel builtInProfile = CreateProfile("Built-in Profile", ProfileEntryKind.BuiltIn);
 
         Assert.False(filters.Matches(userProfile));
         Assert.True(filters.Matches(builtInProfile));
@@ -70,14 +64,13 @@ public sealed class ProfileListFiltersViewModelTests
             Kind = ProfileListKindFilterMode.BuiltIn
         };
 
-        ProfileLibraryListItemViewModel userProfile =
-            CreateProfile("Source User", ProfileEntryKind.User);
+        ProfileLibraryListItemViewModel userProfile = CreateProfile("Source User", ProfileEntryKind.User);
 
-        ProfileLibraryListItemViewModel matchingBuiltInProfile =
-            CreateProfile("Source Built-in", ProfileEntryKind.BuiltIn);
+        ProfileLibraryListItemViewModel matchingBuiltInProfile = CreateProfile(
+            "Source Built-in",
+            ProfileEntryKind.BuiltIn);
 
-        ProfileLibraryListItemViewModel otherBuiltInProfile =
-            CreateProfile("Docs Built-in", ProfileEntryKind.BuiltIn);
+        ProfileLibraryListItemViewModel otherBuiltInProfile = CreateProfile("Docs Built-in", ProfileEntryKind.BuiltIn);
 
         Assert.False(filters.Matches(userProfile));
         Assert.True(filters.Matches(matchingBuiltInProfile));
@@ -102,9 +95,7 @@ public sealed class ProfileListFiltersViewModelTests
         Assert.False(filters.HasActiveFilters);
     }
 
-    private static ProfileLibraryListItemViewModel CreateProfile(
-        string name,
-        ProfileEntryKind kind)
+    private static ProfileLibraryListItemViewModel CreateProfile(string name, ProfileEntryKind kind)
     {
         bool isBuiltIn = kind == ProfileEntryKind.BuiltIn;
 
@@ -120,9 +111,7 @@ public sealed class ProfileListFiltersViewModelTests
         ProfileLibraryEntry entry = new(
             Metadata: metadata,
             Profile: CreateProfileDto(),
-            FilePath: kind == ProfileEntryKind.User
-                ? $"{name}.filemerger.profile.json"
-                : null,
+            FilePath: kind == ProfileEntryKind.User ? $"{name}.filemerger.profile.json" : null,
             Kind: kind);
 
         return new ProfileLibraryListItemViewModel(entry);
@@ -135,7 +124,6 @@ public sealed class ProfileListFiltersViewModelTests
             IncludeFileSeparators: true,
             IncludeRelativePathInSeparator: true,
             TrimTrailingEmptyLines: true,
-            RemoveUsingDirectives: false,
             FileTypes: [],
             LineEndingMode: LineEndingMode.Preserve,
             SortMode: SortMode.ByRelativePathAscending,

@@ -266,7 +266,10 @@ public sealed class WorkspaceDocumentLifecycleServiceTests
 
         FakeWorkspaceDocumentDirtyStateService dirtyStateService = new();
         FakeRecentWorkspacesService recentWorkspacesService = new();
-        WorkspaceDocumentLifecycleService service = CreateService(coordinator, dirtyStateService, recentWorkspacesService);
+        WorkspaceDocumentLifecycleService service = CreateService(
+            coordinator,
+            dirtyStateService,
+            recentWorkspacesService);
         WorkspaceDocumentViewModel document = CreateDocument();
 
         bool result = await service.SaveWorkspaceAsync(document);
@@ -287,7 +290,10 @@ public sealed class WorkspaceDocumentLifecycleServiceTests
 
         FakeWorkspaceDocumentDirtyStateService dirtyStateService = new();
         FakeRecentWorkspacesService recentWorkspacesService = new();
-        WorkspaceDocumentLifecycleService service = CreateService(coordinator, dirtyStateService, recentWorkspacesService);
+        WorkspaceDocumentLifecycleService service = CreateService(
+            coordinator,
+            dirtyStateService,
+            recentWorkspacesService);
         WorkspaceDocumentViewModel document = CreateDocument();
 
         bool result = await service.SaveWorkspaceAsAsync(document);
@@ -308,7 +314,10 @@ public sealed class WorkspaceDocumentLifecycleServiceTests
 
         FakeWorkspaceDocumentDirtyStateService dirtyStateService = new();
         FakeRecentWorkspacesService recentWorkspacesService = new();
-        WorkspaceDocumentLifecycleService service = CreateService(coordinator, dirtyStateService, recentWorkspacesService);
+        WorkspaceDocumentLifecycleService service = CreateService(
+            coordinator,
+            dirtyStateService,
+            recentWorkspacesService);
         WorkspaceDocumentViewModel document = CreateDocument();
 
         bool result = await service.LoadWorkspaceAsync(document);
@@ -328,7 +337,10 @@ public sealed class WorkspaceDocumentLifecycleServiceTests
 
         FakeWorkspaceDocumentDirtyStateService dirtyStateService = new();
         FakeRecentWorkspacesService recentWorkspacesService = new();
-        WorkspaceDocumentLifecycleService service = CreateService(coordinator, dirtyStateService, recentWorkspacesService);
+        WorkspaceDocumentLifecycleService service = CreateService(
+            coordinator,
+            dirtyStateService,
+            recentWorkspacesService);
         WorkspaceDocumentViewModel document = CreateDocument();
 
         bool result = await service.SaveWorkspaceAsync(document);
@@ -348,7 +360,10 @@ public sealed class WorkspaceDocumentLifecycleServiceTests
 
         FakeWorkspaceDocumentDirtyStateService dirtyStateService = new();
         FakeRecentWorkspacesService recentWorkspacesService = new();
-        WorkspaceDocumentLifecycleService service = CreateService(coordinator, dirtyStateService, recentWorkspacesService);
+        WorkspaceDocumentLifecycleService service = CreateService(
+            coordinator,
+            dirtyStateService,
+            recentWorkspacesService);
         WorkspaceDocumentViewModel document = CreateDocument();
 
         bool result = await service.LoadWorkspaceAsync(document);
@@ -373,7 +388,10 @@ public sealed class WorkspaceDocumentLifecycleServiceTests
             AddException = new IOException("Recent storage failed.")
         };
 
-        WorkspaceDocumentLifecycleService service = CreateService(coordinator, dirtyStateService, recentWorkspacesService);
+        WorkspaceDocumentLifecycleService service = CreateService(
+            coordinator,
+            dirtyStateService,
+            recentWorkspacesService);
         WorkspaceDocumentViewModel document = CreateDocument();
 
         bool result = await service.SaveWorkspaceAsync(document);
@@ -545,9 +563,7 @@ public sealed class WorkspaceDocumentLifecycleServiceTests
             return Task.FromResult(result);
         }
 
-        public Task AddOrUpdateAsync(
-            string workspaceFilePath,
-            CancellationToken cancellationToken = default)
+        public Task AddOrUpdateAsync(string workspaceFilePath, CancellationToken cancellationToken = default)
         {
             if (AddException is not null)
                 throw AddException;
@@ -556,9 +572,7 @@ public sealed class WorkspaceDocumentLifecycleServiceTests
             return Task.CompletedTask;
         }
 
-        public Task RemoveAsync(
-            string workspaceFilePath,
-            CancellationToken cancellationToken = default)
+        public Task RemoveAsync(string workspaceFilePath, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }

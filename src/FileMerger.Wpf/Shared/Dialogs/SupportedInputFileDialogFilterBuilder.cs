@@ -19,13 +19,11 @@ public sealed class SupportedInputFileDialogFilterBuilder : IFileDialogFilterBui
 
         string allPatterns = string.Join(
             ';',
-            fileTypes.Select(x => $"*{x.Extension}")
-                .Distinct(StringComparer.OrdinalIgnoreCase));
+            fileTypes.Select(x => $"*{x.Extension}").Distinct(StringComparer.OrdinalIgnoreCase));
 
         string allLabel = string.Join(
             ";",
-            fileTypes.Select(x => $"*{x.Extension}")
-                .Distinct(StringComparer.OrdinalIgnoreCase));
+            fileTypes.Select(x => $"*{x.Extension}").Distinct(StringComparer.OrdinalIgnoreCase));
 
         List<string> parts =
         [

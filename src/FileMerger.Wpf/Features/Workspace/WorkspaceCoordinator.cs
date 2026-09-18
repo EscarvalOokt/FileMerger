@@ -8,9 +8,10 @@ public sealed class WorkspaceCoordinator : IWorkspaceCoordinator
     private const string WorkspaceFilter =
         "Workspace files (*.filemerger.workspace.json)|*.filemerger.workspace.json|JSON files (*.json)|*.json|All files (*.*)|*.*";
 
-    private readonly IWorkspacePersistenceService _workspacePersistenceService;
-    private readonly ISaveFileDialogService _saveFileDialogService;
     private readonly IOpenFileDialogService _openFileDialogService;
+    private readonly ISaveFileDialogService _saveFileDialogService;
+
+    private readonly IWorkspacePersistenceService _workspacePersistenceService;
 
     public WorkspaceCoordinator(
         IWorkspacePersistenceService workspacePersistenceService,
@@ -35,10 +36,7 @@ public sealed class WorkspaceCoordinator : IWorkspaceCoordinator
         if (string.IsNullOrWhiteSpace(document.WorkspaceFilePath))
             return await SaveWorkspaceAsAsync(document, cancellationToken);
 
-        await SaveWorkspaceToPathAsync(
-            document,
-            document.WorkspaceFilePath,
-            cancellationToken);
+        await SaveWorkspaceToPathAsync(document, document.WorkspaceFilePath, cancellationToken);
 
         return true;
     }
@@ -73,10 +71,7 @@ public sealed class WorkspaceCoordinator : IWorkspaceCoordinator
         if (string.IsNullOrWhiteSpace(path))
             return false;
 
-        return await LoadWorkspaceFromPathAsync(
-            document,
-            path,
-            cancellationToken);
+        return await LoadWorkspaceFromPathAsync(document, path, cancellationToken);
     }
 
     public async Task<bool> LoadWorkspaceFromPathAsync(
@@ -91,9 +86,7 @@ public sealed class WorkspaceCoordinator : IWorkspaceCoordinator
 
         string normalizedPath = Path.GetFullPath(workspaceFilePath.Trim());
 
-        WorkspaceDto dto = await _workspacePersistenceService.LoadWorkspaceAsync(
-            normalizedPath,
-            cancellationToken);
+        WorkspaceDto dto = await _workspacePersistenceService.LoadWorkspaceAsync(normalizedPath, cancellationToken);
 
         WorkspaceDocumentMapper.Apply(document, dto);
 
@@ -108,10 +101,7 @@ public sealed class WorkspaceCoordinator : IWorkspaceCoordinator
     {
         WorkspaceDto dto = WorkspaceDocumentMapper.Capture(document);
 
-        await _workspacePersistenceService.SaveWorkspaceAsync(
-            dto,
-            path,
-            cancellationToken);
+        await _workspacePersistenceService.SaveWorkspaceAsync(dto, path, cancellationToken);
     }
 
     private static string BuildInitialWorkspacePath(WorkspaceDocumentViewModel document)
@@ -119,7 +109,8 @@ public sealed class WorkspaceCoordinator : IWorkspaceCoordinator
         if (!string.IsNullOrWhiteSpace(document.WorkspaceFilePath))
             return document.WorkspaceFilePath;
 
-        string fileName = $"{MakeSafeFileName(document.SessionSettings.SessionName, "DefaultSession")}.filemerger.workspace.json";
+        string fileName =
+            $"{MakeSafeFileName(document.SessionSettings.SessionName, "DefaultSession")}.filemerger.workspace.json";
         return Path.Combine(GetDefaultStorageDirectory(), fileName);
     }
 
@@ -141,15 +132,11 @@ public sealed class WorkspaceCoordinator : IWorkspaceCoordinator
 
     private static string MakeSafeFileName(string? value, string fallback)
     {
-        string candidate = string.IsNullOrWhiteSpace(value)
-            ? fallback
-            : value.Trim();
+        string candidate = string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
         foreach (char invalidChar in Path.GetInvalidFileNameChars())
             candidate = candidate.Replace(invalidChar, '_');
 
-        return string.IsNullOrWhiteSpace(candidate)
-            ? fallback
-            : candidate;
+        return string.IsNullOrWhiteSpace(candidate) ? fallback : candidate;
     }
 }

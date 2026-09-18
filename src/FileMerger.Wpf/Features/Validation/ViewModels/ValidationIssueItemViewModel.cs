@@ -20,11 +20,12 @@ public sealed class ValidationIssueItemViewModel : ViewModelBase
     public string Code => Model.Code;
     public string Message => Model.Message;
 
-    public StatusSeverity SeverityStatus => Model.Severity switch
-    {
-        ValidationSeverity.Info => StatusSeverity.Info,
-        ValidationSeverity.Warning => StatusSeverity.Warning,
-        ValidationSeverity.Error => StatusSeverity.Error,
-        _ => StatusSeverity.None
-    };
+    public StatusSeverity SeverityStatus =>
+        Model.Severity switch
+        {
+            ValidationSeverity.Info => StatusSeverity.Info,
+            ValidationSeverity.Warning => StatusSeverity.Warning,
+            ValidationSeverity.Error => StatusSeverity.Error,
+            _ => StatusSeverity.None
+        };
 }

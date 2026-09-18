@@ -36,13 +36,9 @@ public sealed class SourceDetailsDialogViewModel : ViewModelBase
         Source.Exclusions.CollectionChanged += Exclusions_CollectionChanged;
         SelectedExclusions.CollectionChanged += SelectedExclusions_CollectionChanged;
 
-        AddExcludedFolderCommand = new RelayCommand(
-            AddExcludedFolder,
-            () => CanAddExclusions);
+        AddExcludedFolderCommand = new RelayCommand(AddExcludedFolder, () => CanAddExclusions);
 
-        AddExcludedFileCommand = new RelayCommand(
-            AddExcludedFile,
-            () => CanAddExclusions);
+        AddExcludedFileCommand = new RelayCommand(AddExcludedFile, () => CanAddExclusions);
 
         RemoveSelectedExclusionsCommand = new RelayCommand(
             RemoveSelectedExclusions,
@@ -73,13 +69,10 @@ public sealed class SourceDetailsDialogViewModel : ViewModelBase
 
     public ObservableCollection<MergeSourceExclusionItemViewModel> SelectedExclusions { get; }
 
-    public bool CanEditExclusions =>
-        Source.Type == MergeSourceType.Directory;
+    public bool CanEditExclusions => Source.Type == MergeSourceType.Directory;
 
     public bool CanAddExclusions =>
-        CanEditExclusions &&
-        !string.IsNullOrWhiteSpace(Source.Path) &&
-        Directory.Exists(Source.Path);
+        CanEditExclusions && !string.IsNullOrWhiteSpace(Source.Path) && Directory.Exists(Source.Path);
 
     public bool HasExclusions => Source.Exclusions.Count > 0;
 
@@ -138,9 +131,7 @@ public sealed class SourceDetailsDialogViewModel : ViewModelBase
         AddExclusions(selectedPaths, MergeSourceExclusionType.File);
     }
 
-    private void AddExclusions(
-        IEnumerable<string> selectedPaths,
-        MergeSourceExclusionType type)
+    private void AddExclusions(IEnumerable<string> selectedPaths, MergeSourceExclusionType type)
     {
         if (Source.Type != MergeSourceType.Directory)
             return;
@@ -232,9 +223,7 @@ public sealed class SourceDetailsDialogViewModel : ViewModelBase
         SetExclusionsEnabled(Source.Exclusions, isEnabled: false);
     }
 
-    private void SetExclusionsEnabled(
-        IEnumerable<MergeSourceExclusionItemViewModel> exclusions,
-        bool isEnabled)
+    private void SetExclusionsEnabled(IEnumerable<MergeSourceExclusionItemViewModel> exclusions, bool isEnabled)
     {
         MergeSourceExclusionItemViewModel[] items = [.. exclusions];
 
@@ -266,13 +255,13 @@ public sealed class SourceDetailsDialogViewModel : ViewModelBase
 
     private void Source_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MergeSourceItemViewModel.Path) or
-            nameof(MergeSourceItemViewModel.Type) or
-            nameof(MergeSourceItemViewModel.Exclusions) or
-            nameof(MergeSourceItemViewModel.ExclusionCount) or
-            nameof(MergeSourceItemViewModel.EnabledExclusionCount) or
-            nameof(MergeSourceItemViewModel.DisabledExclusionCount) or
-            nameof(MergeSourceItemViewModel.ExclusionSummary))
+        if (e.PropertyName is nameof(MergeSourceItemViewModel.Path)
+            or nameof(MergeSourceItemViewModel.Type)
+            or nameof(MergeSourceItemViewModel.Exclusions)
+            or nameof(MergeSourceItemViewModel.ExclusionCount)
+            or nameof(MergeSourceItemViewModel.EnabledExclusionCount)
+            or nameof(MergeSourceItemViewModel.DisabledExclusionCount)
+            or nameof(MergeSourceItemViewModel.ExclusionSummary))
         {
             OnPropertyChanged(nameof(CanEditExclusions));
             OnPropertyChanged(nameof(CanAddExclusions));
@@ -314,8 +303,7 @@ public sealed class SourceDetailsDialogViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(relativePath))
             return string.Empty;
 
-        return relativePath
-            .Trim()
+        return relativePath.Trim()
             .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
             .Trim(Path.DirectorySeparatorChar);
     }

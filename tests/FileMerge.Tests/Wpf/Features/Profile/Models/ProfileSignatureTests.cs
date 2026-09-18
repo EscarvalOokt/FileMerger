@@ -21,9 +21,7 @@ public sealed class ProfileSignatureTests
                 ExcludeDirectoryRule("Temp")
             ]);
 
-        Assert.NotEqual(
-            ProfileSignature.From(first),
-            ProfileSignature.From(second));
+        Assert.NotEqual(ProfileSignature.From(first), ProfileSignature.From(second));
     }
 
     [Fact]
@@ -41,20 +39,16 @@ public sealed class ProfileSignatureTests
                 ExcludeDirectoryRule("Library")
             ]);
 
-        Assert.Equal(
-            ProfileSignature.From(first),
-            ProfileSignature.From(second));
+        Assert.Equal(ProfileSignature.From(first), ProfileSignature.From(second));
     }
 
-    private static WorkspaceProfileDto CreateProfile(
-        List<WorkspaceFileFilterRuleDto>? filterRules = null)
+    private static WorkspaceProfileDto CreateProfile(List<WorkspaceFileFilterRuleDto>? filterRules = null)
     {
         return new WorkspaceProfileDto(
             IncludeHeaderComment: false,
             IncludeFileSeparators: true,
             IncludeRelativePathInSeparator: true,
             TrimTrailingEmptyLines: true,
-            RemoveUsingDirectives: false,
             FileTypes:
             [
                 new WorkspaceFileTypeDto(

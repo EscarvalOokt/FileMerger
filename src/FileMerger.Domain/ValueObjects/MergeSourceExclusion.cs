@@ -4,10 +4,7 @@ namespace FileMerger.Domain.ValueObjects
 {
     public sealed record MergeSourceExclusion
     {
-        public MergeSourceExclusion(
-            string relativePath,
-            MergeSourceExclusionType type,
-            bool isEnabled = true)
+        public MergeSourceExclusion(string relativePath, MergeSourceExclusionType type, bool isEnabled = true)
         {
             if (string.IsNullOrWhiteSpace(relativePath))
                 throw new ArgumentException("Relative path cannot be empty.", nameof(relativePath));
@@ -23,7 +20,9 @@ namespace FileMerger.Domain.ValueObjects
                 throw new ArgumentException("Relative path cannot be empty.", nameof(relativePath));
 
             if (ContainsParentTraversal(normalizedRelativePath))
-                throw new ArgumentException("Relative path cannot contain parent traversal segments.", nameof(relativePath));
+                throw new ArgumentException(
+                    "Relative path cannot contain parent traversal segments.",
+                    nameof(relativePath));
 
             RelativePath = normalizedRelativePath;
             Type = type;
@@ -36,8 +35,7 @@ namespace FileMerger.Domain.ValueObjects
 
         private static string NormalizeRelativePath(string path)
         {
-            return path
-                .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+            return path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
                 .Trim(Path.DirectorySeparatorChar);
         }
 

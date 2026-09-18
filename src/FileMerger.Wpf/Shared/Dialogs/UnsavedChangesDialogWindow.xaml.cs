@@ -10,8 +10,7 @@ public partial class UnsavedChangesDialogWindow : ShellDialogWindow
         InitializeComponent();
     }
 
-    private UnsavedChangesDialogViewModel? ViewModel =>
-        DataContext as UnsavedChangesDialogViewModel;
+    private UnsavedChangesDialogViewModel? ViewModel => DataContext as UnsavedChangesDialogViewModel;
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
     {

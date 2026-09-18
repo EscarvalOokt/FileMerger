@@ -4,8 +4,8 @@ namespace FileMerger.Wpf.Features.Profile.ViewModels;
 
 public sealed class ProfileListFiltersViewModel : ViewModelBase
 {
-    private string _searchText = string.Empty;
     private ProfileListKindFilterMode _kind = ProfileListKindFilterMode.All;
+    private string _searchText = string.Empty;
 
     public string SearchText
     {
@@ -27,9 +27,7 @@ public sealed class ProfileListFiltersViewModel : ViewModelBase
         }
     }
 
-    public bool HasActiveFilters =>
-        !string.IsNullOrWhiteSpace(SearchText) ||
-        Kind != ProfileListKindFilterMode.All;
+    public bool HasActiveFilters => !string.IsNullOrWhiteSpace(SearchText) || Kind != ProfileListKindFilterMode.All;
 
     public void Reset()
     {
@@ -69,7 +67,6 @@ public sealed class ProfileListFiltersViewModel : ViewModelBase
 
     private static bool Contains(string? value, string search)
     {
-        return !string.IsNullOrWhiteSpace(value) &&
-               value.Contains(search, StringComparison.OrdinalIgnoreCase);
+        return !string.IsNullOrWhiteSpace(value) && value.Contains(search, StringComparison.OrdinalIgnoreCase);
     }
 }

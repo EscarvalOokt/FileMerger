@@ -52,8 +52,7 @@ public partial class MainWindow
         if (ViewModel is null || sender is not DataGrid dataGrid)
             return;
 
-        ViewModel.FilesPane.ReplaceSelectedFiles(
-            dataGrid.SelectedItems.OfType<InputFileItemViewModel>());
+        ViewModel.FilesPane.ReplaceSelectedFiles(dataGrid.SelectedItems.OfType<InputFileItemViewModel>());
     }
 
     private void FilesDataGridRow_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
@@ -138,9 +137,7 @@ public partial class MainWindow
         _ = CloseWorkspaceTabSafelyAsync(viewModel, tab);
     }
 
-    private static async Task CloseWorkspaceTabSafelyAsync(
-        MainViewModel viewModel,
-        WorkspaceTabViewModel tab)
+    private static async Task CloseWorkspaceTabSafelyAsync(MainViewModel viewModel, WorkspaceTabViewModel tab)
     {
         try
         {
@@ -154,8 +151,7 @@ public partial class MainWindow
         }
     }
 
-    private static T? FindVisualParent<T>(DependencyObject child)
-        where T : DependencyObject
+    private static T? FindVisualParent<T>(DependencyObject child) where T : DependencyObject
     {
         DependencyObject? current = child;
 

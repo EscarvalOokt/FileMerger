@@ -81,9 +81,7 @@ public sealed class CrashLogFormatterTests
     {
         try
         {
-            throw new InvalidOperationException(
-                "Top failure",
-                new ArgumentException("Inner failure"));
+            throw new InvalidOperationException("Top failure", new ArgumentException("Inner failure"));
         }
         catch (Exception ex)
         {

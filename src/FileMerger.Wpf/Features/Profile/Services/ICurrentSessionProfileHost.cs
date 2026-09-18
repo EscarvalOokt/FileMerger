@@ -9,8 +9,5 @@ public interface ICurrentSessionProfileHost
 
     WorkspaceProfileDto CaptureCurrentProfile();
 
-    void ApplyProfileToCurrentSession(
-        string profileName,
-        WorkspaceProfileDto profile,
-        string? profileEntryId);
+    void ApplyProfileToCurrentSession(string profileName, WorkspaceProfileDto profile, string? profileEntryId);
 }

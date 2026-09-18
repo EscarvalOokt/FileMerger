@@ -4,8 +4,8 @@ namespace FileMerger.Wpf.Features.Preview.State;
 
 public sealed class PreviewDirtyStateTracker : ViewModelBase
 {
-    private PreviewStateSnapshot? _lastAppliedState;
     private bool _isPreviewDirty = true;
+    private PreviewStateSnapshot? _lastAppliedState;
     private PreviewDirtyReason _previewDirtyReason = PreviewDirtyReason.NeverBuilt;
 
     public bool IsPreviewDirty
@@ -81,9 +81,7 @@ public sealed class PreviewDirtyStateTracker : ViewModelBase
         if (hadAppliedPreview)
             OnPropertyChanged(nameof(HasAppliedPreview));
 
-        UpdateDirtyState(
-            isPreviewDirty: true,
-            previewDirtyReason: PreviewDirtyReason.NeverBuilt);
+        UpdateDirtyState(isPreviewDirty: true, previewDirtyReason: PreviewDirtyReason.NeverBuilt);
     }
 
     public void MarkPreviewApplied(PreviewStateSnapshot appliedState)
@@ -97,9 +95,7 @@ public sealed class PreviewDirtyStateTracker : ViewModelBase
         if (hadAppliedPreview != HasAppliedPreview)
             OnPropertyChanged(nameof(HasAppliedPreview));
 
-        UpdateDirtyState(
-            isPreviewDirty: false,
-            previewDirtyReason: PreviewDirtyReason.None);
+        UpdateDirtyState(isPreviewDirty: false, previewDirtyReason: PreviewDirtyReason.None);
     }
 
     public void Refresh(PreviewStateSnapshot currentState)
@@ -108,9 +104,7 @@ public sealed class PreviewDirtyStateTracker : ViewModelBase
 
         if (_lastAppliedState is null)
         {
-            UpdateDirtyState(
-                isPreviewDirty: true,
-                previewDirtyReason: PreviewDirtyReason.NeverBuilt);
+            UpdateDirtyState(isPreviewDirty: true, previewDirtyReason: PreviewDirtyReason.NeverBuilt);
             return;
         }
 
@@ -128,9 +122,7 @@ public sealed class PreviewDirtyStateTracker : ViewModelBase
         if (!DictionariesEqual(currentState.FileInclusionOverrides, _lastAppliedState.FileInclusionOverrides))
             reasons |= PreviewDirtyReason.FileOverridesChanged;
 
-        UpdateDirtyState(
-            isPreviewDirty: reasons != PreviewDirtyReason.None,
-            previewDirtyReason: reasons);
+        UpdateDirtyState(isPreviewDirty: reasons != PreviewDirtyReason.None, previewDirtyReason: reasons);
     }
 
     private void UpdateDirtyState(bool isPreviewDirty, PreviewDirtyReason previewDirtyReason)
@@ -211,11 +203,13 @@ public sealed class PreviewDirtyStateTracker : ViewModelBase
             MergeSourceExclusionStateSnapshot leftExclusion = leftEnumerator.Current;
             MergeSourceExclusionStateSnapshot rightExclusion = rightEnumerator.Current;
 
-            if (!string.Equals(leftExclusion.RelativePath, rightExclusion.RelativePath, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(
+                    leftExclusion.RelativePath,
+                    rightExclusion.RelativePath,
+                    StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            if (leftExclusion.Type != rightExclusion.Type ||
-                leftExclusion.IsEnabled != rightExclusion.IsEnabled)
+            if (leftExclusion.Type != rightExclusion.Type || leftExclusion.IsEnabled != rightExclusion.IsEnabled)
             {
                 return false;
             }

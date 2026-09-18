@@ -9,8 +9,7 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
 {
     private readonly IUnsupportedTextFileDetector _unsupportedTextFileDetector;
 
-    public FileDiscoveryService()
-        : this(new UnsupportedTextFileDetector())
+    public FileDiscoveryService() : this(new UnsupportedTextFileDetector())
     {
     }
 
@@ -24,13 +23,14 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
     public FileDiscoveryResult DiscoverFiles(
         IReadOnlyCollection<MergeSource> sources,
         MergeProfile profile,
-        IProgress<FileDiscoveryProgress>? progress = null)
+        IProgress<FileDiscoveryProgress>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(sources);
         ArgumentNullException.ThrowIfNull(profile);
+        cancellationToken.ThrowIfCancellationRequested();
 
-        Dictionary<string, FileTypeDefinition> knownTypes =
-            BuildFileTypeLookup(profile.FileTypes);
+        Dictionary<string, FileTypeDefinition> knownTypes = BuildFileTypeLookup(profile.FileTypes);
 
         Dictionary<string, FileTypeDefinition> enabledTypes =
             BuildFileTypeLookup(profile.FileTypes.Where(x => x.IsEnabled));
@@ -43,6 +43,8 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
 
         foreach (MergeSource source in sources.Where(x => x.IsEnabled))
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (source.Type == MergeSourceType.Directory)
             {
                 DiscoverFromDirectory(
@@ -53,7 +55,8 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
                     inventoryFiles,
                     sourceExcludedFiles,
                     shouldCollectSourceExcludedFiles,
-                    progressReporter);
+                    progressReporter,
+                    cancellationToken);
             }
             else if (source.Type == MergeSourceType.File)
             {
@@ -63,14 +66,16 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
                     knownTypes,
                     enabledTypes,
                     inventoryFiles,
-                    progressReporter);
+                    progressReporter,
+                    cancellationToken);
             }
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
+
         InputFile[] distinctInventoryFiles =
         [
-            .. inventoryFiles
-                .GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
+            .. inventoryFiles.GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
                 .Select(x => x.First())
                 .OrderBy(x => x.RelativePath, StringComparer.OrdinalIgnoreCase)
         ];
@@ -81,16 +86,13 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
 
         InputFile[] distinctSourceExcludedFiles =
         [
-            .. sourceExcludedFiles
-                .Where(x => !inventoryPaths.Contains(x.FullPath))
+            .. sourceExcludedFiles.Where(x => !inventoryPaths.Contains(x.FullPath))
                 .GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
                 .Select(x => x.First())
                 .OrderBy(x => x.RelativePath, StringComparer.OrdinalIgnoreCase)
         ];
 
-        return new FileDiscoveryResult(
-            distinctInventoryFiles,
-            distinctSourceExcludedFiles);
+        return new FileDiscoveryResult(distinctInventoryFiles, distinctSourceExcludedFiles);
     }
 
     private static bool ShouldCollectSourceExcludedFiles(MergeProfile profile)
@@ -98,20 +100,14 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
         OutputMetadataOptions options = profile.GeneralOptions.OutputMetadataOptions;
 
         return options.SkippedFilesMetadataMode != SkippedFilesMetadataMode.None &&
-               options.EffectiveSkippedFileCategories.Includes(
-                   SkippedFileCategory.SourceExclusion);
+               options.EffectiveSkippedFileCategories.Includes(SkippedFileCategory.SourceExclusion);
     }
 
-    private static Dictionary<string, FileTypeDefinition> BuildFileTypeLookup(
-        IEnumerable<FileTypeDefinition> fileTypes)
+    private static Dictionary<string, FileTypeDefinition> BuildFileTypeLookup(IEnumerable<FileTypeDefinition> fileTypes)
     {
-        return fileTypes
-            .Where(x => !string.IsNullOrWhiteSpace(x.Extension))
+        return fileTypes.Where(x => !string.IsNullOrWhiteSpace(x.Extension))
             .GroupBy(x => x.Extension, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                x => x.Key,
-                x => x.First(),
-                StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(x => x.Key, x => x.First(), StringComparer.OrdinalIgnoreCase);
     }
 
     private void DiscoverFromDirectory(
@@ -122,16 +118,21 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
         List<InputFile> result,
         List<InputFile> sourceExcludedFiles,
         bool shouldCollectSourceExcludedFiles,
-        DiscoveryProgressReporter progressReporter)
+        DiscoveryProgressReporter progressReporter,
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (!Directory.Exists(source.Path))
             return;
 
         string rootPath = Path.GetFullPath(source.Path);
         var exclusions = SourceExclusionMatcher.From(source, rootPath);
 
-        foreach (string filePath in EnumerateFiles(source, rootPath, exclusions))
+        foreach (string filePath in EnumerateFiles(source, rootPath, exclusions, cancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (exclusions.IsFileExcluded(filePath))
                 continue;
 
@@ -142,32 +143,34 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
                 knownTypes,
                 enabledTypes,
                 result,
-                progressReporter);
+                progressReporter,
+                cancellationToken);
         }
 
         if (shouldCollectSourceExcludedFiles)
         {
-            CollectSourceExcludedFiles(
-                source,
-                rootPath,
-                sourceExcludedFiles);
+            CollectSourceExcludedFiles(source, rootPath, sourceExcludedFiles, cancellationToken);
         }
     }
 
     private static IEnumerable<string> EnumerateFiles(
         MergeSource source,
         string rootPath,
-        SourceExclusionMatcher exclusions)
+        SourceExclusionMatcher exclusions,
+        CancellationToken cancellationToken)
     {
         Stack<string> pendingDirectories = [];
         pendingDirectories.Push(rootPath);
 
         while (pendingDirectories.Count > 0)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             string currentDirectory = pendingDirectories.Pop();
 
             foreach (string filePath in Directory.EnumerateFiles(currentDirectory))
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 yield return filePath;
             }
 
@@ -176,7 +179,12 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
 
             foreach (string directoryPath in Directory.EnumerateDirectories(currentDirectory))
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 if (exclusions.IsDirectoryExcluded(directoryPath))
+                    continue;
+
+                if (IsDirectoryReparsePoint(directoryPath))
                     continue;
 
                 pendingDirectories.Push(directoryPath);
@@ -187,39 +195,48 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
     private static void CollectSourceExcludedFiles(
         MergeSource source,
         string rootPath,
-        List<InputFile> result)
+        List<InputFile> result,
+        CancellationToken cancellationToken)
     {
         foreach (MergeSourceExclusion exclusion in source.Exclusions.Where(x => x.IsEnabled))
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             string excludedPath = Path.GetFullPath(Path.Combine(rootPath, exclusion.RelativePath));
 
             if (exclusion.Type == MergeSourceExclusionType.File)
             {
-                if (!IsReachableFileExclusion(source, exclusion) || !File.Exists(excludedPath))
-                    continue;
+                string? relativeDirectoryPath = Path.GetDirectoryName(exclusion.RelativePath);
 
-                result.Add(CreateSourceExcludedInputFile(
-                    rootPath,
-                    excludedPath));
+                if (!IsReachableFileExclusion(source, exclusion) ||
+                    !File.Exists(excludedPath) ||
+                    ContainsDirectoryReparsePoint(rootPath, relativeDirectoryPath, cancellationToken))
+                {
+                    continue;
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                result.Add(CreateSourceExcludedInputFile(rootPath, excludedPath));
 
                 continue;
             }
 
-            if (!source.IsRecursive || !Directory.Exists(excludedPath))
-                continue;
-
-            foreach (string filePath in EnumerateDirectoryTreeFiles(excludedPath))
+            if (!source.IsRecursive ||
+                !Directory.Exists(excludedPath) ||
+                ContainsDirectoryReparsePoint(rootPath, exclusion.RelativePath, cancellationToken))
             {
-                result.Add(CreateSourceExcludedInputFile(
-                    rootPath,
-                    filePath));
+                continue;
+            }
+
+            foreach (string filePath in EnumerateDirectoryTreeFiles(excludedPath, cancellationToken))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                result.Add(CreateSourceExcludedInputFile(rootPath, filePath));
             }
         }
     }
 
-    private static bool IsReachableFileExclusion(
-        MergeSource source,
-        MergeSourceExclusion exclusion)
+    private static bool IsReachableFileExclusion(MergeSource source, MergeSourceExclusion exclusion)
     {
         if (source.IsRecursive)
             return true;
@@ -228,26 +245,75 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
         return string.IsNullOrWhiteSpace(directoryName);
     }
 
-    private static IEnumerable<string> EnumerateDirectoryTreeFiles(string rootPath)
+    private static bool ContainsDirectoryReparsePoint(
+        string rootPath,
+        string? relativeDirectoryPath,
+        CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(relativeDirectoryPath))
+            return false;
+
+        string currentPath = rootPath;
+        string[] segments = relativeDirectoryPath.Split(
+            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+            StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (string segment in segments)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            currentPath = Path.Combine(currentPath, segment);
+
+            if (!Directory.Exists(currentPath))
+                return false;
+
+            if (IsDirectoryReparsePoint(currentPath))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<string> EnumerateDirectoryTreeFiles(string rootPath, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (IsDirectoryReparsePoint(rootPath))
+            yield break;
+
         Stack<string> pendingDirectories = [];
         pendingDirectories.Push(rootPath);
 
         while (pendingDirectories.Count > 0)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             string currentDirectory = pendingDirectories.Pop();
 
             foreach (string filePath in Directory.EnumerateFiles(currentDirectory))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
                 yield return filePath;
+            }
 
             foreach (string directoryPath in Directory.EnumerateDirectories(currentDirectory))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (IsDirectoryReparsePoint(directoryPath))
+                    continue;
+
                 pendingDirectories.Push(directoryPath);
+            }
         }
     }
 
-    private static InputFile CreateSourceExcludedInputFile(
-        string rootPath,
-        string filePath)
+    private static bool IsDirectoryReparsePoint(string directoryPath)
+    {
+        return (File.GetAttributes(directoryPath) & FileAttributes.ReparsePoint) != 0;
+    }
+
+    private static InputFile CreateSourceExcludedInputFile(string rootPath, string filePath)
     {
         return new InputFile(
             fullPath: filePath,
@@ -267,17 +333,22 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
         IReadOnlyDictionary<string, FileTypeDefinition> knownTypes,
         IReadOnlyDictionary<string, FileTypeDefinition> enabledTypes,
         List<InputFile> result,
-        DiscoveryProgressReporter progressReporter)
+        DiscoveryProgressReporter progressReporter,
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         string relativePath = Path.GetRelativePath(rootPath, filePath);
 
-        result.Add(CreateInputFile(
-            filePath,
-            relativePath,
-            profile.GeneralOptions.UnsupportedTextFallbackOptions,
-            knownTypes,
-            enabledTypes,
-            progressReporter));
+        result.Add(
+            CreateInputFile(
+                filePath,
+                relativePath,
+                profile.GeneralOptions.UnsupportedTextFallbackOptions,
+                knownTypes,
+                enabledTypes,
+                progressReporter,
+                cancellationToken));
     }
 
     private void DiscoverFromFile(
@@ -286,18 +357,25 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
         IReadOnlyDictionary<string, FileTypeDefinition> knownTypes,
         IReadOnlyDictionary<string, FileTypeDefinition> enabledTypes,
         List<InputFile> result,
-        DiscoveryProgressReporter progressReporter)
+        DiscoveryProgressReporter progressReporter,
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (!File.Exists(source.Path))
             return;
 
-        result.Add(CreateInputFile(
-            source.Path,
-            Path.GetFileName(source.Path),
-            profile.GeneralOptions.UnsupportedTextFallbackOptions,
-            knownTypes,
-            enabledTypes,
-            progressReporter));
+        cancellationToken.ThrowIfCancellationRequested();
+
+        result.Add(
+            CreateInputFile(
+                source.Path,
+                Path.GetFileName(source.Path),
+                profile.GeneralOptions.UnsupportedTextFallbackOptions,
+                knownTypes,
+                enabledTypes,
+                progressReporter,
+                cancellationToken));
     }
 
     private InputFile CreateInputFile(
@@ -306,8 +384,11 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
         UnsupportedTextFallbackOptions fallbackOptions,
         IReadOnlyDictionary<string, FileTypeDefinition> knownTypes,
         IReadOnlyDictionary<string, FileTypeDefinition> enabledTypes,
-        DiscoveryProgressReporter progressReporter)
+        DiscoveryProgressReporter progressReporter,
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (TryResolveKnownFileType(
                 filePath,
                 enabledTypes,
@@ -341,12 +422,16 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
 
         string unsupportedExtension = ResolveUnsupportedExtension(filePath);
 
-        if (!string.IsNullOrWhiteSpace(unsupportedExtension) &&
-            fallbackOptions.IsEnabled)
+        if (!string.IsNullOrWhiteSpace(unsupportedExtension) && fallbackOptions.IsEnabled)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             progressReporter.ReportProbe(relativePath);
+            cancellationToken.ThrowIfCancellationRequested();
 
-            if (_unsupportedTextFileDetector.IsTextCandidate(filePath, fallbackOptions))
+            bool isTextCandidate = _unsupportedTextFileDetector.IsTextCandidate(filePath, fallbackOptions);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (isTextCandidate)
             {
                 return new InputFile(
                     fullPath: filePath,
@@ -386,8 +471,7 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
 
         string fileName = Path.GetFileName(filePath);
 
-        if (fileName.StartsWith('.') &&
-            fileTypes.TryGetValue(fileName, out FileTypeDefinition? dotFileType))
+        if (fileName.StartsWith('.') && fileTypes.TryGetValue(fileName, out FileTypeDefinition? dotFileType))
         {
             extension = dotFileType.Extension;
             fileType = dotFileType;
@@ -428,9 +512,7 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
 
     private static SkipReason CreateSourceExclusionSkipReason()
     {
-        return new SkipReason(
-            code: "source.exclude",
-            description: "Excluded by a source-specific exclusion.");
+        return new SkipReason(code: "source.exclude", description: "Excluded by a source-specific exclusion.");
     }
 
     private static long? TryGetFileSize(string filePath)
@@ -453,17 +535,15 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
         public void ReportProbe(string relativePath)
         {
             _probedFiles++;
-            _progress?.Report(new FileDiscoveryProgress(
-                ProbedFiles: _probedFiles,
-                RelativePath: relativePath));
+            _progress?.Report(new FileDiscoveryProgress(ProbedFiles: _probedFiles, RelativePath: relativePath));
         }
     }
 
     private sealed class SourceExclusionMatcher
     {
-        private readonly string _rootPath;
-        private readonly HashSet<string> _excludedFiles;
         private readonly HashSet<string> _excludedDirectories;
+        private readonly HashSet<string> _excludedFiles;
+        private readonly string _rootPath;
 
         private SourceExclusionMatcher(
             string rootPath,
@@ -506,8 +586,7 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
         {
             string relativePath = GetRelativePath(filePath);
 
-            return _excludedFiles.Contains(relativePath) ||
-                   IsInsideExcludedDirectory(relativePath);
+            return _excludedFiles.Contains(relativePath) || IsInsideExcludedDirectory(relativePath);
         }
 
         public bool IsDirectoryExcluded(string directoryPath)
@@ -537,15 +616,12 @@ public sealed class FileDiscoveryService : IFileDiscoveryService
         private static bool IsSameOrChildPath(string candidate, string parent)
         {
             return string.Equals(candidate, parent, StringComparison.OrdinalIgnoreCase) ||
-                   candidate.StartsWith(
-                       parent + Path.DirectorySeparatorChar,
-                       StringComparison.OrdinalIgnoreCase);
+                   candidate.StartsWith(parent + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
         }
 
         private static string NormalizeRelativePath(string path)
         {
-            return path
-                .Replace('\\', Path.DirectorySeparatorChar)
+            return path.Replace('\\', Path.DirectorySeparatorChar)
                 .Replace('/', Path.DirectorySeparatorChar)
                 .Trim(Path.DirectorySeparatorChar);
         }

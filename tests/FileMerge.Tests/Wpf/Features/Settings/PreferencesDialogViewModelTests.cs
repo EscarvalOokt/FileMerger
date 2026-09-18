@@ -12,8 +12,7 @@ public sealed class PreferencesDialogViewModelTests
     [Fact]
     public void Constructor_Should_Load_Current_Preferences()
     {
-        FakeApplicationPreferencesStore store = CreateStore(
-            new ApplicationPreferences(true, 20_000, 50));
+        FakeApplicationPreferencesStore store = CreateStore(new ApplicationPreferences(true, 20_000, 50));
 
         PreferencesDialogViewModel viewModel = CreateViewModel(store);
 
@@ -68,8 +67,7 @@ public sealed class PreferencesDialogViewModelTests
     [Fact]
     public void RestoreDefaultsCommand_Should_Reset_Fields_Without_Saving()
     {
-        FakeApplicationPreferencesStore store = CreateStore(
-            new ApplicationPreferences(true, 20_000, 50));
+        FakeApplicationPreferencesStore store = CreateStore(new ApplicationPreferences(true, 20_000, 50));
         PreferencesDialogViewModel viewModel = CreateViewModel(store);
 
         viewModel.RestoreDefaultsCommand.Execute(null);
@@ -119,6 +117,75 @@ public sealed class PreferencesDialogViewModelTests
     }
 
     [Fact]
+    public void PreviewDisplayCharacterLimitValidationMessage_Should_Show_Range_Error_For_Invalid_Value()
+    {
+        PreferencesDialogViewModel viewModel = CreateViewModel();
+
+        viewModel.PreviewDisplayCharacterLimitText = "0";
+
+        string expectedMessage = "Preview display character limit must be between " +
+                                 $"{FormatNumber(ApplicationPreferences.MinimumPreviewDisplayCharacterLimit)} and " +
+                                 $"{FormatNumber(ApplicationPreferences.MaximumPreviewDisplayCharacterLimit)}.";
+
+        Assert.True(viewModel.HasPreviewDisplayCharacterLimitValidationError);
+        Assert.Equal(expectedMessage, viewModel.PreviewDisplayCharacterLimitValidationMessage);
+        Assert.False(viewModel.SaveCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void PreviewDisplayCharacterLimitValidationMessage_Should_Clear_When_Value_Is_Corrected()
+    {
+        PreferencesDialogViewModel viewModel = CreateViewModel();
+        viewModel.PreviewDisplayCharacterLimitText = "0";
+
+        viewModel.PreviewDisplayCharacterLimitText = ToText(ApplicationPreferences.DefaultPreviewDisplayCharacterLimit);
+
+        Assert.False(viewModel.HasPreviewDisplayCharacterLimitValidationError);
+        Assert.Equal(string.Empty, viewModel.PreviewDisplayCharacterLimitValidationMessage);
+        Assert.True(viewModel.CanSave);
+        Assert.True(viewModel.SaveCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void PreviewDisplayCharacterLimitValidationMessage_Should_Show_Whole_Number_Error()
+    {
+        PreferencesDialogViewModel viewModel = CreateViewModel();
+
+        viewModel.PreviewDisplayCharacterLimitText = "not a number";
+
+        Assert.True(viewModel.HasPreviewDisplayCharacterLimitValidationError);
+        Assert.Equal(
+            "Preview display character limit must be a whole number.",
+            viewModel.PreviewDisplayCharacterLimitValidationMessage);
+    }
+
+    [Fact]
+    public void PreviewDisplayCharacterLimitValidationMessage_Should_Not_Show_CrashRetention_Error()
+    {
+        PreferencesDialogViewModel viewModel = CreateViewModel();
+
+        viewModel.CrashLogRetentionLimitText = "not a number";
+
+        AssertSaveDisabledWithValidationError(viewModel);
+        Assert.False(viewModel.HasPreviewDisplayCharacterLimitValidationError);
+        Assert.Equal(string.Empty, viewModel.PreviewDisplayCharacterLimitValidationMessage);
+    }
+
+    [Fact]
+    public void RestoreDefaultsCommand_Should_Clear_PreviewDisplayCharacterLimitValidationMessage()
+    {
+        PreferencesDialogViewModel viewModel = CreateViewModel();
+        viewModel.PreviewDisplayCharacterLimitText = "0";
+
+        viewModel.RestoreDefaultsCommand.Execute(null);
+
+        Assert.False(viewModel.HasPreviewDisplayCharacterLimitValidationError);
+        Assert.Equal(string.Empty, viewModel.PreviewDisplayCharacterLimitValidationMessage);
+        Assert.True(viewModel.CanSave);
+        Assert.True(viewModel.SaveCommand.CanExecute(null));
+    }
+
+    [Fact]
     public void SaveCommand_Should_Be_Disabled_When_CrashRetention_Is_Not_Number()
     {
         PreferencesDialogViewModel viewModel = CreateViewModel();
@@ -133,8 +200,7 @@ public sealed class PreferencesDialogViewModelTests
     {
         PreferencesDialogViewModel viewModel = CreateViewModel();
 
-        viewModel.CrashLogRetentionLimitText = ToText(
-            ApplicationPreferences.MinimumCrashLogRetentionLimit - 1);
+        viewModel.CrashLogRetentionLimitText = ToText(ApplicationPreferences.MinimumCrashLogRetentionLimit - 1);
 
         AssertSaveDisabledWithValidationError(viewModel);
     }
@@ -144,8 +210,7 @@ public sealed class PreferencesDialogViewModelTests
     {
         PreferencesDialogViewModel viewModel = CreateViewModel();
 
-        viewModel.CrashLogRetentionLimitText = ToText(
-            ApplicationPreferences.MaximumCrashLogRetentionLimit + 1);
+        viewModel.CrashLogRetentionLimitText = ToText(ApplicationPreferences.MaximumCrashLogRetentionLimit + 1);
 
         AssertSaveDisabledWithValidationError(viewModel);
     }
@@ -172,13 +237,11 @@ public sealed class PreferencesDialogViewModelTests
     [Fact]
     public void Constructor_Should_Load_Crash_Log_Directory_And_File_Count()
     {
-        FakeApplicationPreferencesStore store = CreateStore(
-            new ApplicationPreferences(false, 20_000, 2));
+        FakeApplicationPreferencesStore store = CreateStore(new ApplicationPreferences(false, 20_000, 2));
         FakeCrashLogMaintenanceService crashLogs = new();
         AddCrashLogFiles(crashLogs, 3);
 
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(store, crashLogs);
+        PreferencesDialogViewModel viewModel = CreateViewModel(store, crashLogs);
 
         Assert.Equal(crashLogs.DirectoryPath, viewModel.CrashLogDirectoryPath);
         Assert.Equal("3 crash log files found.", viewModel.CrashLogFileCountText);
@@ -190,8 +253,7 @@ public sealed class PreferencesDialogViewModelTests
     public void RefreshCrashLogsCommand_Should_Update_File_Count()
     {
         FakeCrashLogMaintenanceService crashLogs = new();
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(crashLogs: crashLogs);
+        PreferencesDialogViewModel viewModel = CreateViewModel(crashLogs: crashLogs);
         AddCrashLogFiles(crashLogs, 2);
 
         viewModel.RefreshCrashLogsCommand.Execute(null);
@@ -204,35 +266,26 @@ public sealed class PreferencesDialogViewModelTests
     public void RefreshCrashLogsCommand_Should_Show_Error_When_Enumeration_Fails()
     {
         FakeCrashLogMaintenanceService crashLogs = new();
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(crashLogs: crashLogs);
-        crashLogs.FileListResult = CrashLogFileListResult.Failure(
-            new IOException("read failed"));
+        PreferencesDialogViewModel viewModel = CreateViewModel(crashLogs: crashLogs);
+        crashLogs.FileListResult = CrashLogFileListResult.Failure(new IOException("read failed"));
 
         viewModel.RefreshCrashLogsCommand.Execute(null);
 
         Assert.True(viewModel.HasCrashLogMaintenanceStatus);
-        Assert.Contains(
-            "read failed",
-            viewModel.CrashLogMaintenanceStatusText);
-        Assert.Equal(
-            "Unable to read crash log folder.",
-            viewModel.CrashLogFileCountText);
+        Assert.Contains("read failed", viewModel.CrashLogMaintenanceStatusText);
+        Assert.Equal("Unable to read crash log folder.", viewModel.CrashLogFileCountText);
     }
 
     [Fact]
     public void OpenCrashLogsFolderCommand_Should_Call_Service_And_Show_Status()
     {
         FakeCrashLogMaintenanceService crashLogs = new();
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(crashLogs: crashLogs);
+        PreferencesDialogViewModel viewModel = CreateViewModel(crashLogs: crashLogs);
 
         viewModel.OpenCrashLogsFolderCommand.Execute(null);
 
         Assert.Equal(1, crashLogs.OpenCalls);
-        Assert.Equal(
-            "Crash log folder opened.",
-            viewModel.CrashLogMaintenanceStatusText);
+        Assert.Equal("Crash log folder opened.", viewModel.CrashLogMaintenanceStatusText);
     }
 
     [Fact]
@@ -242,26 +295,21 @@ public sealed class PreferencesDialogViewModelTests
         crashLogs.OpenResult = CrashLogFolderOpenResult.Failure(
             crashLogs.DirectoryPath,
             new InvalidOperationException("open failed"));
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(crashLogs: crashLogs);
+        PreferencesDialogViewModel viewModel = CreateViewModel(crashLogs: crashLogs);
 
         viewModel.OpenCrashLogsFolderCommand.Execute(null);
 
-        Assert.Contains(
-            "open failed",
-            viewModel.CrashLogMaintenanceStatusText);
+        Assert.Contains("open failed", viewModel.CrashLogMaintenanceStatusText);
     }
 
     [Fact]
     public void ClearOldCrashLogsCommand_Should_Ask_For_Confirmation()
     {
-        FakeApplicationPreferencesStore store = CreateStore(
-            new ApplicationPreferences(false, 20_000, 1));
+        FakeApplicationPreferencesStore store = CreateStore(new ApplicationPreferences(false, 20_000, 1));
         FakeCrashLogMaintenanceService crashLogs = new();
         AddCrashLogFiles(crashLogs, 2);
         FakeUserPromptService prompts = new();
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(store, crashLogs, prompts);
+        PreferencesDialogViewModel viewModel = CreateViewModel(store, crashLogs, prompts);
 
         viewModel.ClearOldCrashLogsCommand.Execute(null);
 
@@ -273,16 +321,14 @@ public sealed class PreferencesDialogViewModelTests
     [Fact]
     public void ClearOldCrashLogsCommand_Should_Not_Run_When_Confirmation_Is_Cancelled()
     {
-        FakeApplicationPreferencesStore store = CreateStore(
-            new ApplicationPreferences(false, 20_000, 1));
+        FakeApplicationPreferencesStore store = CreateStore(new ApplicationPreferences(false, 20_000, 1));
         FakeCrashLogMaintenanceService crashLogs = new();
         AddCrashLogFiles(crashLogs, 2);
         FakeUserPromptService prompts = new()
         {
             ConfirmResult = false
         };
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(store, crashLogs, prompts);
+        PreferencesDialogViewModel viewModel = CreateViewModel(store, crashLogs, prompts);
 
         viewModel.ClearOldCrashLogsCommand.Execute(null);
 
@@ -292,36 +338,29 @@ public sealed class PreferencesDialogViewModelTests
     [Fact]
     public void ClearOldCrashLogsCommand_Should_Run_When_Confirmed_And_Show_Deleted_Count()
     {
-        FakeApplicationPreferencesStore store = CreateStore(
-            new ApplicationPreferences(false, 20_000, 1));
+        FakeApplicationPreferencesStore store = CreateStore(new ApplicationPreferences(false, 20_000, 1));
         FakeCrashLogMaintenanceService crashLogs = new()
         {
-            CleanupOldResult =
-                CrashLogCleanupResult.From(["a", "b"], [])
+            CleanupOldResult = CrashLogCleanupResult.From(["a", "b"], [])
         };
         AddCrashLogFiles(crashLogs, 2);
         FakeUserPromptService prompts = new();
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(store, crashLogs, prompts);
+        PreferencesDialogViewModel viewModel = CreateViewModel(store, crashLogs, prompts);
 
         viewModel.ClearOldCrashLogsCommand.Execute(null);
 
         Assert.Equal(1, crashLogs.CleanupOldCalls);
-        Assert.Contains(
-            "Deleted 2",
-            viewModel.CrashLogMaintenanceStatusText);
+        Assert.Contains("Deleted 2", viewModel.CrashLogMaintenanceStatusText);
     }
 
     [Fact]
     public void ClearOldCrashLogsCommand_Should_Be_Disabled_When_No_Old_Logs()
     {
-        FakeApplicationPreferencesStore store = CreateStore(
-            new ApplicationPreferences(false, 20_000, 5));
+        FakeApplicationPreferencesStore store = CreateStore(new ApplicationPreferences(false, 20_000, 5));
         FakeCrashLogMaintenanceService crashLogs = new();
         AddCrashLogFiles(crashLogs, 2);
 
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(store, crashLogs);
+        PreferencesDialogViewModel viewModel = CreateViewModel(store, crashLogs);
 
         Assert.False(viewModel.ClearOldCrashLogsCommand.CanExecute(null));
     }
@@ -332,8 +371,7 @@ public sealed class PreferencesDialogViewModelTests
         FakeCrashLogMaintenanceService crashLogs = new();
         AddCrashLogFiles(crashLogs, 1);
         FakeUserPromptService prompts = new();
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(crashLogs: crashLogs, prompts: prompts);
+        PreferencesDialogViewModel viewModel = CreateViewModel(crashLogs: crashLogs, prompts: prompts);
 
         viewModel.ClearAllCrashLogsCommand.Execute(null);
 
@@ -351,8 +389,7 @@ public sealed class PreferencesDialogViewModelTests
         {
             ConfirmResult = false
         };
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(crashLogs: crashLogs, prompts: prompts);
+        PreferencesDialogViewModel viewModel = CreateViewModel(crashLogs: crashLogs, prompts: prompts);
 
         viewModel.ClearAllCrashLogsCommand.Execute(null);
 
@@ -367,15 +404,12 @@ public sealed class PreferencesDialogViewModelTests
             ClearAllResult = CrashLogCleanupResult.From(["a"], [])
         };
         AddCrashLogFiles(crashLogs, 1);
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(crashLogs: crashLogs);
+        PreferencesDialogViewModel viewModel = CreateViewModel(crashLogs: crashLogs);
 
         viewModel.ClearAllCrashLogsCommand.Execute(null);
 
         Assert.Equal(1, crashLogs.ClearAllCalls);
-        Assert.Contains(
-            "Deleted 1",
-            viewModel.CrashLogMaintenanceStatusText);
+        Assert.Contains("Deleted 1", viewModel.CrashLogMaintenanceStatusText);
     }
 
     [Fact]
@@ -389,12 +423,10 @@ public sealed class PreferencesDialogViewModelTests
     [Fact]
     public void Diagnostics_Actions_Should_Not_Request_Close()
     {
-        FakeApplicationPreferencesStore store = CreateStore(
-            new ApplicationPreferences(false, 20_000, 1));
+        FakeApplicationPreferencesStore store = CreateStore(new ApplicationPreferences(false, 20_000, 1));
         FakeCrashLogMaintenanceService crashLogs = new();
         AddCrashLogFiles(crashLogs, 2);
-        PreferencesDialogViewModel viewModel =
-            CreateViewModel(store, crashLogs);
+        PreferencesDialogViewModel viewModel = CreateViewModel(store, crashLogs);
         bool closeRequested = false;
         viewModel.RequestClose += (_, _) => closeRequested = true;
 
@@ -417,29 +449,26 @@ public sealed class PreferencesDialogViewModelTests
             prompts ?? new FakeUserPromptService());
     }
 
-    private static FakeApplicationPreferencesStore CreateStore(
-        ApplicationPreferences preferences)
+    private static FakeApplicationPreferencesStore CreateStore(ApplicationPreferences preferences)
     {
         FakeApplicationPreferencesStore store = new();
         store.SetCurrent(preferences);
         return store;
     }
 
-    private static void AddCrashLogFiles(
-        FakeCrashLogMaintenanceService crashLogs,
-        int count)
+    private static void AddCrashLogFiles(FakeCrashLogMaintenanceService crashLogs, int count)
     {
         for (int i = 0; i < count; i++)
         {
-            crashLogs.Files.Add(new CrashLogFileInfo(
-                Path: $@"C:\FileMerger\CrashLogs\crash-{i}.log",
-                FileName: $"crash-{i}.log",
-                LastWriteTimeUtc: DateTime.UtcNow.AddMinutes(-i)));
+            crashLogs.Files.Add(
+                new CrashLogFileInfo(
+                    Path: $@"C:\FileMerger\CrashLogs\crash-{i}.log",
+                    FileName: $"crash-{i}.log",
+                    LastWriteTimeUtc: DateTime.UtcNow.AddMinutes(-i)));
         }
     }
 
-    private static void AssertSaveDisabledWithValidationError(
-        PreferencesDialogViewModel viewModel)
+    private static void AssertSaveDisabledWithValidationError(PreferencesDialogViewModel viewModel)
     {
         Assert.True(viewModel.HasValidationErrors);
         Assert.True(viewModel.HasErrorMessage);
@@ -450,5 +479,10 @@ public sealed class PreferencesDialogViewModelTests
     private static string ToText(int value)
     {
         return value.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static string FormatNumber(int value)
+    {
+        return value.ToString("N0", CultureInfo.InvariantCulture);
     }
 }

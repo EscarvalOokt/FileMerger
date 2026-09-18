@@ -2,11 +2,7 @@ namespace FileMerger.Domain.Entities
 {
     public sealed record MergeSection
     {
-        public MergeSection(
-            InputFile sourceFile,
-            string content,
-            int order,
-            string? headerText = null)
+        public MergeSection(InputFile sourceFile, string content, int order, string? headerText = null)
         {
             ArgumentNullException.ThrowIfNull(sourceFile);
 

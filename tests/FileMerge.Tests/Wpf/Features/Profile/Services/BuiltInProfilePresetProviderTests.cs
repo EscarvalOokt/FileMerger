@@ -19,9 +19,7 @@ public sealed class BuiltInProfilePresetProviderTests
         Assert.Contains(entries, x => x.Id == "builtin.unity-project");
         Assert.Contains(entries, x => x.Id == "builtin.full-source-dump");
 
-        Assert.Equal(
-            entries.Length,
-            entries.Select(x => x.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Equal(entries.Length, entries.Select(x => x.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count());
     }
 
     [Fact]
@@ -29,16 +27,19 @@ public sealed class BuiltInProfilePresetProviderTests
     {
         IReadOnlyCollection<ProfileLibraryEntry> entries = CreateProvider().GetAll();
 
-        Assert.All(entries, entry =>
-        {
-            Assert.Equal(ProfileEntryKind.BuiltIn, entry.Kind);
-            Assert.True(entry.Metadata.IsBuiltIn);
-            Assert.True(entry.Metadata.IsReadOnly);
-            Assert.True(entry.IsBuiltIn);
-            Assert.True(entry.IsReadOnly);
-            Assert.False(entry.IsUserDefined);
-            Assert.Null(entry.FilePath);
-        });
+        Assert.All(
+            entries,
+            // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
+            entry =>
+            {
+                Assert.Equal(ProfileEntryKind.BuiltIn, entry.Kind);
+                Assert.True(entry.Metadata.IsBuiltIn);
+                Assert.True(entry.Metadata.IsReadOnly);
+                Assert.True(entry.IsBuiltIn);
+                Assert.True(entry.IsReadOnly);
+                Assert.False(entry.IsUserDefined);
+                Assert.Null(entry.FilePath);
+            });
     }
 
     [Fact]
@@ -49,9 +50,7 @@ public sealed class BuiltInProfilePresetProviderTests
 
         ProfileLibraryEntry entry = provider.GetAll().Single(x => x.Id == "builtin.default");
 
-        AssertSameExtensions(
-            catalog.GetDefault().Select(x => x.Extension),
-            EnabledExtensions(entry));
+        AssertSameExtensions(catalog.GetDefault().Select(x => x.Extension), EnabledExtensions(entry));
         AssertCSharpFilterRules(entry);
     }
 
@@ -62,7 +61,6 @@ public sealed class BuiltInProfilePresetProviderTests
 
         AssertSameExtensions([".cs"], EnabledExtensions(entry));
 
-        Assert.False(entry.Profile.RemoveUsingDirectives);
         AssertCSharpFilterRules(entry);
     }
 
@@ -92,20 +90,23 @@ public sealed class BuiltInProfilePresetProviderTests
             ],
             EnabledExtensions(entry));
 
-        Assert.DoesNotContain(entry.Profile.FileTypes, x =>
-            x.Extension == ".cs" && x.IsEnabled);
+        Assert.DoesNotContain(entry.Profile.FileTypes, x => x is { Extension: ".cs", IsEnabled: true });
 
-        Assert.DoesNotContain(entry.Profile.FilterRules ?? [], x =>
-            string.Equals(x.Pattern, "bin", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            entry.Profile.FilterRules ?? [],
+            x => string.Equals(x.Pattern, "bin", StringComparison.OrdinalIgnoreCase));
 
-        Assert.DoesNotContain(entry.Profile.FilterRules ?? [], x =>
-            string.Equals(x.Pattern, "obj", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            entry.Profile.FilterRules ?? [],
+            x => string.Equals(x.Pattern, "obj", StringComparison.OrdinalIgnoreCase));
 
-        Assert.DoesNotContain(entry.Profile.FilterRules ?? [], x =>
-            string.Equals(x.Pattern, "*.Designer.cs", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            entry.Profile.FilterRules ?? [],
+            x => string.Equals(x.Pattern, "*.Designer.cs", StringComparison.OrdinalIgnoreCase));
 
-        Assert.DoesNotContain(entry.Profile.FilterRules ?? [], x =>
-            string.Equals(x.Pattern, "AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            entry.Profile.FilterRules ?? [],
+            x => string.Equals(x.Pattern, "AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -113,10 +114,9 @@ public sealed class BuiltInProfilePresetProviderTests
     {
         ProfileLibraryEntry entry = GetEntry("builtin.docs-config");
 
-        Assert.Contains(entry.Profile.FileTypes, x =>
-            x.Extension == KnownFileTypes.SolutionXml.Extension &&
-            x.Kind == FileKind.Xml &&
-            x.IsEnabled);
+        Assert.Contains(
+            entry.Profile.FileTypes,
+            x => x.Extension == KnownFileTypes.SolutionXml.Extension && x is { Kind: FileKind.Xml, IsEnabled: true });
     }
 
     [Fact]
@@ -124,10 +124,9 @@ public sealed class BuiltInProfilePresetProviderTests
     {
         ProfileLibraryEntry entry = GetEntry("builtin.docs-config");
 
-        Assert.Contains(entry.Profile.FileTypes, x =>
-            x.Extension == KnownFileTypes.EditorConfig.Extension &&
-            x.Kind == FileKind.Text &&
-            x.IsEnabled);
+        Assert.Contains(
+            entry.Profile.FileTypes,
+            x => x.Extension == KnownFileTypes.EditorConfig.Extension && x is { Kind: FileKind.Text, IsEnabled: true });
     }
 
     [Fact]
@@ -143,11 +142,8 @@ public sealed class BuiltInProfilePresetProviderTests
     {
         ProfileLibraryEntry entry = GetEntry("builtin.wpf-app");
 
-        AssertSameExtensions(
-            KnownFileTypes.WpfApplication.Select(x => x.Extension),
-            EnabledExtensions(entry));
+        AssertSameExtensions(KnownFileTypes.WpfApplication.Select(x => x.Extension), EnabledExtensions(entry));
 
-        Assert.False(entry.Profile.RemoveUsingDirectives);
         AssertCSharpFilterRules(entry);
     }
 
@@ -156,10 +152,9 @@ public sealed class BuiltInProfilePresetProviderTests
     {
         ProfileLibraryEntry entry = GetEntry("builtin.wpf-app");
 
-        Assert.Contains(entry.Profile.FileTypes, x =>
-            x.Extension == KnownFileTypes.SolutionXml.Extension &&
-            x.Kind == FileKind.Xml &&
-            x.IsEnabled);
+        Assert.Contains(
+            entry.Profile.FileTypes,
+            x => x.Extension == KnownFileTypes.SolutionXml.Extension && x is { Kind: FileKind.Xml, IsEnabled: true });
     }
 
     [Fact]
@@ -175,11 +170,8 @@ public sealed class BuiltInProfilePresetProviderTests
     {
         ProfileLibraryEntry entry = GetEntry("builtin.unity-project");
 
-        AssertSameExtensions(
-            KnownFileTypes.UnityProject.Select(x => x.Extension),
-            EnabledExtensions(entry));
+        AssertSameExtensions(KnownFileTypes.UnityProject.Select(x => x.Extension), EnabledExtensions(entry));
 
-        Assert.False(entry.Profile.RemoveUsingDirectives);
         AssertCSharpFilterRules(entry);
     }
 
@@ -188,9 +180,9 @@ public sealed class BuiltInProfilePresetProviderTests
     {
         ProfileLibraryEntry entry = GetEntry("builtin.unity-project");
 
-        Assert.DoesNotContain(entry.Profile.FileTypes, x =>
-            string.Equals(x.Extension, ".meta", StringComparison.OrdinalIgnoreCase) &&
-            x.IsEnabled);
+        Assert.DoesNotContain(
+            entry.Profile.FileTypes,
+            x => string.Equals(x.Extension, ".meta", StringComparison.OrdinalIgnoreCase) && x.IsEnabled);
         AssertCSharpFilterRules(entry);
     }
 
@@ -202,23 +194,24 @@ public sealed class BuiltInProfilePresetProviderTests
 
         ProfileLibraryEntry entry = provider.GetAll().Single(x => x.Id == "builtin.full-source-dump");
 
-        AssertSameExtensions(
-            catalog.GetAll().Select(x => x.Extension),
-            EnabledExtensions(entry));
+        AssertSameExtensions(catalog.GetAll().Select(x => x.Extension), EnabledExtensions(entry));
 
-        Assert.False(entry.Profile.RemoveUsingDirectives);
 
-        Assert.DoesNotContain(entry.Profile.FilterRules ?? [], x =>
-            string.Equals(x.Pattern, "bin", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            entry.Profile.FilterRules ?? [],
+            x => string.Equals(x.Pattern, "bin", StringComparison.OrdinalIgnoreCase));
 
-        Assert.DoesNotContain(entry.Profile.FilterRules ?? [], x =>
-            string.Equals(x.Pattern, "obj", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            entry.Profile.FilterRules ?? [],
+            x => string.Equals(x.Pattern, "obj", StringComparison.OrdinalIgnoreCase));
 
-        Assert.DoesNotContain(entry.Profile.FilterRules ?? [], x =>
-            string.Equals(x.Pattern, "*.Designer.cs", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            entry.Profile.FilterRules ?? [],
+            x => string.Equals(x.Pattern, "*.Designer.cs", StringComparison.OrdinalIgnoreCase));
 
-        Assert.DoesNotContain(entry.Profile.FilterRules ?? [], x =>
-            string.Equals(x.Pattern, "AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            entry.Profile.FilterRules ?? [],
+            x => string.Equals(x.Pattern, "AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -228,17 +221,21 @@ public sealed class BuiltInProfilePresetProviderTests
 
         Assert.Empty(entry.Profile.FilterRules ?? []);
 
-        Assert.DoesNotContain(entry.Profile.FilterRules ?? [], x =>
-            string.Equals(x.Pattern, "bin", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            entry.Profile.FilterRules ?? [],
+            x => string.Equals(x.Pattern, "bin", StringComparison.OrdinalIgnoreCase));
 
-        Assert.DoesNotContain(entry.Profile.FilterRules ?? [], x =>
-            string.Equals(x.Pattern, "obj", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            entry.Profile.FilterRules ?? [],
+            x => string.Equals(x.Pattern, "obj", StringComparison.OrdinalIgnoreCase));
 
-        Assert.DoesNotContain(entry.Profile.FilterRules ?? [], x =>
-            string.Equals(x.Pattern, "*.Designer.cs", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            entry.Profile.FilterRules ?? [],
+            x => string.Equals(x.Pattern, "*.Designer.cs", StringComparison.OrdinalIgnoreCase));
 
-        Assert.DoesNotContain(entry.Profile.FilterRules ?? [], x =>
-            string.Equals(x.Pattern, "AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            entry.Profile.FilterRules ?? [],
+            x => string.Equals(x.Pattern, "AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -246,10 +243,9 @@ public sealed class BuiltInProfilePresetProviderTests
     {
         ProfileLibraryEntry entry = GetEntry("builtin.full-source-dump");
 
-        Assert.Contains(entry.Profile.FileTypes, x =>
-            x.Extension == KnownFileTypes.SolutionXml.Extension &&
-            x.Kind == FileKind.Xml &&
-            x.IsEnabled);
+        Assert.Contains(
+            entry.Profile.FileTypes,
+            x => x.Extension == KnownFileTypes.SolutionXml.Extension && x is { Kind: FileKind.Xml, IsEnabled: true });
     }
 
     [Fact]
@@ -257,10 +253,9 @@ public sealed class BuiltInProfilePresetProviderTests
     {
         ProfileLibraryEntry entry = GetEntry("builtin.full-source-dump");
 
-        Assert.Contains(entry.Profile.FileTypes, x =>
-            x.Extension == KnownFileTypes.EditorConfig.Extension &&
-            x.Kind == FileKind.Text &&
-            x.IsEnabled);
+        Assert.Contains(
+            entry.Profile.FileTypes,
+            x => x.Extension == KnownFileTypes.EditorConfig.Extension && x is { Kind: FileKind.Text, IsEnabled: true });
     }
 
     [Fact]
@@ -278,29 +273,29 @@ public sealed class BuiltInProfilePresetProviderTests
 
         Assert.NotNull(entry.Profile.FilterRules);
 
-        Assert.Contains(entry.Profile.FilterRules!, x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.FileName &&
-            x.PatternType == RulePatternType.Wildcard &&
-            x.Pattern == "*.g.cs" &&
-            x.IsEnabled &&
-            x.IsUserEditable);
+        Assert.Contains(
+            entry.Profile.FilterRules!,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.FileName, PatternType: RulePatternType.Wildcard,
+                Pattern: "*.g.cs", IsEnabled: true, IsUserEditable: true
+            });
 
-        Assert.Contains(entry.Profile.FilterRules!, x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.FileName &&
-            x.PatternType == RulePatternType.Wildcard &&
-            x.Pattern == "*.g.i.cs" &&
-            x.IsEnabled &&
-            x.IsUserEditable);
+        Assert.Contains(
+            entry.Profile.FilterRules!,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.FileName, PatternType: RulePatternType.Wildcard,
+                Pattern: "*.g.i.cs", IsEnabled: true, IsUserEditable: true
+            });
 
-        Assert.Contains(entry.Profile.FilterRules!, x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.FileName &&
-            x.PatternType == RulePatternType.Wildcard &&
-            x.Pattern == "*.AssemblyAttributes.cs" &&
-            x.IsEnabled &&
-            x.IsUserEditable);
+        Assert.Contains(
+            entry.Profile.FilterRules!,
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.FileName, PatternType: RulePatternType.Wildcard,
+                Pattern: "*.AssemblyAttributes.cs", IsEnabled: true, IsUserEditable: true
+            });
 
         AssertCSharpFilterRules(entry);
     }
@@ -331,45 +326,46 @@ public sealed class BuiltInProfilePresetProviderTests
         AssertDirectoryRule(entry, "bin");
         AssertDirectoryRule(entry, "obj");
 
-        Assert.Contains(entry.Profile.FilterRules ?? [], x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.FileName &&
-            x.PatternType == RulePatternType.Wildcard &&
-            x.Pattern == "*.Designer.cs" &&
-            x.IsEnabled &&
-            x.IsUserEditable);
+        Assert.Contains(
+            entry.Profile.FilterRules ?? [],
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.FileName, PatternType: RulePatternType.Wildcard,
+                Pattern: "*.Designer.cs", IsEnabled: true, IsUserEditable: true
+            });
 
-        Assert.Contains(entry.Profile.FilterRules ?? [], x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.FileName &&
-            x.PatternType == RulePatternType.Exact &&
-            x.Pattern == "AssemblyInfo.cs" &&
-            x.IsEnabled &&
-            x.IsUserEditable);
+        Assert.Contains(
+            entry.Profile.FilterRules ?? [],
+            x => x is
+            {
+                Mode: FilterMode.Exclude, Target: FilterTarget.FileName, PatternType: RulePatternType.Exact,
+                Pattern: "AssemblyInfo.cs", IsEnabled: true, IsUserEditable: true
+            });
     }
 
     private static void AssertDirectoryRule(ProfileLibraryEntry entry, string pattern)
     {
-        Assert.Contains(entry.Profile.FilterRules ?? [], x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.DirectorySegment &&
-            x.PatternType == RulePatternType.Exact &&
-            string.Equals(x.Pattern, pattern, StringComparison.OrdinalIgnoreCase) &&
-            x.IsEnabled &&
-            x.IsUserEditable);
+        Assert.Contains(
+            entry.Profile.FilterRules ?? [],
+            x => x is
+                 {
+                     Mode: FilterMode.Exclude, Target: FilterTarget.DirectorySegment, PatternType: RulePatternType.Exact
+                 } &&
+                 string.Equals(x.Pattern, pattern, StringComparison.OrdinalIgnoreCase) &&
+                 x is { IsEnabled: true, IsUserEditable: true });
     }
 
     private static void AssertMsBuildPropsAndTargetsEnabled(ProfileLibraryEntry entry)
     {
-        Assert.Contains(entry.Profile.FileTypes, x =>
-            x.Extension == KnownFileTypes.Props.Extension &&
-            x.Kind == FileKind.Xml &&
-            x.IsEnabled);
+        Assert.Contains(
+            entry.Profile.FileTypes,
+            // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
+            x => x.Extension == KnownFileTypes.Props.Extension && x is { Kind: FileKind.Xml, IsEnabled: true });
 
-        Assert.Contains(entry.Profile.FileTypes, x =>
-            x.Extension == KnownFileTypes.Targets.Extension &&
-            x.Kind == FileKind.Xml &&
-            x.IsEnabled);
+        Assert.Contains(
+            entry.Profile.FileTypes,
+            // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
+            x => x.Extension == KnownFileTypes.Targets.Extension && x is { Kind: FileKind.Xml, IsEnabled: true });
     }
 
     private static BuiltInProfilePresetProvider CreateProvider()
@@ -386,8 +382,7 @@ public sealed class BuiltInProfilePresetProviderTests
     {
         return
         [
-            .. entry.Profile.FileTypes
-                .Where(x => x.IsEnabled)
+            .. entry.Profile.FileTypes.Where(x => x.IsEnabled)
                 .Select(x => x.Extension)
                 .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
         ];
@@ -395,18 +390,17 @@ public sealed class BuiltInProfilePresetProviderTests
 
     private static void AssertUnityDirectoryRule(ProfileLibraryEntry entry, string pattern)
     {
-        Assert.Contains(entry.Profile.FilterRules ?? [], x =>
-            x.Mode == FilterMode.Exclude &&
-            x.Target == FilterTarget.DirectorySegment &&
-            x.PatternType == RulePatternType.Exact &&
-            string.Equals(x.Pattern, pattern, StringComparison.OrdinalIgnoreCase) &&
-            x.IsEnabled &&
-            x.IsUserEditable);
+        Assert.Contains(
+            entry.Profile.FilterRules ?? [],
+            x => x is
+                 {
+                     Mode: FilterMode.Exclude, Target: FilterTarget.DirectorySegment, PatternType: RulePatternType.Exact
+                 } &&
+                 string.Equals(x.Pattern, pattern, StringComparison.OrdinalIgnoreCase) &&
+                 x is { IsEnabled: true, IsUserEditable: true });
     }
 
-    private static void AssertSameExtensions(
-        IEnumerable<string> expected,
-        IEnumerable<string> actual)
+    private static void AssertSameExtensions(IEnumerable<string> expected, IEnumerable<string> actual)
     {
         string[] expectedArray =
         [

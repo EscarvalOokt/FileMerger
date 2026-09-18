@@ -7,5 +7,6 @@ public interface IFileDiscoveryService
     FileDiscoveryResult DiscoverFiles(
         IReadOnlyCollection<MergeSource> sources,
         MergeProfile profile,
-        IProgress<FileDiscoveryProgress>? progress = null);
+        IProgress<FileDiscoveryProgress>? progress = null,
+        CancellationToken cancellationToken = default);
 }

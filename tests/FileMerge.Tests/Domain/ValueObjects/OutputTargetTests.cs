@@ -30,8 +30,9 @@ public sealed class OutputTargetTests
     [InlineData(" ")]
     public void Constructor_Should_Throw_When_EncodingName_Is_Invalid(string? encodingName)
     {
-        ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-            new OutputTarget(@"D:\C# Repository\Tests\FileMerger\out\merged.txt", encodingName!));
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => new OutputTarget(
+            @"D:\C# Repository\Tests\FileMerger\out\merged.txt",
+            encodingName!));
 
         Assert.Equal("encodingName", ex.ParamName);
     }

@@ -30,12 +30,11 @@ public sealed class FileFilterRuleTests
     [InlineData(" ")]
     public void Constructor_Should_Throw_When_Pattern_Is_Invalid(string? pattern)
     {
-        ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-            new FileFilterRule(
-                FilterMode.Exclude,
-                FilterTarget.FileName,
-                RulePatternType.Wildcard,
-                pattern!));
+        ArgumentException ex = Assert.Throws<ArgumentException>(() => new FileFilterRule(
+            FilterMode.Exclude,
+            FilterTarget.FileName,
+            RulePatternType.Wildcard,
+            pattern!));
 
         Assert.Equal("pattern", ex.ParamName);
     }

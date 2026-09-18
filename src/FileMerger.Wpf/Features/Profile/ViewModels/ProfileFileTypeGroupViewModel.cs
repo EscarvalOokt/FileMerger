@@ -56,9 +56,7 @@ public sealed class ProfileFileTypeGroupViewModel : ViewModelBase
     public string SummaryLabel => $"{EnabledCount}/{TotalCount} enabled";
 
     public string FilteredSummaryLabel =>
-        VisibleCount == TotalCount
-            ? SummaryLabel
-            : $"{VisibleCount}/{TotalCount} shown • {SummaryLabel}";
+        VisibleCount == TotalCount ? SummaryLabel : $"{VisibleCount}/{TotalCount} shown • {SummaryLabel}";
 
     public bool CanEnableAll => VisibleFileTypes.Any(x => !x.IsEnabled);
 

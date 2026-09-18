@@ -12,14 +12,9 @@ public sealed class FileListFiltersViewModelTests
     [Fact]
     public void MatchesFacet_NotIncluded_Should_Match_NotIncluded_File_WithoutSkipReason()
     {
-        InputFileItemViewModel file = CreateItem(
-            "ManualOff.cs",
-            currentIncluded: false,
-            skipReason: null);
+        InputFileItemViewModel file = CreateItem("ManualOff.cs", currentIncluded: false, skipReason: null);
 
-        bool result = FileListFiltersViewModel.MatchesFacet(
-            file,
-            FileListFacet.NotIncluded);
+        bool result = FileListFiltersViewModel.MatchesFacet(file, FileListFacet.NotIncluded);
 
         Assert.True(result);
     }
@@ -34,9 +29,7 @@ public sealed class FileListFiltersViewModelTests
             appliedIncluded: false,
             skipReason: new SkipReason("filter.rule.exclude", "Excluded by rule."));
 
-        bool result = FileListFiltersViewModel.MatchesFacet(
-            file,
-            FileListFacet.ExcludedByProfileRule);
+        bool result = FileListFiltersViewModel.MatchesFacet(file, FileListFacet.ExcludedByProfileRule);
 
         Assert.True(result);
     }
@@ -51,9 +44,7 @@ public sealed class FileListFiltersViewModelTests
             appliedIncluded: false,
             skipReason: new SkipReason("filter.rule.exclude", "Excluded by rule."));
 
-        bool result = FileListFiltersViewModel.MatchesFacet(
-            file,
-            FileListFacet.ExcludedByProfileRule);
+        bool result = FileListFiltersViewModel.MatchesFacet(file, FileListFacet.ExcludedByProfileRule);
 
         Assert.False(result);
     }
@@ -68,9 +59,7 @@ public sealed class FileListFiltersViewModelTests
             automaticIncluded: false,
             currentIncluded: false,
             appliedIncluded: false,
-            skipReason: new SkipReason(
-                "discovery.file-type-disabled",
-                "File type is disabled in the current profile."),
+            skipReason: new SkipReason("discovery.file-type-disabled", "File type is disabled in the current profile."),
             isMergeCandidate: false);
 
         Assert.True(FileListFiltersViewModel.MatchesFacet(file, FileListFacet.DisabledType));
@@ -122,9 +111,7 @@ public sealed class FileListFiltersViewModelTests
             kind: FileKind.Text,
             isFallbackText: true);
 
-        bool result = FileListFiltersViewModel.MatchesFacet(
-            file,
-            FileListFacet.Fallback);
+        bool result = FileListFiltersViewModel.MatchesFacet(file, FileListFacet.Fallback);
 
         Assert.True(result);
     }
@@ -188,9 +175,7 @@ public sealed class FileListFiltersViewModelTests
             automaticIncluded: false,
             currentIncluded: false,
             appliedIncluded: false,
-            skipReason: new SkipReason(
-                "discovery.file-type-disabled",
-                "File type is disabled in the current profile."),
+            skipReason: new SkipReason("discovery.file-type-disabled", "File type is disabled in the current profile."),
             isMergeCandidate: false);
 
         InputFileItemViewModel unsupported = CreateItem(
@@ -357,9 +342,7 @@ public sealed class FileListFiltersViewModelTests
             automaticIncluded: false,
             currentIncluded: false,
             appliedIncluded: false,
-            skipReason: new SkipReason(
-                "discovery.file-type-disabled",
-                "File type is disabled in the current profile."),
+            skipReason: new SkipReason("discovery.file-type-disabled", "File type is disabled in the current profile."),
             isMergeCandidate: false);
 
         InputFileItemViewModel unselectedFile = CreateItem(
@@ -369,9 +352,7 @@ public sealed class FileListFiltersViewModelTests
             automaticIncluded: false,
             currentIncluded: false,
             appliedIncluded: false,
-            skipReason: new SkipReason(
-                "discovery.file-type-disabled",
-                "File type is disabled in the current profile."),
+            skipReason: new SkipReason("discovery.file-type-disabled", "File type is disabled in the current profile."),
             isMergeCandidate: false);
 
         var selectedFiles = new ObservableCollection<InputFileItemViewModel>
@@ -431,14 +412,8 @@ public sealed class FileListFiltersViewModelTests
 
         InputFileItemViewModel included = CreateItem("Included.cs");
 
-        Assert.True(filters.MatchesForFacetCount(
-            profileRuleExcluded,
-            [],
-            FileListFacet.ExcludedByProfileRule));
-        Assert.False(filters.MatchesForFacetCount(
-            included,
-            [],
-            FileListFacet.ExcludedByProfileRule));
+        Assert.True(filters.MatchesForFacetCount(profileRuleExcluded, [], FileListFacet.ExcludedByProfileRule));
+        Assert.False(filters.MatchesForFacetCount(included, [], FileListFacet.ExcludedByProfileRule));
     }
 
     [Fact]
@@ -465,14 +440,8 @@ public sealed class FileListFiltersViewModelTests
             kind: FileKind.Text,
             isFallbackText: true);
 
-        Assert.True(filters.MatchesForFacetCount(
-            unsupported,
-            [],
-            FileListFacet.Unsupported));
-        Assert.False(filters.MatchesForFacetCount(
-            includedFallback,
-            [],
-            FileListFacet.Fallback));
+        Assert.True(filters.MatchesForFacetCount(unsupported, [], FileListFacet.Unsupported));
+        Assert.False(filters.MatchesForFacetCount(includedFallback, [], FileListFacet.Fallback));
     }
 
     [Fact]
@@ -489,10 +458,7 @@ public sealed class FileListFiltersViewModelTests
             skipReason: new SkipReason("filter.rule.exclude", "Excluded by rule."));
 
         Assert.False(filters.Matches(profileRuleExcluded, []));
-        Assert.True(filters.MatchesForFacetCount(
-            profileRuleExcluded,
-            [],
-            FileListFacet.ExcludedByProfileRule));
+        Assert.True(filters.MatchesForFacetCount(profileRuleExcluded, [], FileListFacet.ExcludedByProfileRule));
     }
 
     [Fact]
@@ -517,14 +483,8 @@ public sealed class FileListFiltersViewModelTests
             appliedIncluded: false,
             skipReason: new SkipReason("filter.rule.exclude", "Excluded by rule."));
 
-        Assert.True(filters.MatchesForFacetCount(
-            pendingProfileRule,
-            [],
-            FileListFacet.ExcludedByProfileRule));
-        Assert.False(filters.MatchesForFacetCount(
-            appliedProfileRule,
-            [],
-            FileListFacet.ExcludedByProfileRule));
+        Assert.True(filters.MatchesForFacetCount(pendingProfileRule, [], FileListFacet.ExcludedByProfileRule));
+        Assert.False(filters.MatchesForFacetCount(appliedProfileRule, [], FileListFacet.ExcludedByProfileRule));
     }
 
     [Fact]
@@ -546,18 +506,9 @@ public sealed class FileListFiltersViewModelTests
             selectedBeta
         };
 
-        Assert.True(filters.MatchesForFacetCount(
-            selectedAlpha,
-            selectedFiles,
-            FileListFacet.Included));
-        Assert.False(filters.MatchesForFacetCount(
-            selectedBeta,
-            selectedFiles,
-            FileListFacet.Included));
-        Assert.False(filters.MatchesForFacetCount(
-            unselectedAlpha,
-            selectedFiles,
-            FileListFacet.Included));
+        Assert.True(filters.MatchesForFacetCount(selectedAlpha, selectedFiles, FileListFacet.Included));
+        Assert.False(filters.MatchesForFacetCount(selectedBeta, selectedFiles, FileListFacet.Included));
+        Assert.False(filters.MatchesForFacetCount(unselectedAlpha, selectedFiles, FileListFacet.Included));
     }
 
     [Fact]
@@ -578,14 +529,8 @@ public sealed class FileListFiltersViewModelTests
             isFallbackText: true,
             isMergeCandidate: false);
 
-        Assert.True(filters.MatchesForFacetCount(
-            fallbackUnsupported,
-            [],
-            FileListFacet.Unsupported));
-        Assert.True(filters.MatchesForFacetCount(
-            fallbackUnsupported,
-            [],
-            FileListFacet.Fallback));
+        Assert.True(filters.MatchesForFacetCount(fallbackUnsupported, [], FileListFacet.Unsupported));
+        Assert.True(filters.MatchesForFacetCount(fallbackUnsupported, [], FileListFacet.Fallback));
     }
 
     [Fact]
@@ -664,9 +609,7 @@ public sealed class FileListFiltersViewModelTests
         Assert.All(filters.AllFacets, x => Assert.False(x.IsSelected));
     }
 
-    private static void SelectFacet(
-        FileListFiltersViewModel filters,
-        FileListFacet facet)
+    private static void SelectFacet(FileListFiltersViewModel filters, FileListFacet facet)
     {
         filters.AllFacets.Single(x => x.Facet == facet).IsSelected = true;
     }

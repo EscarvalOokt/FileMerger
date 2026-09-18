@@ -27,16 +27,9 @@ public sealed class WorkspaceConfigurationMapperTests
                 isEnabled: true,
                 exclusions:
                 [
-                    new MergeSourceExclusion(
-                        "bin",
-                        MergeSourceExclusionType.Directory,
-                        isEnabled: true)
+                    new MergeSourceExclusion("bin", MergeSourceExclusionType.Directory, isEnabled: true)
                 ]),
-            new MergeSource(
-                @"D:\Project\README.md",
-                MergeSourceType.File,
-                isRecursive: false,
-                isEnabled: false)
+            new MergeSource(@"D:\Project\README.md", MergeSourceType.File, isRecursive: false, isEnabled: false)
         ]);
 
         document.ProfileEditor.WorkingProfileName = "Workspace Profile";
@@ -87,11 +80,7 @@ public sealed class WorkspaceConfigurationMapperTests
             outputPath: @"D:\Output\source.txt");
         source.SourcesPane.LoadSources(
         [
-            new MergeSource(
-                @"D:\Source",
-                MergeSourceType.Directory,
-                isRecursive: false,
-                isEnabled: true)
+            new MergeSource(@"D:\Source", MergeSourceType.Directory, isRecursive: false, isEnabled: true)
         ]);
         source.ProfileEditor.WorkingProfileName = "Source Profile";
         source.ProfileEditor.IncludeHeaderComment = true;
@@ -144,18 +133,12 @@ public sealed class WorkspaceConfigurationMapperTests
         WorkspaceDocumentViewModel source = WorkspaceDocumentTestFactory.CreateDocument();
         source.SourcesPane.LoadSources(
         [
-            new MergeSource(
-                @"D:\Project",
-                MergeSourceType.Directory,
-                isRecursive: true,
-                isEnabled: true)
+            new MergeSource(@"D:\Project", MergeSourceType.Directory, isRecursive: true, isEnabled: true)
         ]);
 
         WorkspaceDocumentViewModel target = WorkspaceDocumentTestFactory.CreateDocument();
 
-        WorkspaceConfigurationMapper.Apply(
-            target,
-            WorkspaceConfigurationMapper.Capture(source));
+        WorkspaceConfigurationMapper.Apply(target, WorkspaceConfigurationMapper.Capture(source));
 
         Assert.NotSame(source.SourcesPane.Sources[0], target.SourcesPane.Sources[0]);
 
@@ -174,11 +157,7 @@ public sealed class WorkspaceConfigurationMapperTests
             kind: FileKind.CSharp,
             isIncluded: true);
 
-        return new InputFileItemViewModel(
-            model,
-            automaticIncluded: true,
-            currentIncluded: true,
-            appliedIncluded: true);
+        return new InputFileItemViewModel(model, automaticIncluded: true, currentIncluded: true, appliedIncluded: true);
     }
 
     private static MergeOutput CreateOutput(string outputPath)

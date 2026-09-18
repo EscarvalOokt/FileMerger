@@ -1,6 +1,7 @@
 using FileMerger.Domain.Profiles;
 using FileMerger.Tests.Wpf.Fakes;
 using FileMerger.Wpf.Features.Profile.Services;
+using FileMerger.Wpf.Features.Profile.ViewModels;
 using FileMerger.Wpf.Features.Workspace;
 using FileMerger.Wpf.Features.Workspace.State;
 
@@ -15,7 +16,7 @@ public static class WorkspaceDocumentTestFactory
         FakeApplicationPreferencesStore? applicationPreferencesStore = null)
     {
         return new WorkspaceDocumentFactory(
-            new ProfileEditorFactory(new BuiltInFileTypeCatalog()),
+            new ProfileEditorFactory(new BuiltInFileTypeCatalog(), new NoOpProfileFilterRulesDialogService()),
             new FakeFolderBrowserService(),
             new FakeOpenFileDialogService(),
             new FakeSourceDetailsDialogService(),
@@ -44,9 +45,7 @@ public static class WorkspaceDocumentTestFactory
         string sessionName = DefaultSessionName,
         string outputPath = "")
     {
-        WorkspaceDocumentViewModel document = CreateDocument(
-            sessionName,
-            outputPath);
+        WorkspaceDocumentViewModel document = CreateDocument(sessionName, outputPath);
 
         MarkWorkspaceSaved(document);
 
@@ -57,15 +56,20 @@ public static class WorkspaceDocumentTestFactory
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        document.WorkspaceDirtyTracker.Refresh(
-            WorkspaceDocumentStateSnapshotFactory.Capture(document));
+        document.WorkspaceDirtyTracker.Refresh(WorkspaceDocumentStateSnapshotFactory.Capture(document));
     }
 
     public static void MarkWorkspaceSaved(WorkspaceDocumentViewModel document)
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        document.WorkspaceDirtyTracker.MarkWorkspaceSaved(
-            WorkspaceDocumentStateSnapshotFactory.Capture(document));
+        document.WorkspaceDirtyTracker.MarkWorkspaceSaved(WorkspaceDocumentStateSnapshotFactory.Capture(document));
+    }
+
+    private sealed class NoOpProfileFilterRulesDialogService : IProfileFilterRulesDialogService
+    {
+        public void Show(ProfileEditorViewModel editor)
+        {
+        }
     }
 }

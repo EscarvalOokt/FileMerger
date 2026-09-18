@@ -2,8 +2,8 @@ namespace FileMerger.Wpf.Features.Workspace;
 
 public sealed class WorkspaceDocumentCloneService : IWorkspaceDocumentCloneService
 {
-    private readonly IWorkspaceDocumentFactory _workspaceDocumentFactory;
     private readonly IWorkspaceDocumentDirtyStateService _workspaceDocumentDirtyStateService;
+    private readonly IWorkspaceDocumentFactory _workspaceDocumentFactory;
 
     public WorkspaceDocumentCloneService(
         IWorkspaceDocumentFactory workspaceDocumentFactory,

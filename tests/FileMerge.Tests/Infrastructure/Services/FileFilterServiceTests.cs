@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using FileMerger.Domain.Entities;
 using FileMerger.Domain.Enums;
 using FileMerger.Domain.ValueObjects;
@@ -44,9 +45,7 @@ public sealed class FileFilterServiceTests
                     description: "Exclude bin directory")
             ]);
 
-        InputFile file = CreateInputFile(
-            fullPath: @"D:\Project\bin\Debug\Test.cs",
-            relativePath: @"bin\Debug\Test.cs");
+        InputFile file = CreateInputFile(fullPath: @"D:\Project\bin\Debug\Test.cs", relativePath: @"bin\Debug\Test.cs");
 
         InputFile result = service.ApplyFilters([file], profile).Single();
 
@@ -72,9 +71,7 @@ public sealed class FileFilterServiceTests
                     description: "Exclude obj directory")
             ]);
 
-        InputFile file = CreateInputFile(
-            fullPath: @"D:\Project\obj\Debug\Test.cs",
-            relativePath: @"obj\Debug\Test.cs");
+        InputFile file = CreateInputFile(fullPath: @"D:\Project\obj\Debug\Test.cs", relativePath: @"obj\Debug\Test.cs");
 
         InputFile result = service.ApplyFilters([file], profile).Single();
 
@@ -222,9 +219,66 @@ public sealed class FileFilterServiceTests
                     pattern: "Generated")
             ]);
 
+        InputFile file = CreateInputFile(fullPath: @"D:\Project\Generated\Test.cs", relativePath: @"Generated\Test.cs");
+
+        InputFile result = service.ApplyFilters([file], profile).Single();
+
+        Assert.False(result.IsIncluded);
+        Assert.NotNull(result.SkipReason);
+        Assert.Equal("filter.rule.exclude", result.SkipReason!.Code);
+    }
+
+    [Theory]
+    [InlineData(RulePatternType.Exact, "Target.cs")]
+    [InlineData(RulePatternType.Contains, "Target")]
+    [InlineData(RulePatternType.Wildcard, "*Target*")]
+    [InlineData(RulePatternType.Regex, @"^Target\.cs$")]
+    public void ApplyFilters_Should_Not_Match_FileName_As_DirectorySegment(RulePatternType patternType, string pattern)
+    {
+        var service = new FileFilterService();
+
+        MergeProfile profile = CreateProfile(
+            filterRules:
+            [
+                new FileFilterRule(
+                    mode: FilterMode.Exclude,
+                    target: FilterTarget.DirectorySegment,
+                    patternType: patternType,
+                    pattern: pattern)
+            ]);
+
+        InputFile file = CreateInputFile(fullPath: @"D:\Project\Source\Target.cs", relativePath: @"Source\Target.cs");
+
+        InputFile result = service.ApplyFilters([file], profile).Single();
+
+        Assert.True(result.IsIncluded);
+        Assert.Null(result.SkipReason);
+    }
+
+    [Theory]
+    [InlineData(RulePatternType.Exact, "GeneratedCode")]
+    [InlineData(RulePatternType.Contains, "Generated")]
+    [InlineData(RulePatternType.Wildcard, "Generated*")]
+    [InlineData(RulePatternType.Regex, "^GeneratedCode$")]
+    public void ApplyFilters_Should_Match_Real_DirectorySegment_For_All_Pattern_Types(
+        RulePatternType patternType,
+        string pattern)
+    {
+        var service = new FileFilterService();
+
+        MergeProfile profile = CreateProfile(
+            filterRules:
+            [
+                new FileFilterRule(
+                    mode: FilterMode.Exclude,
+                    target: FilterTarget.DirectorySegment,
+                    patternType: patternType,
+                    pattern: pattern)
+            ]);
+
         InputFile file = CreateInputFile(
-            fullPath: @"D:\Project\Generated\Test.cs",
-            relativePath: @"Generated\Test.cs");
+            fullPath: @"D:\Project\GeneratedCode\Test.cs",
+            relativePath: @"GeneratedCode\Test.cs");
 
         InputFile result = service.ApplyFilters([file], profile).Single();
 
@@ -294,9 +348,7 @@ public sealed class FileFilterServiceTests
                     description: "Exclude bin directory")
             ]);
 
-        InputFile file = CreateInputFile(
-            fullPath: @"D:\Project\Bin\Debug\Test.cs",
-            relativePath: @"Bin\Debug\Test.cs");
+        InputFile file = CreateInputFile(fullPath: @"D:\Project\Bin\Debug\Test.cs", relativePath: @"Bin\Debug\Test.cs");
 
         InputFile result = service.ApplyFilters([file], profile).Single();
 
@@ -331,6 +383,26 @@ public sealed class FileFilterServiceTests
 
         Assert.True(result.IsIncluded);
         Assert.Null(result.SkipReason);
+    }
+
+    [Fact]
+    public void ApplyFilters_Should_Throw_When_Regex_Evaluation_Times_Out()
+    {
+        var service = new FileFilterService();
+
+        MergeProfile profile = CreateProfile(
+            filterRules:
+            [
+                new FileFilterRule(
+                    mode: FilterMode.Exclude,
+                    target: FilterTarget.RelativePath,
+                    patternType: RulePatternType.Regex,
+                    pattern: "^(a+)+$")
+            ]);
+
+        InputFile file = CreateInputFile(fullPath: @"D:\Project\Test.cs", relativePath: new string('a', 100_000) + "!");
+
+        Assert.Throws<RegexMatchTimeoutException>(() => service.ApplyFilters([file], profile));
     }
 
     [Fact]
@@ -379,9 +451,7 @@ public sealed class FileFilterServiceTests
 
         MergeProfile profile = CreateProfile(filterRules: [rule]);
 
-        InputFile file = CreateInputFile(
-            fullPath: @"D:\Project\Generated\Test.cs",
-            relativePath: @"Generated\Test.cs");
+        InputFile file = CreateInputFile(fullPath: @"D:\Project\Generated\Test.cs", relativePath: @"Generated\Test.cs");
 
         InputFile result = service.ApplyFilters([file], profile).Single();
 
@@ -400,23 +470,17 @@ public sealed class FileFilterServiceTests
 
     private static InputFile CreateInputFile(string fullPath, string relativePath)
     {
-        return new InputFile(
-            fullPath: fullPath,
-            relativePath: relativePath,
-            extension: ".cs",
-            kind: FileKind.CSharp);
+        return new InputFile(fullPath: fullPath, relativePath: relativePath, extension: ".cs", kind: FileKind.CSharp);
     }
 
     private static MergeProfile CreateProfile(
         GeneralMergeOptions? generalOptions = null,
-        CsMergeOptions? csOptions = null,
         IReadOnlyCollection<FileFilterRule>? filterRules = null,
         IReadOnlyCollection<FileTypeDefinition>? fileTypes = null)
     {
         return new MergeProfile(
             name: "Test profile",
             generalOptions: generalOptions ?? new GeneralMergeOptions(),
-            csOptions: csOptions ?? new CsMergeOptions(),
             fileTypes: fileTypes ??
             [
                 new FileTypeDefinition(".cs", "C# source", FileKind.CSharp)

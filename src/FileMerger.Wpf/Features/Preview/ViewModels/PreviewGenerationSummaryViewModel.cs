@@ -7,8 +7,6 @@ namespace FileMerger.Wpf.Features.Preview.ViewModels;
 
 public sealed class PreviewGenerationSummaryViewModel : ViewModelBase
 {
-    public static PreviewGenerationSummaryViewModel Empty { get; } = new();
-
     private PreviewGenerationSummaryViewModel()
     {
         HasSummary = false;
@@ -53,15 +51,11 @@ public sealed class PreviewGenerationSummaryViewModel : ViewModelBase
         WasTruncated = wasTruncated;
         OmittedCharacters = omittedCharacters;
 
-        GeneratedAtText = generatedAtUtc
-            .ToLocalTime()
-            .ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture);
+        GeneratedAtText = generatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture);
 
         string normalizedOutputPath = outputPath ?? string.Empty;
 
-        OutputPathText = string.IsNullOrWhiteSpace(normalizedOutputPath)
-            ? "Not set"
-            : normalizedOutputPath;
+        OutputPathText = string.IsNullOrWhiteSpace(normalizedOutputPath) ? "Not set" : normalizedOutputPath;
 
         DurationText = FormatDuration(duration);
 
@@ -69,6 +63,8 @@ public sealed class PreviewGenerationSummaryViewModel : ViewModelBase
             ? $"Preview is truncated. Showing {displayedCharacters:N0} of {totalCharacters:N0} characters; {omittedCharacters:N0} character(s) omitted. Save still uses the full output."
             : string.Empty;
     }
+
+    public static PreviewGenerationSummaryViewModel Empty { get; } = new();
 
     public bool HasSummary { get; }
     public bool HasNoSummary => !HasSummary;
@@ -118,9 +114,7 @@ public sealed class PreviewGenerationSummaryViewModel : ViewModelBase
     public string DisplayedCharactersText => DisplayedCharacters.ToString("N0", CultureInfo.CurrentCulture);
 
     public string CompactTooltip =>
-        HasSummary
-            ? BuildCompactTooltip()
-            : "Preview generation summary is not available yet.";
+        HasSummary ? BuildCompactTooltip() : "Preview generation summary is not available yet.";
 
     public static PreviewGenerationSummaryViewModel From(
         MergeOutput output,
@@ -135,12 +129,8 @@ public sealed class PreviewGenerationSummaryViewModel : ViewModelBase
         ArgumentNullException.ThrowIfNull(sourceExcludedFiles);
         ArgumentNullException.ThrowIfNull(previewText);
 
-        var currentFilesByPath = currentFiles
-            .GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                x => x.Key,
-                x => x.Last(),
-                StringComparer.OrdinalIgnoreCase);
+        var currentFilesByPath = currentFiles.GroupBy(x => x.FullPath, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(x => x.Key, x => x.Last(), StringComparer.OrdinalIgnoreCase);
 
         int filesIncluded = 0;
         int disabledFileTypeFiles = 0;
@@ -152,9 +142,7 @@ public sealed class PreviewGenerationSummaryViewModel : ViewModelBase
 
         foreach (InputFile automaticFile in automaticFiles)
         {
-            InputFile effectiveFile = currentFilesByPath.GetValueOrDefault(
-                automaticFile.FullPath,
-                automaticFile);
+            InputFile effectiveFile = currentFilesByPath.GetValueOrDefault(automaticFile.FullPath, automaticFile);
 
             if (effectiveFile.IsIncluded)
             {
@@ -218,9 +206,7 @@ public sealed class PreviewGenerationSummaryViewModel : ViewModelBase
         string tooltip =
             $"Discovered: {FilesDiscovered:N0}, included: {FilesIncluded:N0}, not included: {FilesNotIncluded:N0}, characters: {TotalCharacters:N0}";
 
-        return SourceExcludedFiles > 0
-            ? $"{tooltip}, source excluded: {SourceExcludedFiles:N0}"
-            : tooltip;
+        return SourceExcludedFiles > 0 ? $"{tooltip}, source excluded: {SourceExcludedFiles:N0}" : tooltip;
     }
 
     private static string FormatDuration(TimeSpan duration)

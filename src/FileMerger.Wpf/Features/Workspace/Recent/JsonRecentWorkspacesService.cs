@@ -18,14 +18,13 @@ public sealed class JsonRecentWorkspacesService : IRecentWorkspacesService
     private readonly RecentWorkspacesStoragePathPolicy _pathPolicy;
     private readonly TimeProvider _timeProvider;
 
-    public JsonRecentWorkspacesService(RecentWorkspacesStoragePathPolicy pathPolicy)
-        : this(pathPolicy, TimeProvider.System)
+    public JsonRecentWorkspacesService(RecentWorkspacesStoragePathPolicy pathPolicy) : this(
+        pathPolicy,
+        TimeProvider.System)
     {
     }
 
-    public JsonRecentWorkspacesService(
-        RecentWorkspacesStoragePathPolicy pathPolicy,
-        TimeProvider timeProvider)
+    public JsonRecentWorkspacesService(RecentWorkspacesStoragePathPolicy pathPolicy, TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(pathPolicy);
         ArgumentNullException.ThrowIfNull(timeProvider);
@@ -49,9 +48,7 @@ public sealed class JsonRecentWorkspacesService : IRecentWorkspacesService
         ];
     }
 
-    public async Task AddOrUpdateAsync(
-        string workspaceFilePath,
-        CancellationToken cancellationToken = default)
+    public async Task AddOrUpdateAsync(string workspaceFilePath, CancellationToken cancellationToken = default)
     {
         string normalizedPath = NormalizePathOrThrow(workspaceFilePath, nameof(workspaceFilePath));
 
@@ -60,20 +57,18 @@ public sealed class JsonRecentWorkspacesService : IRecentWorkspacesService
 
         entries.RemoveAll(x => PathsEqual(x.FilePath, normalizedPath));
 
-        entries.Insert(0, new RecentWorkspaceEntryDto(
-            FilePath: normalizedPath,
-            LastUsedAtUtc: _timeProvider.GetUtcNow().UtcDateTime));
+        entries.Insert(
+            0,
+            new RecentWorkspaceEntryDto(
+                FilePath: normalizedPath,
+                LastUsedAtUtc: _timeProvider.GetUtcNow().UtcDateTime));
 
         entries = [.. entries.Take(MaxEntries)];
 
-        await SaveDocumentAsync(
-            new RecentWorkspacesDocumentDto(CurrentSchemaVersion, entries),
-            cancellationToken);
+        await SaveDocumentAsync(new RecentWorkspacesDocumentDto(CurrentSchemaVersion, entries), cancellationToken);
     }
 
-    public async Task RemoveAsync(
-        string workspaceFilePath,
-        CancellationToken cancellationToken = default)
+    public async Task RemoveAsync(string workspaceFilePath, CancellationToken cancellationToken = default)
     {
         string normalizedPath = NormalizePathOrThrow(workspaceFilePath, nameof(workspaceFilePath));
 
@@ -82,9 +77,7 @@ public sealed class JsonRecentWorkspacesService : IRecentWorkspacesService
 
         entries.RemoveAll(x => PathsEqual(x.FilePath, normalizedPath));
 
-        await SaveDocumentAsync(
-            new RecentWorkspacesDocumentDto(CurrentSchemaVersion, entries),
-            cancellationToken);
+        await SaveDocumentAsync(new RecentWorkspacesDocumentDto(CurrentSchemaVersion, entries), cancellationToken);
     }
 
     public async Task ClearAsync(CancellationToken cancellationToken = default)
@@ -92,8 +85,7 @@ public sealed class JsonRecentWorkspacesService : IRecentWorkspacesService
         await SaveDocumentAsync(CreateEmptyDocument(), cancellationToken);
     }
 
-    private async Task<RecentWorkspacesDocumentDto> LoadDocumentOrDefaultAsync(
-        CancellationToken cancellationToken)
+    private async Task<RecentWorkspacesDocumentDto> LoadDocumentOrDefaultAsync(CancellationToken cancellationToken)
     {
         string filePath = _pathPolicy.GetStorageFilePath();
 
@@ -117,19 +109,16 @@ public sealed class JsonRecentWorkspacesService : IRecentWorkspacesService
                 SchemaVersion: document.SchemaVersion,
                 Entries: NormalizeEntries(document.Entries));
         }
-        catch (Exception ex) when (
-            ex is JsonException ||
-            ex is IOException ||
-            ex is UnauthorizedAccessException ||
-            ex is NotSupportedException)
+        catch (Exception ex) when (ex is JsonException ||
+                                   ex is IOException ||
+                                   ex is UnauthorizedAccessException ||
+                                   ex is NotSupportedException)
         {
             return CreateEmptyDocument();
         }
     }
 
-    private async Task SaveDocumentAsync(
-        RecentWorkspacesDocumentDto document,
-        CancellationToken cancellationToken)
+    private async Task SaveDocumentAsync(RecentWorkspacesDocumentDto document, CancellationToken cancellationToken)
     {
         string filePath = _pathPolicy.GetStorageFilePath();
         string? directory = Path.GetDirectoryName(filePath);
@@ -139,11 +128,7 @@ public sealed class JsonRecentWorkspacesService : IRecentWorkspacesService
 
         await using FileStream stream = File.Create(filePath);
 
-        await JsonSerializer.SerializeAsync(
-            stream,
-            document,
-            JsonOptions,
-            cancellationToken);
+        await JsonSerializer.SerializeAsync(stream, document, JsonOptions, cancellationToken);
     }
 
     private static RecentWorkspacesDocumentDto CreateEmptyDocument()
@@ -151,8 +136,7 @@ public sealed class JsonRecentWorkspacesService : IRecentWorkspacesService
         return new RecentWorkspacesDocumentDto(CurrentSchemaVersion, []);
     }
 
-    private static List<RecentWorkspaceEntryDto> NormalizeEntries(
-        IEnumerable<RecentWorkspaceEntryDto>? entries)
+    private static List<RecentWorkspaceEntryDto> NormalizeEntries(IEnumerable<RecentWorkspaceEntryDto>? entries)
     {
         Dictionary<string, RecentWorkspaceEntryDto> byPath = new(StringComparer.OrdinalIgnoreCase);
 
@@ -178,9 +162,7 @@ public sealed class JsonRecentWorkspacesService : IRecentWorkspacesService
 
         return
         [
-            .. byPath.Values
-                .OrderByDescending(x => x.LastUsedAtUtc)
-                .Take(MaxEntries)
+            .. byPath.Values.OrderByDescending(x => x.LastUsedAtUtc).Take(MaxEntries)
         ];
     }
 
@@ -193,10 +175,7 @@ public sealed class JsonRecentWorkspacesService : IRecentWorkspacesService
         {
             return Path.GetFullPath(path.Trim());
         }
-        catch (Exception ex) when (
-            ex is ArgumentException ||
-            ex is NotSupportedException ||
-            ex is PathTooLongException)
+        catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException || ex is PathTooLongException)
         {
             throw new ArgumentException("Workspace file path is invalid.", paramName, ex);
         }

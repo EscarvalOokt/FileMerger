@@ -21,8 +21,7 @@ public sealed class MergeSourceItemViewModelTests
     [Fact]
     public void ExclusionSummary_Should_Show_Singular_For_One_Enabled_Exclusion()
     {
-        MergeSourceItemViewModel source = CreateSource(
-            CreateExclusion("bin", isEnabled: true));
+        MergeSourceItemViewModel source = CreateSource(CreateExclusion("bin", isEnabled: true));
 
         Assert.Equal(1, source.ExclusionCount);
         Assert.Equal(1, source.EnabledExclusionCount);
@@ -34,8 +33,7 @@ public sealed class MergeSourceItemViewModelTests
     [Fact]
     public void ExclusionSummary_Should_Show_Disabled_Singular_For_One_Disabled_Exclusion()
     {
-        MergeSourceItemViewModel source = CreateSource(
-            CreateExclusion("bin", isEnabled: false));
+        MergeSourceItemViewModel source = CreateSource(CreateExclusion("bin", isEnabled: false));
 
         Assert.Equal(1, source.ExclusionCount);
         Assert.Equal(0, source.EnabledExclusionCount);
@@ -152,15 +150,10 @@ public sealed class MergeSourceItemViewModelTests
         Assert.Equal("No exclusions", source.ExclusionSummary);
     }
 
-    private static MergeSourceItemViewModel CreateSource(
-        params MergeSourceExclusionItemViewModel[] exclusions)
+    private static MergeSourceItemViewModel CreateSource(params MergeSourceExclusionItemViewModel[] exclusions)
     {
         var source = new MergeSourceItemViewModel(
-            new MergeSource(
-                path: @"D:\Project",
-                type: MergeSourceType.Directory,
-                isRecursive: true,
-                isEnabled: true));
+            new MergeSource(path: @"D:\Project", type: MergeSourceType.Directory, isRecursive: true, isEnabled: true));
 
         foreach (MergeSourceExclusionItemViewModel exclusion in exclusions)
             source.Exclusions.Add(exclusion);
@@ -168,9 +161,7 @@ public sealed class MergeSourceItemViewModelTests
         return source;
     }
 
-    private static MergeSourceExclusionItemViewModel CreateExclusion(
-        string relativePath,
-        bool isEnabled)
+    private static MergeSourceExclusionItemViewModel CreateExclusion(string relativePath, bool isEnabled)
     {
         return new MergeSourceExclusionItemViewModel(
             new MergeSourceExclusion(

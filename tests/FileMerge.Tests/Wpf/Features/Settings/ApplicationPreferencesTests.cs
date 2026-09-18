@@ -49,9 +49,7 @@ public sealed class ApplicationPreferencesTests
             ApplicationPreferences.DefaultPreviewDisplayCharacterLimit,
             ApplicationPreferences.MinimumCrashLogRetentionLimit - 1);
 
-        Assert.Equal(
-            ApplicationPreferences.MinimumCrashLogRetentionLimit,
-            preferences.CrashLogRetentionLimit);
+        Assert.Equal(ApplicationPreferences.MinimumCrashLogRetentionLimit, preferences.CrashLogRetentionLimit);
     }
 
     [Fact]
@@ -62,9 +60,7 @@ public sealed class ApplicationPreferencesTests
             ApplicationPreferences.DefaultPreviewDisplayCharacterLimit,
             ApplicationPreferences.MaximumCrashLogRetentionLimit + 1);
 
-        Assert.Equal(
-            ApplicationPreferences.MaximumCrashLogRetentionLimit,
-            preferences.CrashLogRetentionLimit);
+        Assert.Equal(ApplicationPreferences.MaximumCrashLogRetentionLimit, preferences.CrashLogRetentionLimit);
     }
 
     [Fact]

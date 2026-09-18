@@ -64,8 +64,7 @@ public sealed class WorkspaceTabManagerViewModelTests
     {
         WorkspaceTabManagerViewModel manager = CreateManager();
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            manager.SelectTab(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => manager.SelectTab(null!));
 
         Assert.Equal("tab", ex.ParamName);
     }
@@ -76,8 +75,7 @@ public sealed class WorkspaceTabManagerViewModelTests
         WorkspaceTabManagerViewModel manager = CreateManager();
         WorkspaceTabViewModel foreignTab = new(CreateDocument("Foreign Workspace"));
 
-        Assert.Throws<InvalidOperationException>(() =>
-            manager.SelectTab(foreignTab));
+        Assert.Throws<InvalidOperationException>(() => manager.SelectTab(foreignTab));
     }
 
     [Fact]
@@ -301,8 +299,7 @@ public sealed class WorkspaceTabManagerViewModelTests
     {
         WorkspaceTabManagerViewModel manager = CreateManager();
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            manager.CloseTab(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => manager.CloseTab(null!));
 
         Assert.Equal("tab", ex.ParamName);
     }
@@ -313,8 +310,7 @@ public sealed class WorkspaceTabManagerViewModelTests
         WorkspaceTabManagerViewModel manager = CreateManager();
         WorkspaceTabViewModel foreignTab = new(CreateDocument("Foreign Workspace"));
 
-        Assert.Throws<InvalidOperationException>(() =>
-            manager.CloseTab(foreignTab));
+        Assert.Throws<InvalidOperationException>(() => manager.CloseTab(foreignTab));
     }
 
     [Fact]
@@ -807,7 +803,7 @@ public sealed class WorkspaceTabManagerViewModelTests
         dirtyTab.Document.WorkspaceDirtyTracker.Refresh(
             WorkspaceDocumentStateSnapshotFactory.Capture(dirtyTab.Document));
 
-        lifecycle.OnSave = document => { WorkspaceDocumentTestFactory.MarkWorkspaceSaved(document); };
+        lifecycle.OnSave = WorkspaceDocumentTestFactory.MarkWorkspaceSaved;
 
         bool result = await manager.TryCloseTabAsync(dirtyTab);
 
@@ -1143,7 +1139,7 @@ public sealed class WorkspaceTabManagerViewModelTests
 
         MarkWorkspaceDirty(dirtyTab.Document);
 
-        lifecycle.OnSave = document => { WorkspaceDocumentTestFactory.MarkWorkspaceSaved(document); };
+        lifecycle.OnSave = WorkspaceDocumentTestFactory.MarkWorkspaceSaved;
 
         manager.SelectTab(activeTab);
 
@@ -1281,8 +1277,7 @@ public sealed class WorkspaceTabManagerViewModelTests
     {
         WorkspaceTabManagerViewModel manager = CreateManager();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            manager.OpenWorkspaceAsync());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => manager.OpenWorkspaceAsync());
     }
 
     [Fact]
@@ -1391,8 +1386,7 @@ public sealed class WorkspaceTabManagerViewModelTests
     {
         WorkspaceTabManagerViewModel manager = CreateManagerWithClone();
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            manager.DuplicateTab(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => manager.DuplicateTab(null!));
 
         Assert.Equal("tab", ex.ParamName);
     }
@@ -1403,8 +1397,7 @@ public sealed class WorkspaceTabManagerViewModelTests
         WorkspaceTabManagerViewModel manager = CreateManagerWithClone();
         WorkspaceTabViewModel foreignTab = new(CreateDocument("Foreign Workspace"));
 
-        Assert.Throws<InvalidOperationException>(() =>
-            manager.DuplicateTab(foreignTab));
+        Assert.Throws<InvalidOperationException>(() => manager.DuplicateTab(foreignTab));
     }
 
     [Fact]
@@ -1412,8 +1405,7 @@ public sealed class WorkspaceTabManagerViewModelTests
     {
         WorkspaceTabManagerViewModel manager = CreateManager();
 
-        Assert.Throws<InvalidOperationException>(() =>
-            manager.DuplicateActiveTab());
+        Assert.Throws<InvalidOperationException>(manager.DuplicateActiveTab);
     }
 
     [Fact]
@@ -1424,8 +1416,7 @@ public sealed class WorkspaceTabManagerViewModelTests
         WorkspaceTabViewModel tab = manager.ActiveTab;
         tab.Document.OperationStatus.IsBusy = true;
 
-        Assert.Throws<InvalidOperationException>(() =>
-            manager.DuplicateTab(tab));
+        Assert.Throws<InvalidOperationException>(() => manager.DuplicateTab(tab));
     }
 
     [Fact]
@@ -1520,8 +1511,7 @@ public sealed class WorkspaceTabManagerViewModelTests
         WorkspaceTabManagerViewModel manager = CreateManagerWithClone();
         WorkspaceTabViewModel foreignTab = new(CreateDocument("Foreign Workspace"));
 
-        Assert.Throws<InvalidOperationException>(() =>
-            manager.RenameTab(foreignTab, "Renamed Workspace"));
+        Assert.Throws<InvalidOperationException>(() => manager.RenameTab(foreignTab, "Renamed Workspace"));
     }
 
     [Fact]
@@ -1550,6 +1540,150 @@ public sealed class WorkspaceTabManagerViewModelTests
         Assert.False(manager.CanRenameTab(tab));
     }
 
+    [Fact]
+    public async Task TryPrepareForApplicationShutdownAsync_Should_Accept_Clean_Workspaces_Without_Closing_Tabs()
+    {
+        WorkspaceTabManagerViewModel manager = CreateManager();
+        manager.CreateNewTab();
+        int tabCount = manager.Tabs.Count;
+
+        bool result = await manager.TryPrepareForApplicationShutdownAsync();
+
+        Assert.True(result);
+        Assert.Equal(tabCount, manager.Tabs.Count);
+    }
+
+    [Fact]
+    public async Task TryPrepareForApplicationShutdownAsync_Should_Reject_When_Any_Tab_Is_Busy()
+    {
+        WorkspaceTabManagerViewModel manager = CreateManager();
+        WorkspaceTabViewModel busyInactiveTab = manager.ActiveTab;
+        WorkspaceTabViewModel activeTab = manager.CreateNewTab();
+        busyInactiveTab.Document.OperationStatus.IsBusy = true;
+        manager.SelectTab(activeTab);
+
+        bool result = await manager.TryPrepareForApplicationShutdownAsync();
+
+        Assert.False(result);
+        Assert.True(manager.HasBusyTabs());
+        Assert.Equal(2, manager.Tabs.Count);
+    }
+
+    [Fact]
+    public async Task TryPrepareForApplicationShutdownAsync_Should_Save_Dirty_Workspace_And_Keep_Tab_Open()
+    {
+        FakeWorkspaceDocumentFactory factory = new();
+        FakeWorkspaceDocumentLifecycleService lifecycle = new()
+        {
+            OnSave = WorkspaceDocumentTestFactory.MarkWorkspaceSaved
+        };
+        FakeUserPromptService prompts = new()
+        {
+            UnsavedChangesDecision = UnsavedChangesDecision.Save
+        };
+        WorkspaceTabManagerViewModel manager = new(factory, lifecycle, prompts);
+        WorkspaceTabViewModel tab = manager.ActiveTab;
+        MarkWorkspaceDirty(tab.Document);
+
+        bool result = await manager.TryPrepareForApplicationShutdownAsync();
+
+        Assert.True(result);
+        Assert.Single(manager.Tabs);
+        Assert.False(tab.IsWorkspaceDirty);
+        Assert.Same(tab.Document, lifecycle.LastSaveWorkspaceDocument);
+    }
+
+    [Fact]
+    public async Task TryPrepareForApplicationShutdownAsync_Should_Accept_Discard_Without_Clearing_Dirty_State()
+    {
+        FakeWorkspaceDocumentFactory factory = new();
+        FakeWorkspaceDocumentLifecycleService lifecycle = new();
+        FakeUserPromptService prompts = new()
+        {
+            UnsavedChangesDecision = UnsavedChangesDecision.Discard
+        };
+        WorkspaceTabManagerViewModel manager = new(factory, lifecycle, prompts);
+        WorkspaceTabViewModel tab = manager.ActiveTab;
+        MarkWorkspaceDirty(tab.Document);
+
+        bool result = await manager.TryPrepareForApplicationShutdownAsync();
+
+        Assert.True(result);
+        Assert.Single(manager.Tabs);
+        Assert.True(tab.IsWorkspaceDirty);
+        Assert.Null(lifecycle.LastSaveWorkspaceDocument);
+    }
+
+    [Fact]
+    public async Task TryPrepareForApplicationShutdownAsync_Should_Stop_On_Cancel()
+    {
+        FakeWorkspaceDocumentFactory factory = new();
+        FakeWorkspaceDocumentLifecycleService lifecycle = new();
+        FakeUserPromptService prompts = new()
+        {
+            UnsavedChangesDecision = UnsavedChangesDecision.Cancel
+        };
+        WorkspaceTabManagerViewModel manager = new(factory, lifecycle, prompts);
+        WorkspaceTabViewModel tab = manager.ActiveTab;
+        MarkWorkspaceDirty(tab.Document);
+
+        bool result = await manager.TryPrepareForApplicationShutdownAsync();
+
+        Assert.False(result);
+        Assert.Single(manager.Tabs);
+        Assert.True(tab.IsWorkspaceDirty);
+    }
+
+    [Fact]
+    public async Task TryPrepareForApplicationShutdownAsync_Should_Stop_When_Save_Fails()
+    {
+        FakeWorkspaceDocumentFactory factory = new();
+        FakeWorkspaceDocumentLifecycleService lifecycle = new()
+        {
+            SaveResult = false
+        };
+        FakeUserPromptService prompts = new()
+        {
+            UnsavedChangesDecision = UnsavedChangesDecision.Save
+        };
+        WorkspaceTabManagerViewModel manager = new(factory, lifecycle, prompts);
+        WorkspaceTabViewModel tab = manager.ActiveTab;
+        MarkWorkspaceDirty(tab.Document);
+
+        bool result = await manager.TryPrepareForApplicationShutdownAsync();
+
+        Assert.False(result);
+        Assert.True(tab.IsWorkspaceDirty);
+        Assert.Same(tab.Document, lifecycle.LastSaveWorkspaceDocument);
+    }
+
+    [Fact]
+    public async Task TryPrepareForApplicationShutdownAsync_Should_Process_Multiple_Dirty_Tabs_Sequentially()
+    {
+        FakeWorkspaceDocumentFactory factory = new();
+        FakeWorkspaceDocumentLifecycleService lifecycle = new()
+        {
+            OnSave = WorkspaceDocumentTestFactory.MarkWorkspaceSaved
+        };
+        FakeUserPromptService prompts = new();
+        prompts.EnqueueUnsavedChangesDecision(UnsavedChangesDecision.Save);
+        prompts.EnqueueUnsavedChangesDecision(UnsavedChangesDecision.Discard);
+
+        WorkspaceTabManagerViewModel manager = new(factory, lifecycle, prompts);
+        WorkspaceTabViewModel first = manager.ActiveTab;
+        WorkspaceTabViewModel second = manager.CreateNewTab();
+        MarkWorkspaceDirty(first.Document);
+        MarkWorkspaceDirty(second.Document);
+
+        bool result = await manager.TryPrepareForApplicationShutdownAsync();
+
+        Assert.True(result);
+        Assert.Equal(2, manager.Tabs.Count);
+        Assert.False(first.IsWorkspaceDirty);
+        Assert.True(second.IsWorkspaceDirty);
+        Assert.Equal(2, prompts.ConfirmUnsavedChangesCalls);
+    }
+
     private static WorkspaceTabManagerViewModel CreateManager()
     {
         return new WorkspaceTabManagerViewModel(new FakeWorkspaceDocumentFactory());
@@ -1566,13 +1700,9 @@ public sealed class WorkspaceTabManagerViewModelTests
         FakeWorkspaceDocumentFactory factory = new();
         FakeWorkspaceDocumentDirtyStateService dirtyStateService = new();
 
-        WorkspaceDocumentCloneService cloneService = new(
-            factory,
-            dirtyStateService);
+        WorkspaceDocumentCloneService cloneService = new(factory, dirtyStateService);
 
-        return new WorkspaceTabManagerViewModel(
-            factory,
-            workspaceDocumentCloneService: cloneService);
+        return new WorkspaceTabManagerViewModel(factory, workspaceDocumentCloneService: cloneService);
     }
 
     private static MergeOutput CreateOutput()
@@ -1592,30 +1722,22 @@ public sealed class WorkspaceTabManagerViewModelTests
 
     private static WorkspaceDocumentViewModel CreateDocument(string sessionName)
     {
-        return WorkspaceDocumentTestFactory.CreateSavedDocument(
-            sessionName: sessionName,
-            outputPath: string.Empty);
+        return WorkspaceDocumentTestFactory.CreateSavedDocument(sessionName: sessionName, outputPath: string.Empty);
     }
 
     private sealed class FakeWorkspaceDocumentLifecycleService : IWorkspaceDocumentLifecycleService
     {
         public WorkspaceDocumentViewModel? LastSaveWorkspaceDocument { get; private set; }
 
-        public WorkspaceDocumentViewModel? LastSaveWorkspaceAsDocument { get; private set; }
-
         public WorkspaceDocumentViewModel? LastLoadWorkspaceDocument { get; private set; }
 
-        public string? LastLoadWorkspaceFromPath { get; private set; }
-
-        public bool SaveResult { get; set; } = true;
+        public bool SaveResult { get; init; } = true;
 
         public bool SaveAsResult { get; set; } = true;
 
-        public bool LoadResult { get; set; } = true;
+        public bool LoadResult { get; init; } = true;
 
         public Action<WorkspaceDocumentViewModel>? OnSave { get; set; }
-
-        public Action<WorkspaceDocumentViewModel>? OnSaveAs { get; set; }
 
         public Action<WorkspaceDocumentViewModel>? OnLoad { get; set; }
 
@@ -1635,9 +1757,6 @@ public sealed class WorkspaceTabManagerViewModelTests
             Action? stateChanged = null,
             CancellationToken cancellationToken = default)
         {
-            LastSaveWorkspaceAsDocument = document;
-            OnSaveAs?.Invoke(document);
-
             return Task.FromResult(SaveAsResult);
         }
 
@@ -1659,8 +1778,6 @@ public sealed class WorkspaceTabManagerViewModelTests
             CancellationToken cancellationToken = default)
         {
             LastLoadWorkspaceDocument = document;
-            LastLoadWorkspaceFromPath = workspaceFilePath;
-
             OnLoad?.Invoke(document);
 
             return Task.FromResult(LoadResult);

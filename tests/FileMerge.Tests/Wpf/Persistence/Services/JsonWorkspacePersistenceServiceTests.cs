@@ -22,6 +22,59 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
         Directory.CreateDirectory(_tempRoot);
     }
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempRoot))
+            Directory.Delete(_tempRoot, recursive: true);
+    }
+
+    [Fact]
+    public async Task SaveWorkspaceAsync_Should_Replace_Existing_Workspace_After_Successful_Write()
+    {
+        JsonWorkspacePersistenceService service = new();
+        string path = Path.Combine(_tempRoot, "workspace.filemerger.workspace.json");
+
+        WorkspaceDto original = CreateWorkspace(sources: [], profileDisplayName: "Original Profile");
+        WorkspaceDto replacement = CreateWorkspace(sources: [], profileDisplayName: "Replacement Profile");
+
+        await service.SaveWorkspaceAsync(original, path);
+        await service.SaveWorkspaceAsync(replacement, path);
+
+        WorkspaceDto result = await service.LoadWorkspaceAsync(path);
+
+        Assert.Equal("Replacement Profile", result.Document.ProfileDisplayName);
+        AssertNoTemporaryFiles(path);
+    }
+
+    [Fact]
+    public async Task SaveWorkspaceAsync_Should_Preserve_Existing_Workspace_When_Commit_Fails()
+    {
+        JsonWorkspacePersistenceService service = new();
+        string path = Path.Combine(_tempRoot, "workspace.filemerger.workspace.json");
+
+        WorkspaceDto original = CreateWorkspace(sources: [], profileDisplayName: "Original Profile");
+        WorkspaceDto replacement = CreateWorkspace(sources: [], profileDisplayName: "Replacement Profile");
+
+        await service.SaveWorkspaceAsync(original, path);
+        string originalJson = await File.ReadAllTextAsync(path);
+
+        {
+            await using FileStream lockStream = new(path, FileMode.Open, FileAccess.Read, FileShare.None);
+
+            Exception exception =
+                await Assert.ThrowsAnyAsync<Exception>(() => service.SaveWorkspaceAsync(replacement, path));
+
+            Assert.True(
+                exception is IOException or UnauthorizedAccessException,
+                $"Expected an I/O commit failure, but got '{exception.GetType().FullName}'.");
+        }
+
+        string persistedJson = await File.ReadAllTextAsync(path);
+
+        Assert.Equal(originalJson, persistedJson);
+        AssertNoTemporaryFiles(path);
+    }
+
     [Fact]
     public async Task SaveWorkspaceAsync_Should_Write_Document_Root()
     {
@@ -146,11 +199,13 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
         Assert.NotNull(source.Exclusions);
         Assert.Equal(2, source.Exclusions!.Count);
 
-        Assert.Contains(source.Exclusions, x =>
-            x is { RelativePath: "bin", Type: MergeSourceExclusionType.Directory, IsEnabled: true });
+        Assert.Contains(
+            source.Exclusions,
+            x => x is { RelativePath: "bin", Type: MergeSourceExclusionType.Directory, IsEnabled: true });
 
-        Assert.Contains(source.Exclusions, x =>
-            x is { RelativePath: @"Secrets\ApiKeys.cs", Type: MergeSourceExclusionType.File, IsEnabled: false });
+        Assert.Contains(
+            source.Exclusions,
+            x => x is { RelativePath: @"Secrets\ApiKeys.cs", Type: MergeSourceExclusionType.File, IsEnabled: false });
     }
 
     [Fact]
@@ -196,14 +251,40 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
         document.Remove("profileOriginEntryId");
         document.Remove("profileOriginDisplayName");
 
-        await File.WriteAllTextAsync(
-            path,
-            root.ToJsonString(CreateJsonOptions()));
+        await File.WriteAllTextAsync(path, root.ToJsonString(CreateJsonOptions()));
 
         WorkspaceDto result = await service.LoadWorkspaceAsync(path);
 
         Assert.Null(result.Document.ProfileOriginEntryId);
         Assert.Null(result.Document.ProfileOriginDisplayName);
+    }
+
+    [Fact]
+    public async Task LoadWorkspaceAsync_Should_Ignore_Legacy_RemoveUsingDirectives_And_Not_Write_It_Back()
+    {
+        var service = new JsonWorkspacePersistenceService();
+        string path = Path.Combine(_tempRoot, "legacy-using.filemerger.workspace.json");
+        string savedPath = Path.Combine(_tempRoot, "legacy-using-saved.filemerger.workspace.json");
+
+        WorkspaceDto workspace = CreateWorkspace(sources: []);
+        string json = JsonSerializer.Serialize(workspace, CreateJsonOptions());
+        var root = JsonNode.Parse(json)!;
+        root["document"]!["profile"]!.AsObject()["removeUsingDirectives"] = true;
+
+        await File.WriteAllTextAsync(path, root.ToJsonString(CreateJsonOptions()));
+
+        WorkspaceDto loaded = await service.LoadWorkspaceAsync(path);
+
+        Assert.Equal(workspace.Document.SessionName, loaded.Document.SessionName);
+        Assert.True(loaded.Document.Profile.TrimTrailingEmptyLines);
+
+        await service.SaveWorkspaceAsync(loaded, savedPath);
+
+        string savedJson = await File.ReadAllTextAsync(savedPath);
+        using var savedDocument = JsonDocument.Parse(savedJson);
+        JsonElement savedProfile = savedDocument.RootElement.GetProperty("document").GetProperty("profile");
+
+        Assert.False(savedProfile.TryGetProperty("removeUsingDirectives", out _));
     }
 
     [Fact]
@@ -399,10 +480,7 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
 
         using var document = JsonDocument.Parse(json);
 
-        JsonElement profileElement = document
-            .RootElement
-            .GetProperty("document")
-            .GetProperty("profile");
+        JsonElement profileElement = document.RootElement.GetProperty("document").GetProperty("profile");
 
         Assert.False(profileElement.GetProperty("includeBuildTimestampMetadata").GetBoolean());
         Assert.False(profileElement.GetProperty("includeSessionNameMetadata").GetBoolean());
@@ -416,12 +494,18 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
 
         JsonElement categories = profileElement.GetProperty("skippedFileCategories");
 
-        Assert.Equal(selection.IncludeDisabledFileTypes, categories.GetProperty("includeDisabledFileTypes").GetBoolean());
+        Assert.Equal(
+            selection.IncludeDisabledFileTypes,
+            categories.GetProperty("includeDisabledFileTypes").GetBoolean());
         Assert.Equal(selection.IncludeUnsupportedFiles, categories.GetProperty("includeUnsupportedFiles").GetBoolean());
-        Assert.Equal(selection.IncludeProfileExclusions, categories.GetProperty("includeProfileExclusions").GetBoolean());
+        Assert.Equal(
+            selection.IncludeProfileExclusions,
+            categories.GetProperty("includeProfileExclusions").GetBoolean());
         Assert.Equal(selection.IncludeManualExclusions, categories.GetProperty("includeManualExclusions").GetBoolean());
         Assert.Equal(selection.IncludeSourceExclusions, categories.GetProperty("includeSourceExclusions").GetBoolean());
-        Assert.Equal(selection.IncludeProcessingFailures, categories.GetProperty("includeProcessingFailures").GetBoolean());
+        Assert.Equal(
+            selection.IncludeProcessingFailures,
+            categories.GetProperty("includeProcessingFailures").GetBoolean());
         Assert.Equal(selection.IncludeOther, categories.GetProperty("includeOther").GetBoolean());
     }
 
@@ -469,9 +553,7 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
 
         WorkspaceDto workspace = CreateWorkspace(
             sources: [],
-            profile: CreateProfile(
-                includeSourceExcludedFiles: true,
-                skippedFileCategories: selection));
+            profile: CreateProfile(includeSourceExcludedFiles: true, skippedFileCategories: selection));
 
         await service.SaveWorkspaceAsync(workspace, path);
         WorkspaceDto result = await service.LoadWorkspaceAsync(path);
@@ -481,7 +563,8 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task LoadWorkspaceAsync_Should_Preserve_Legacy_Metadata_State_When_Skipped_File_Categories_Are_Missing()
+    public async Task
+        LoadWorkspaceAsync_Should_Preserve_Legacy_Metadata_State_When_Skipped_File_Categories_Are_Missing()
     {
         JsonWorkspacePersistenceService service = new();
         string path = Path.Combine(_tempRoot, "workspace.filemerger.workspace.json");
@@ -497,9 +580,7 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
         JsonObject profile = root["document"]!["profile"]!.AsObject();
         profile.Remove("skippedFileCategories");
 
-        await File.WriteAllTextAsync(
-            path,
-            root.ToJsonString(CreateJsonOptions()));
+        await File.WriteAllTextAsync(path, root.ToJsonString(CreateJsonOptions()));
 
         WorkspaceDto result = await service.LoadWorkspaceAsync(path);
 
@@ -513,22 +594,26 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
         JsonWorkspacePersistenceService service = new();
         string path = Path.Combine(_tempRoot, "workspace.filemerger.workspace.json");
 
-        WorkspaceDto workspace = CreateWorkspace(
-            sources: [],
-            profile: CreateProfile(includeSourceExcludedFiles: true));
+        WorkspaceDto workspace = CreateWorkspace(sources: [], profile: CreateProfile(includeSourceExcludedFiles: true));
 
         string json = JsonSerializer.Serialize(workspace, CreateJsonOptions());
         var root = JsonNode.Parse(json)!;
         JsonObject profile = root["document"]!["profile"]!.AsObject();
         profile.Remove("includeSourceExcludedFiles");
 
-        await File.WriteAllTextAsync(
-            path,
-            root.ToJsonString(CreateJsonOptions()));
+        await File.WriteAllTextAsync(path, root.ToJsonString(CreateJsonOptions()));
 
         WorkspaceDto result = await service.LoadWorkspaceAsync(path);
 
         Assert.False(result.Document.Profile.IncludeSourceExcludedFiles);
+    }
+
+    private static void AssertNoTemporaryFiles(string targetPath)
+    {
+        string directory = Path.GetDirectoryName(targetPath)!;
+        string pattern = $".{Path.GetFileName(targetPath)}.*.tmp";
+
+        Assert.Empty(Directory.GetFiles(directory, pattern, SearchOption.TopDirectoryOnly));
     }
 
     private static WorkspaceDto CreateWorkspace(
@@ -571,7 +656,6 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
             IncludeFileSeparators: true,
             IncludeRelativePathInSeparator: true,
             TrimTrailingEmptyLines: true,
-            RemoveUsingDirectives: false,
             FileTypes:
             [
                 new WorkspaceFileTypeDto(
@@ -619,11 +703,5 @@ public sealed class JsonWorkspacePersistenceServiceTests : IDisposable
             WriteIndented = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_tempRoot))
-            Directory.Delete(_tempRoot, recursive: true);
     }
 }

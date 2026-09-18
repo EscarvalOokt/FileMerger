@@ -35,22 +35,16 @@ public sealed class MainStateFactory : IMainStateFactory
                 .ThenBy(x => x.IsEnabled)
         ];
 
-        PreviewSessionStateSnapshot session =
-            document.SessionSettings.BuildPreviewSessionSnapshot();
+        PreviewSessionStateSnapshot session = document.SessionSettings.BuildPreviewSessionSnapshot();
 
-        PreviewProfileStateSnapshot profile =
-            document.ProfileEditor.BuildPreviewProfileSnapshot();
+        PreviewProfileStateSnapshot profile = document.ProfileEditor.BuildPreviewProfileSnapshot();
 
         var overrides = document.FilesPane.BuildOverrides()
             .GroupBy(x => PathUtility.NormalizeForComparison(x.FullPath), StringComparer.OrdinalIgnoreCase)
             .OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(x => x.Key, x => x.Last().IsIncluded, StringComparer.OrdinalIgnoreCase);
 
-        return new PreviewStateSnapshot(
-            sources,
-            session,
-            profile,
-            overrides);
+        return new PreviewStateSnapshot(sources, session, profile, overrides);
     }
 
     public string? BuildInitialOutputPath(WorkspaceDocumentViewModel document)
@@ -61,8 +55,7 @@ public sealed class MainStateFactory : IMainStateFactory
             return document.SessionSettings.OutputPath;
 
         string? firstDirectorySource = document.SourcesPane.Sources
-            .Where(x => x.Type == MergeSourceType.Directory &&
-                        !string.IsNullOrWhiteSpace(x.Path))
+            .Where(x => x.Type == MergeSourceType.Directory && !string.IsNullOrWhiteSpace(x.Path))
             .Select(x => x.Path)
             .FirstOrDefault(Directory.Exists);
 
@@ -70,8 +63,7 @@ public sealed class MainStateFactory : IMainStateFactory
             return Path.Combine(firstDirectorySource, "MergedOutput.txt");
 
         string? firstFileSource = document.SourcesPane.Sources
-            .Where(x => x.Type == MergeSourceType.File &&
-                        !string.IsNullOrWhiteSpace(x.Path))
+            .Where(x => x.Type == MergeSourceType.File && !string.IsNullOrWhiteSpace(x.Path))
             .Select(x => x.Path)
             .FirstOrDefault(File.Exists);
 

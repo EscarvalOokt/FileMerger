@@ -41,28 +41,16 @@ public sealed class SourcesPaneViewModel : ViewModelBase
         AddFolderSourceCommand = new RelayCommand(AddFolderSource);
         AddFileSourceCommand = new RelayCommand(AddFileSource);
 
-        RemoveSourceCommand = new RelayCommand(
-            RemoveSelectedSource,
-            () => SelectedSource is not null);
+        RemoveSourceCommand = new RelayCommand(RemoveSelectedSource, () => SelectedSource is not null);
 
-        RemoveSelectedSourcesCommand = new RelayCommand(
-            RemoveSelectedSources,
-            () => SelectedSources.Count > 0);
+        RemoveSelectedSourcesCommand = new RelayCommand(RemoveSelectedSources, () => SelectedSources.Count > 0);
 
-        EnableSelectedSourcesCommand = new RelayCommand(
-            EnableSelectedSources,
-            () => SelectedSources.Count > 0);
+        EnableSelectedSourcesCommand = new RelayCommand(EnableSelectedSources, () => SelectedSources.Count > 0);
 
-        DisableSelectedSourcesCommand = new RelayCommand(
-            DisableSelectedSources,
-            () => SelectedSources.Count > 0);
+        DisableSelectedSourcesCommand = new RelayCommand(DisableSelectedSources, () => SelectedSources.Count > 0);
 
-        OpenSourceDetailsCommand = new RelayCommand(
-            OpenSourceDetails,
-            () => SelectedSource is not null);
+        OpenSourceDetailsCommand = new RelayCommand(OpenSourceDetails, () => SelectedSource is not null);
     }
-
-    public event EventHandler? SourcesChanged;
 
     public ObservableCollection<MergeSourceItemViewModel> Sources { get; }
     public ObservableCollection<MergeSourceItemViewModel> SelectedSources { get; }
@@ -89,6 +77,8 @@ public sealed class SourcesPaneViewModel : ViewModelBase
     public RelayCommand EnableSelectedSourcesCommand { get; }
     public RelayCommand DisableSelectedSourcesCommand { get; }
     public RelayCommand OpenSourceDetailsCommand { get; }
+
+    public event EventHandler? SourcesChanged;
 
     public void ReplaceSelectedSources(IEnumerable<MergeSourceItemViewModel> selectedItems)
     {
@@ -128,8 +118,7 @@ public sealed class SourcesPaneViewModel : ViewModelBase
                 IsEnabled: x.IsEnabled,
                 Exclusions:
                 [
-                    .. x.Exclusions
-                        .Select(e => new MergeSourceExclusionStateSnapshot(
+                    .. x.Exclusions.Select(e => new MergeSourceExclusionStateSnapshot(
                             RelativePath: NormalizeRelativePathForComparison(e.RelativePath),
                             Type: e.Type,
                             IsEnabled: e.IsEnabled))
@@ -170,8 +159,7 @@ public sealed class SourcesPaneViewModel : ViewModelBase
         foreach (string path in selectedPaths.Where(x => !string.IsNullOrWhiteSpace(x)))
         {
             bool alreadyExists = Sources.Any(x =>
-                x.Type == MergeSourceType.Directory &&
-                PathUtility.PathEquals(x.Path, path));
+                x.Type == MergeSourceType.Directory && PathUtility.PathEquals(x.Path, path));
 
             if (alreadyExists)
                 continue;
@@ -200,9 +188,8 @@ public sealed class SourcesPaneViewModel : ViewModelBase
 
         foreach (string path in selectedPaths.Where(x => !string.IsNullOrWhiteSpace(x)))
         {
-            bool alreadyExists = Sources.Any(x =>
-                x.Type == MergeSourceType.File &&
-                PathUtility.PathEquals(x.Path, path));
+            bool alreadyExists =
+                Sources.Any(x => x.Type == MergeSourceType.File && PathUtility.PathEquals(x.Path, path));
 
             if (alreadyExists)
                 continue;
@@ -305,13 +292,12 @@ public sealed class SourcesPaneViewModel : ViewModelBase
 
     private void SourceItem_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        bool affectsSources =
-            e.PropertyName is nameof(MergeSourceItemViewModel.Path) or
-                nameof(MergeSourceItemViewModel.IsRecursive) or
-                nameof(MergeSourceItemViewModel.IsEnabled) or
-                nameof(MergeSourceItemViewModel.Exclusions) or
-                nameof(MergeSourceItemViewModel.ExclusionCount) or
-                nameof(MergeSourceItemViewModel.ExclusionSummary);
+        bool affectsSources = e.PropertyName is nameof(MergeSourceItemViewModel.Path)
+            or nameof(MergeSourceItemViewModel.IsRecursive)
+            or nameof(MergeSourceItemViewModel.IsEnabled)
+            or nameof(MergeSourceItemViewModel.Exclusions)
+            or nameof(MergeSourceItemViewModel.ExclusionCount)
+            or nameof(MergeSourceItemViewModel.ExclusionSummary);
 
         if (!affectsSources)
             return;
@@ -337,8 +323,7 @@ public sealed class SourcesPaneViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(relativePath))
             return string.Empty;
 
-        return relativePath
-            .Trim()
+        return relativePath.Trim()
             .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
             .Trim(Path.DirectorySeparatorChar);
     }

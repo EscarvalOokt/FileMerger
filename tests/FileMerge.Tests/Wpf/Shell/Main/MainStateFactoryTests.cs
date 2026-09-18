@@ -4,6 +4,8 @@ using FileMerger.Domain.Enums;
 using FileMerger.Domain.ValueObjects;
 using FileMerger.Tests.Wpf.TestSupport;
 using FileMerger.Wpf.Features.Preview.State;
+using FileMerger.Wpf.Features.Profile.ViewModels;
+using FileMerger.Wpf.Features.Sources.ViewModels;
 using FileMerger.Wpf.Features.Workspace;
 using FileMerger.Wpf.Shell.Main;
 
@@ -16,6 +18,12 @@ public sealed class MainStateFactoryTests : IDisposable
         "FileMerger.Tests",
         Guid.NewGuid().ToString("N"));
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempRoot))
+            Directory.Delete(_tempRoot, recursive: true);
+    }
+
     [Fact]
     public void BuildSession_Should_Build_Session_From_Document()
     {
@@ -26,11 +34,7 @@ public sealed class MainStateFactoryTests : IDisposable
         document.ProfileEditor.WorkingProfileName = "Document Profile";
         document.SourcesPane.LoadSources(
         [
-            new MergeSource(
-                path: @"D:\Project",
-                type: MergeSourceType.Directory,
-                isRecursive: true,
-                isEnabled: true)
+            new MergeSource(path: @"D:\Project", type: MergeSourceType.Directory, isRecursive: true, isEnabled: true)
         ]);
 
         MainStateFactory factory = new();
@@ -58,18 +62,11 @@ public sealed class MainStateFactoryTests : IDisposable
         document.ProfileEditor.WorkingProfileName = "Preview Profile";
         document.SourcesPane.LoadSources(
         [
-            new MergeSource(
-                path: @"D:\Project",
-                type: MergeSourceType.Directory,
-                isRecursive: true,
-                isEnabled: true)
+            new MergeSource(path: @"D:\Project", type: MergeSourceType.Directory, isRecursive: true, isEnabled: true)
         ]);
 
         InputFile file = CreateFile(@"D:\Project\Test.cs");
-        document.FilesPane.ApplyFiles(
-            automaticFiles: [file],
-            currentFiles: [file],
-            appliedInclusionState: null);
+        document.FilesPane.ApplyFiles(automaticFiles: [file], currentFiles: [file], appliedInclusionState: null);
 
         document.FilesPane.Files.Single().IsIncluded = false;
 
@@ -83,8 +80,7 @@ public sealed class MainStateFactoryTests : IDisposable
         Assert.Single(snapshot.Sources);
         Assert.Equal("Preview Profile", document.ProfileEditor.WorkingProfileName);
 
-        KeyValuePair<string, bool> onlyOverride =
-            Assert.Single(snapshot.FileInclusionOverrides);
+        KeyValuePair<string, bool> onlyOverride = Assert.Single(snapshot.FileInclusionOverrides);
 
         Assert.EndsWith(@"D:\Project\Test.cs", onlyOverride.Key, StringComparison.OrdinalIgnoreCase);
         Assert.False(onlyOverride.Value);
@@ -117,11 +113,9 @@ public sealed class MainStateFactoryTests : IDisposable
         PreviewStateSnapshot firstSnapshot = factory.BuildPreviewState(firstDocument);
         PreviewStateSnapshot secondSnapshot = factory.BuildPreviewState(secondDocument);
 
-        KeyValuePair<string, bool> firstOverride =
-            Assert.Single(firstSnapshot.FileInclusionOverrides);
+        KeyValuePair<string, bool> firstOverride = Assert.Single(firstSnapshot.FileInclusionOverrides);
 
-        KeyValuePair<string, bool> secondOverride =
-            Assert.Single(secondSnapshot.FileInclusionOverrides);
+        KeyValuePair<string, bool> secondOverride = Assert.Single(secondSnapshot.FileInclusionOverrides);
 
         Assert.EndsWith(@"D:\First\First.cs", firstOverride.Key, StringComparison.OrdinalIgnoreCase);
         Assert.False(firstOverride.Value);
@@ -138,9 +132,7 @@ public sealed class MainStateFactoryTests : IDisposable
         document.SessionSettings.OutputPath = @"D:\Output\explicit.txt";
         document.SourcesPane.LoadSources(
         [
-            new MergeSource(
-                path: @"D:\Project",
-                type: MergeSourceType.Directory)
+            new MergeSource(path: @"D:\Project", type: MergeSourceType.Directory)
         ]);
 
         MainStateFactory factory = new();
@@ -162,18 +154,14 @@ public sealed class MainStateFactoryTests : IDisposable
         document.SessionSettings.OutputPath = string.Empty;
         document.SourcesPane.LoadSources(
         [
-            new MergeSource(
-                path: sourceDirectory,
-                type: MergeSourceType.Directory)
+            new MergeSource(path: sourceDirectory, type: MergeSourceType.Directory)
         ]);
 
         MainStateFactory factory = new();
 
         string? result = factory.BuildInitialOutputPath(document);
 
-        Assert.Equal(
-            Path.Combine(sourceDirectory, "MergedOutput.txt"),
-            result);
+        Assert.Equal(Path.Combine(sourceDirectory, "MergedOutput.txt"), result);
     }
 
     [Fact]
@@ -191,19 +179,14 @@ public sealed class MainStateFactoryTests : IDisposable
         document.SessionSettings.OutputPath = string.Empty;
         document.SourcesPane.LoadSources(
         [
-            new MergeSource(
-                path: sourceFile,
-                type: MergeSourceType.File,
-                isRecursive: false)
+            new MergeSource(path: sourceFile, type: MergeSourceType.File, isRecursive: false)
         ]);
 
         MainStateFactory factory = new();
 
         string? result = factory.BuildInitialOutputPath(document);
 
-        Assert.Equal(
-            Path.Combine(sourceDirectory, "MergedOutput.txt"),
-            result);
+        Assert.Equal(Path.Combine(sourceDirectory, "MergedOutput.txt"), result);
     }
 
     [Fact]
@@ -211,8 +194,7 @@ public sealed class MainStateFactoryTests : IDisposable
     {
         MainStateFactory factory = new();
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            factory.BuildSession(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => factory.BuildSession(null!));
 
         Assert.Equal("document", ex.ParamName);
     }
@@ -222,8 +204,7 @@ public sealed class MainStateFactoryTests : IDisposable
     {
         MainStateFactory factory = new();
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            factory.BuildPreviewState(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => factory.BuildPreviewState(null!));
 
         Assert.Equal("document", ex.ParamName);
     }
@@ -233,16 +214,95 @@ public sealed class MainStateFactoryTests : IDisposable
     {
         MainStateFactory factory = new();
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            factory.BuildInitialOutputPath(null!));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => factory.BuildInitialOutputPath(null!));
 
         Assert.Equal("document", ex.ParamName);
     }
 
-    public void Dispose()
+    [Theory]
+    [InlineData(RulePatternType.Exact, "", true)]
+    [InlineData(RulePatternType.Regex, "[", true)]
+    [InlineData(RulePatternType.Exact, "", false)]
+    public void BuildSession_Should_Reject_Invalid_Profile_And_Succeed_After_Correction(
+        RulePatternType patternType,
+        string pattern,
+        bool isEnabled)
     {
-        if (Directory.Exists(_tempRoot))
-            Directory.Delete(_tempRoot, recursive: true);
+        WorkspaceDocumentViewModel document = CreateDocumentWithFilterRule(patternType, pattern, isEnabled);
+        MainStateFactory factory = new();
+        ProfileFilterRuleItemViewModel rule = Assert.Single(document.ProfileEditor.FilterRules);
+        WorkspaceFileFilterRuleDto originalRule = rule.ToDto();
+        PreviewSessionStateSnapshot sessionSettings = document.SessionSettings.BuildPreviewSessionSnapshot();
+        MergeSourceItemViewModel source = Assert.Single(document.SourcesPane.Sources);
+
+        InvalidOperationException exception =
+            Assert.Throws<InvalidOperationException>(() => factory.BuildSession(document));
+
+        Assert.Equal(document.ProfileEditor.DraftValidationMessage, exception.Message);
+        Assert.Same(rule, Assert.Single(document.ProfileEditor.FilterRules));
+        Assert.Equal(originalRule, rule.ToDto());
+        Assert.Equal(sessionSettings, document.SessionSettings.BuildPreviewSessionSnapshot());
+        Assert.Same(source, Assert.Single(document.SourcesPane.Sources));
+        Assert.Null(document.LastOutput);
+        Assert.False(document.AppliedPreviewFileStateStore.HasAppliedState);
+
+        rule.Pattern = "bin";
+
+        MergeSession session = factory.BuildSession(document);
+        FileFilterRule runtimeRule = Assert.Single(session.Profile.FilterRules);
+
+        Assert.Equal("bin", runtimeRule.Pattern);
+        Assert.Equal(patternType, runtimeRule.PatternType);
+        Assert.Equal(isEnabled, runtimeRule.IsEnabled);
+        Assert.Equal(document.SessionSettings.OutputPath, session.OutputTarget.Path);
+        Assert.Equal(source.Path, Assert.Single(session.Sources).Path);
+    }
+
+    [Theory]
+    [InlineData(RulePatternType.Exact, "")]
+    [InlineData(RulePatternType.Regex, "[")]
+    public void BuildPreviewState_Should_Preserve_Invalid_Profile_Without_Building_A_Runtime_Session(
+        RulePatternType patternType,
+        string pattern)
+    {
+        WorkspaceDocumentViewModel document = CreateDocumentWithFilterRule(patternType, pattern, isEnabled: true);
+        MainStateFactory factory = new();
+
+        PreviewStateSnapshot snapshot = factory.BuildPreviewState(document);
+
+        PreviewFileFilterRuleStateSnapshot rule = Assert.Single(snapshot.Profile.FilterRules);
+        Assert.Equal(pattern, rule.Pattern);
+        Assert.Equal(patternType, rule.PatternType);
+        Assert.Equal(document.SessionSettings.OutputPath, snapshot.Session.OutputPath);
+        Assert.Single(snapshot.Sources);
+        Assert.False(document.ProfileEditor.CanUseProfile);
+        Assert.Equal(pattern, Assert.Single(document.ProfileEditor.FilterRules).Pattern);
+        Assert.Throws<InvalidOperationException>(() => factory.BuildSession(document));
+    }
+
+    private static WorkspaceDocumentViewModel CreateDocumentWithFilterRule(
+        RulePatternType patternType,
+        string pattern,
+        bool isEnabled)
+    {
+        WorkspaceDocumentViewModel document = WorkspaceDocumentTestFactory.CreateDocument();
+        document.SourcesPane.LoadSources(
+        [
+            new MergeSource(path: @"D:\Project", type: MergeSourceType.Directory)
+        ]);
+        document.ProfileEditor.FilterRules.Clear();
+        document.ProfileEditor.FilterRules.Add(
+            new(
+                new WorkspaceFileFilterRuleDto(
+                    Mode: FilterMode.Exclude,
+                    Target: FilterTarget.DirectorySegment,
+                    PatternType: patternType,
+                    Pattern: pattern,
+                    IsEnabled: isEnabled,
+                    Description: "Exclude build output",
+                    IsUserEditable: true)));
+
+        return document;
     }
 
     private static WorkspaceDocumentViewModel CreateDocument()

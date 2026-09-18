@@ -36,12 +36,7 @@ public sealed class MergeStatisticsTests
         string expectedParamName)
     {
         ArgumentOutOfRangeException ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            new MergeStatistics(
-                filesScanned,
-                filesIncluded,
-                filesSkipped,
-                totalCharacters,
-                TimeSpan.Zero));
+            new MergeStatistics(filesScanned, filesIncluded, filesSkipped, totalCharacters, TimeSpan.Zero));
 
         Assert.Equal(expectedParamName, ex.ParamName);
     }

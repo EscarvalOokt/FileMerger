@@ -9,11 +9,17 @@ public class GuardedWindow : Window
     private bool _closeConfirmed;
     private bool _isCloseGuardRunning;
 
-    public GuardedWindow()
+    protected GuardedWindow()
     {
         Closing += GuardedWindow_Closing;
     }
 
+    public void ApproveClose()
+    {
+        _closeConfirmed = true;
+    }
+
+    // ReSharper disable once AsyncVoidEventHandlerMethod
     private async void GuardedWindow_Closing(object? sender, CancelEventArgs e)
     {
         if (_closeConfirmed)

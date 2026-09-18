@@ -8,13 +8,13 @@ namespace FileMerger.Wpf.Features.Validation.ViewModels;
 
 public sealed class ValidationPaneViewModel : ViewModelBase
 {
-    private int _infoCount;
-    private int _warningCount;
-    private int _errorCount;
-    private bool _isDetailsExpanded;
-    private StatusSeverity _highestStatusSeverity = StatusSeverity.None;
-    private string _summaryText = "No validation issues.";
     private string _counterSummaryText = "Errors 0 · Warnings 0 · Info 0";
+    private int _errorCount;
+    private StatusSeverity _highestStatusSeverity = StatusSeverity.None;
+    private int _infoCount;
+    private bool _isDetailsExpanded;
+    private string _summaryText = "No validation issues.";
+    private int _warningCount;
 
     public ObservableCollection<ValidationIssueItemViewModel> Issues { get; } = [];
 
@@ -57,9 +57,7 @@ public sealed class ValidationPaneViewModel : ViewModelBase
         }
     }
 
-    public string DetailsToggleText => IsDetailsExpanded
-        ? "Hide details"
-        : "Show details";
+    public string DetailsToggleText => IsDetailsExpanded ? "Hide details" : "Show details";
 
     public StatusSeverity HighestStatusSeverity
     {
@@ -103,11 +101,9 @@ public sealed class ValidationPaneViewModel : ViewModelBase
         WarningCount = Issues.Count(x => x.SeverityValue == ValidationSeverity.Warning);
         ErrorCount = Issues.Count(x => x.SeverityValue == ValidationSeverity.Error);
 
-        HighestStatusSeverity =
-            ErrorCount > 0 ? StatusSeverity.Error :
+        HighestStatusSeverity = ErrorCount > 0 ? StatusSeverity.Error :
             WarningCount > 0 ? StatusSeverity.Warning :
-            InfoCount > 0 ? StatusSeverity.Info :
-            StatusSeverity.None;
+            InfoCount > 0 ? StatusSeverity.Info : StatusSeverity.None;
 
         SummaryText = BuildSummaryText();
         CounterSummaryText = BuildCounterSummaryText();

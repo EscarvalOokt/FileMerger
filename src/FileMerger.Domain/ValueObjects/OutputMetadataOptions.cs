@@ -14,6 +14,5 @@ public sealed record OutputMetadataOptions(
     public static OutputMetadataOptions Default { get; } = new();
 
     public SkippedFileCategorySelection EffectiveSkippedFileCategories =>
-        SkippedFileCategories ??
-        SkippedFileCategorySelection.ForCurrentBehavior(IncludeSourceExcludedFiles);
+        SkippedFileCategories ?? SkippedFileCategorySelection.ForCurrentBehavior(IncludeSourceExcludedFiles);
 }

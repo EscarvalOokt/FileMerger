@@ -15,8 +15,8 @@ public sealed class FakeWorkspaceDocumentFactory : IWorkspaceDocumentFactory
     {
         _createdCount++;
 
-        WorkspaceDocumentViewModel document = CreateDocument?.Invoke(_createdCount)
-                                              ?? WorkspaceDocumentTestFactory.CreateSavedDocument(
+        WorkspaceDocumentViewModel document = CreateDocument?.Invoke(_createdCount) ??
+                                              WorkspaceDocumentTestFactory.CreateSavedDocument(
                                                   sessionName: $"Workspace {_createdCount}",
                                                   outputPath: string.Empty);
 

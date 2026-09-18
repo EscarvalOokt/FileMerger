@@ -39,9 +39,7 @@ public sealed class CurrentProfileCardViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(profile);
 
-        ProfileName = string.IsNullOrWhiteSpace(profileName)
-            ? "Profile"
-            : profileName.Trim();
+        ProfileName = string.IsNullOrWhiteSpace(profileName) ? "Profile" : profileName.Trim();
 
         ProfileEntryId = NormalizeOptional(profileEntryId);
         ProfileOriginEntryId = NormalizeOptional(profileOriginEntryId);
@@ -59,18 +57,13 @@ public sealed class CurrentProfileCardViewModel : ViewModelBase
 
     private static string? NormalizeOptional(string? value)
     {
-        return string.IsNullOrWhiteSpace(value)
-            ? null
-            : value.Trim();
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }
 
 internal static class ProfileSourceTextFormatter
 {
-    public static string Format(
-        string? profileEntryId,
-        string? profileOriginEntryId,
-        string? profileOriginDisplayName)
+    public static string Format(string? profileEntryId, string? profileOriginEntryId, string? profileOriginDisplayName)
     {
         if (!string.IsNullOrWhiteSpace(profileEntryId))
             return "From profile library";

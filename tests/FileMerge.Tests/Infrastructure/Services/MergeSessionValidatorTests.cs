@@ -10,8 +10,8 @@ namespace FileMerger.Tests.Infrastructure.Services;
 
 public sealed class MergeSessionValidatorTests : IDisposable
 {
-    private readonly string _tempRoot;
     private readonly string _outputRoot;
+    private readonly string _tempRoot;
 
     public MergeSessionValidatorTests()
     {
@@ -28,6 +28,21 @@ public sealed class MergeSessionValidatorTests : IDisposable
         Directory.CreateDirectory(_outputRoot);
 
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            if (Directory.Exists(_tempRoot))
+            {
+                Directory.Delete(_tempRoot, recursive: true);
+            }
+        }
+        catch
+        {
+            // Best-effort cleanup for tests.
+        }
     }
 
     [Fact]
@@ -65,9 +80,7 @@ public sealed class MergeSessionValidatorTests : IDisposable
 
         IReadOnlyCollection<ValidationIssue> result = validator.Validate(session);
 
-        Assert.Contains(result, x =>
-            x.Severity == ValidationSeverity.Error &&
-            x.Code == "session.sources.empty");
+        Assert.Contains(result, x => x is { Severity: ValidationSeverity.Error, Code: "session.sources.empty" });
     }
 
     [Fact]
@@ -82,7 +95,6 @@ public sealed class MergeSessionValidatorTests : IDisposable
         var profile = new MergeProfile(
             name: "No types",
             generalOptions: new GeneralMergeOptions(),
-            csOptions: new CsMergeOptions(),
             fileTypes: disabledFileTypes);
 
         var session = new MergeSession(
@@ -94,9 +106,7 @@ public sealed class MergeSessionValidatorTests : IDisposable
 
         IReadOnlyCollection<ValidationIssue> result = validator.Validate(session);
 
-        Assert.Contains(result, x =>
-            x.Severity == ValidationSeverity.Error &&
-            x.Code == "profile.fileTypes.empty");
+        Assert.Contains(result, x => x is { Severity: ValidationSeverity.Error, Code: "profile.fileTypes.empty" });
     }
 
     [Fact]
@@ -118,9 +128,7 @@ public sealed class MergeSessionValidatorTests : IDisposable
 
         IReadOnlyCollection<ValidationIssue> result = validator.Validate(session);
 
-        Assert.Contains(result, x =>
-            x.Severity == ValidationSeverity.Error &&
-            x.Code == "source.directory.notFound");
+        Assert.Contains(result, x => x is { Severity: ValidationSeverity.Error, Code: "source.directory.notFound" });
     }
 
     [Fact]
@@ -142,9 +150,7 @@ public sealed class MergeSessionValidatorTests : IDisposable
 
         IReadOnlyCollection<ValidationIssue> result = validator.Validate(session);
 
-        Assert.Contains(result, x =>
-            x.Severity == ValidationSeverity.Error &&
-            x.Code == "source.file.notFound");
+        Assert.Contains(result, x => x is { Severity: ValidationSeverity.Error, Code: "source.file.notFound" });
     }
 
     [Fact]
@@ -157,10 +163,7 @@ public sealed class MergeSessionValidatorTests : IDisposable
             name: "Session 1",
             sources:
             [
-                new MergeSource(
-                    Path.Combine(_tempRoot, "DisabledSource"),
-                    MergeSourceType.Directory,
-                    isEnabled: false),
+                new MergeSource(Path.Combine(_tempRoot, "DisabledSource"), MergeSourceType.Directory, isEnabled: false),
 
                 new MergeSource(_tempRoot, MergeSourceType.Directory)
             ],
@@ -169,9 +172,10 @@ public sealed class MergeSessionValidatorTests : IDisposable
 
         IReadOnlyCollection<ValidationIssue> result = validator.Validate(session);
 
-        Assert.DoesNotContain(result, x =>
-            x.Code == "source.directory.notFound" &&
-            x.Message.Contains("DisabledSource", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            result,
+            x => x.Code == "source.directory.notFound" &&
+                 x.Message.Contains("DisabledSource", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -191,24 +195,9 @@ public sealed class MergeSessionValidatorTests : IDisposable
 
         IReadOnlyCollection<ValidationIssue> result = validator.Validate(session);
 
-        Assert.Contains(result, x =>
-            x.Severity == ValidationSeverity.Warning &&
-            x.Code == "output.insideSourceDirectory");
-    }
-
-    public void Dispose()
-    {
-        try
-        {
-            if (Directory.Exists(_tempRoot))
-            {
-                Directory.Delete(_tempRoot, recursive: true);
-            }
-        }
-        catch
-        {
-            // Best-effort cleanup for tests.
-        }
+        Assert.Contains(
+            result,
+            x => x is { Severity: ValidationSeverity.Warning, Code: "output.insideSourceDirectory" });
     }
 
     private MergeSession CreateValidSession()

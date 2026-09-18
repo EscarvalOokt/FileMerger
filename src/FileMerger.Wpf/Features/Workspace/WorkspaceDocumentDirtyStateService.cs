@@ -17,31 +17,27 @@ public sealed class WorkspaceDocumentDirtyStateService : IWorkspaceDocumentDirty
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        document.PreviewDirtyTracker.Refresh(
-            _mainStateFactory.BuildPreviewState(document));
+        document.PreviewDirtyTracker.Refresh(_mainStateFactory.BuildPreviewState(document));
     }
 
     public void MarkPreviewApplied(WorkspaceDocumentViewModel document)
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        document.PreviewDirtyTracker.MarkPreviewApplied(
-            _mainStateFactory.BuildPreviewState(document));
+        document.PreviewDirtyTracker.MarkPreviewApplied(_mainStateFactory.BuildPreviewState(document));
     }
 
     public void RefreshWorkspaceDirtyState(WorkspaceDocumentViewModel document)
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        document.WorkspaceDirtyTracker.Refresh(
-            WorkspaceDocumentStateSnapshotFactory.Capture(document));
+        document.WorkspaceDirtyTracker.Refresh(WorkspaceDocumentStateSnapshotFactory.Capture(document));
     }
 
     public void MarkWorkspaceSaved(WorkspaceDocumentViewModel document)
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        document.WorkspaceDirtyTracker.MarkWorkspaceSaved(
-            WorkspaceDocumentStateSnapshotFactory.Capture(document));
+        document.WorkspaceDirtyTracker.MarkWorkspaceSaved(WorkspaceDocumentStateSnapshotFactory.Capture(document));
     }
 }

@@ -13,8 +13,7 @@ public sealed class MergeBuilderTests
     {
         var builder = new MergeBuilder();
 
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            builder.Build(null!, [], TimeSpan.Zero));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => builder.Build(null!, [], TimeSpan.Zero));
 
         Assert.Equal("session", ex.ParamName);
     }
@@ -36,15 +35,9 @@ public sealed class MergeBuilderTests
         var builder = new MergeBuilder();
         MergeSession session = CreateSession(includeHeaderComment: false);
 
-        var sectionA = new MergeSection(
-            sourceFile: CreateFile("A.cs"),
-            content: "A",
-            order: 1);
+        var sectionA = new MergeSection(sourceFile: CreateFile("A.cs"), content: "A", order: 1);
 
-        var sectionB = new MergeSection(
-            sourceFile: CreateFile("B.cs"),
-            content: "B",
-            order: 0);
+        var sectionB = new MergeSection(sourceFile: CreateFile("B.cs"), content: "B", order: 0);
 
         MergeOutput result = builder.Build(session, [sectionA, sectionB], TimeSpan.Zero);
 
@@ -59,10 +52,7 @@ public sealed class MergeBuilderTests
         var builder = new MergeBuilder();
         MergeSession session = CreateSession(includeHeaderComment: true);
 
-        var section = new MergeSection(
-            sourceFile: CreateFile("Test.cs"),
-            content: "class Test {}",
-            order: 0);
+        var section = new MergeSection(sourceFile: CreateFile("Test.cs"), content: "class Test {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -99,13 +89,9 @@ public sealed class MergeBuilderTests
         InputFile includedFile = CreateFile("Included.cs");
         InputFile skippedFile = CreateFile("Skipped.cs").Exclude(new SkipReason("skip", "Skipped"));
 
-        MergeSession session = CreateSession(includeHeaderComment: false)
-            .WithFiles([includedFile, skippedFile]);
+        MergeSession session = CreateSession(includeHeaderComment: false).WithFiles([includedFile, skippedFile]);
 
-        var section = new MergeSection(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        var section = new MergeSection(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -123,10 +109,7 @@ public sealed class MergeBuilderTests
         var duration = TimeSpan.FromMilliseconds(123);
         MergeSession session = CreateSession(includeHeaderComment: false);
 
-        var section = new MergeSection(
-            sourceFile: CreateFile("Test.cs"),
-            content: "class Test {}",
-            order: 0);
+        var section = new MergeSection(sourceFile: CreateFile("Test.cs"), content: "class Test {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], duration);
 
@@ -145,14 +128,10 @@ public sealed class MergeBuilderTests
         MergeSession session = CreateSession(
                 includeHeaderComment: true,
                 skippedFilesMetadataMode: SkippedFilesMetadataMode.None,
-                skippedFileCategories: CreateSkippedFileCategorySelection(
-                    SkippedFileCategory.ManualExclusion))
+                skippedFileCategories: CreateSkippedFileCategorySelection(SkippedFileCategory.ManualExclusion))
             .WithFiles([includedFile, excludedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -174,10 +153,7 @@ public sealed class MergeBuilderTests
                 skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple)
             .WithFiles([includedFile, excludedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -201,10 +177,7 @@ public sealed class MergeBuilderTests
                 skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed)
             .WithFiles([includedFile, excludedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -221,25 +194,23 @@ public sealed class MergeBuilderTests
 
         InputFile includedFile = CreateFile("Included.cs");
         InputFile excludedFile = CreateFile("Generated/View.g.cs")
-            .Exclude(new SkipReason(
-                code: "filter.rule.exclude",
-                description: "Exclude generated files",
-                ruleDetails: new SkipRuleDetails(
-                    mode: FilterMode.Exclude,
-                    target: FilterTarget.FileName,
-                    patternType: RulePatternType.Wildcard,
-                    pattern: "*.g.cs",
-                    description: "Exclude generated files")));
+            .Exclude(
+                new SkipReason(
+                    code: "filter.rule.exclude",
+                    description: "Exclude generated files",
+                    ruleDetails: new SkipRuleDetails(
+                        mode: FilterMode.Exclude,
+                        target: FilterTarget.FileName,
+                        patternType: RulePatternType.Wildcard,
+                        pattern: "*.g.cs",
+                        description: "Exclude generated files")));
 
         MergeSession session = CreateSession(
                 includeHeaderComment: true,
                 skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed)
             .WithFiles([includedFile, excludedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -262,10 +233,7 @@ public sealed class MergeBuilderTests
                 skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple)
             .WithFiles([includedFile, excludedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -285,10 +253,7 @@ public sealed class MergeBuilderTests
                 skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple)
             .WithFiles([includedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -311,10 +276,7 @@ public sealed class MergeBuilderTests
                 skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple)
             .WithFiles([includedFile, excludedB, excludedA]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -353,8 +315,7 @@ public sealed class MergeBuilderTests
     {
         MergeBuilder builder = new();
 
-        InputFile skippedFile = CreateFile(relativePath)
-            .Exclude(new SkipReason(reasonCode, "Skipped for test."));
+        InputFile skippedFile = CreateFile(relativePath).Exclude(new SkipReason(reasonCode, "Skipped for test."));
 
         MergeSession selectedSession = CreateSession(
                 includeHeaderComment: true,
@@ -362,10 +323,7 @@ public sealed class MergeBuilderTests
                 skippedFileCategories: CreateSkippedFileCategorySelection(category))
             .WithFiles([skippedFile]);
 
-        MergeOutput selectedResult = builder.Build(
-            selectedSession,
-            [],
-            TimeSpan.Zero);
+        MergeOutput selectedResult = builder.Build(selectedSession, [], TimeSpan.Zero);
 
         Assert.Contains($"// - {relativePath}", selectedResult.Content);
         Assert.Contains($"//   Reason: {reasonCode} — Skipped for test.", selectedResult.Content);
@@ -377,10 +335,7 @@ public sealed class MergeBuilderTests
                 skippedFileCategories: CreateSkippedFileCategorySelection())
             .WithFiles([skippedFile]);
 
-        MergeOutput excludedResult = builder.Build(
-            excludedSession,
-            [],
-            TimeSpan.Zero);
+        MergeOutput excludedResult = builder.Build(excludedSession, [], TimeSpan.Zero);
 
         Assert.Contains("// Skipped files: none", excludedResult.Content);
         Assert.DoesNotContain($"// - {relativePath}", excludedResult.Content);
@@ -393,29 +348,20 @@ public sealed class MergeBuilderTests
         MergeBuilder builder = new();
 
         InputFile disabledFile = CreateFile("Disabled.json")
-            .Exclude(new SkipReason(
-                "discovery.file-type-disabled",
-                "File type is disabled by the current profile."));
+            .Exclude(new SkipReason("discovery.file-type-disabled", "File type is disabled by the current profile."));
         InputFile unsupportedFile = CreateFile("Unsupported.bin")
-            .Exclude(new SkipReason(
-                "discovery.unsupported-file-type",
-                "File type is not supported by the current profile."));
+            .Exclude(
+                new SkipReason(
+                    "discovery.unsupported-file-type",
+                    "File type is not supported by the current profile."));
         InputFile profileExcludedFile = CreateFile("ProfileExcluded.cs")
-            .Exclude(new SkipReason(
-                "filter.rule.exclude",
-                "Excluded by profile filter."));
+            .Exclude(new SkipReason("filter.rule.exclude", "Excluded by profile filter."));
         InputFile manualExcludedFile = CreateFile("ManualExcluded.cs")
-            .Exclude(new SkipReason(
-                "manual.exclude",
-                "Excluded manually by user."));
+            .Exclude(new SkipReason("manual.exclude", "Excluded manually by user."));
         InputFile processingFailedFile = CreateFile("Broken.cs")
-            .Exclude(new SkipReason(
-                "file.read.failed",
-                "Failed to read 'Broken.cs': Access denied."));
+            .Exclude(new SkipReason("file.read.failed", "Failed to read 'Broken.cs': Access denied."));
         InputFile otherFile = CreateFile("CustomSkipped.cs")
-            .Exclude(new SkipReason(
-                "custom.exclude",
-                "Excluded by a custom reason."));
+            .Exclude(new SkipReason("custom.exclude", "Excluded by a custom reason."));
         InputFile sourceExcluded = CreateSourceExcludedFile("SourceExcluded.cs");
 
         MergeSession session = CreateSession(
@@ -436,11 +382,7 @@ public sealed class MergeBuilderTests
                 otherFile
             ]);
 
-        MergeOutput result = builder.Build(
-            session,
-            [],
-            TimeSpan.Zero,
-            [sourceExcluded]);
+        MergeOutput result = builder.Build(session, [], TimeSpan.Zero, [sourceExcluded]);
 
         Assert.Equal(6, result.Statistics.FilesScanned);
         Assert.Equal(0, result.Statistics.FilesIncluded);
@@ -465,13 +407,12 @@ public sealed class MergeBuilderTests
         MergeBuilder builder = new();
 
         InputFile manualExcludedFile = CreateFile("ManualExcluded.cs")
-            .Exclude(new SkipReason(
-                "manual.exclude",
-                "Excluded manually by user."));
+            .Exclude(new SkipReason("manual.exclude", "Excluded manually by user."));
         InputFile unsupportedFile = CreateFile("Unsupported.bin")
-            .Exclude(new SkipReason(
-                "discovery.unsupported-file-type",
-                "File type is not supported by the current profile."));
+            .Exclude(
+                new SkipReason(
+                    "discovery.unsupported-file-type",
+                    "File type is not supported by the current profile."));
 
         SkippedFileCategorySelection selection = CreateSkippedFileCategorySelection(
             SkippedFileCategory.ManualExclusion);
@@ -497,9 +438,7 @@ public sealed class MergeBuilderTests
         Assert.DoesNotContain("// - Unsupported.bin", detailedResult.Content);
 
         Assert.DoesNotContain("manual.exclude", simpleResult.Content);
-        Assert.Contains(
-            "//   Reason: manual.exclude — Excluded manually by user.",
-            detailedResult.Content);
+        Assert.Contains("//   Reason: manual.exclude — Excluded manually by user.", detailedResult.Content);
     }
 
     [Fact]
@@ -517,8 +456,7 @@ public sealed class MergeBuilderTests
         MergeSession selectedSession = CreateSession(
                 includeHeaderComment: true,
                 skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed,
-                skippedFileCategories: CreateSkippedFileCategorySelection(
-                    SkippedFileCategory.Other))
+                skippedFileCategories: CreateSkippedFileCategorySelection(SkippedFileCategory.Other))
             .WithFiles([skippedWithoutReason]);
 
         MergeOutput selectedResult = builder.Build(selectedSession, [], TimeSpan.Zero);
@@ -551,20 +489,12 @@ public sealed class MergeBuilderTests
                 includeHeaderComment: true,
                 skippedFilesMetadataMode: SkippedFilesMetadataMode.Simple,
                 includeSourceExcludedFiles: false,
-                skippedFileCategories: CreateSkippedFileCategorySelection(
-                    SkippedFileCategory.SourceExclusion))
+                skippedFileCategories: CreateSkippedFileCategorySelection(SkippedFileCategory.SourceExclusion))
             .WithFiles([includedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
-        MergeOutput result = builder.Build(
-            session,
-            [section],
-            TimeSpan.Zero,
-            [sourceExcluded]);
+        MergeOutput result = builder.Build(session, [section], TimeSpan.Zero, [sourceExcluded]);
 
         Assert.Contains("// - Generated.cs", result.Content);
     }
@@ -584,16 +514,9 @@ public sealed class MergeBuilderTests
                 skippedFileCategories: CreateSkippedFileCategorySelection())
             .WithFiles([includedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
-        MergeOutput result = builder.Build(
-            session,
-            [section],
-            TimeSpan.Zero,
-            [sourceExcluded]);
+        MergeOutput result = builder.Build(session, [section], TimeSpan.Zero, [sourceExcluded]);
 
         Assert.Contains("// Skipped files: none", result.Content);
         Assert.DoesNotContain("Generated.cs", result.Content);
@@ -613,16 +536,9 @@ public sealed class MergeBuilderTests
                 includeSourceExcludedFiles: false)
             .WithFiles([includedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
-        MergeOutput result = builder.Build(
-            session,
-            [section],
-            TimeSpan.Zero,
-            [sourceExcluded]);
+        MergeOutput result = builder.Build(session, [section], TimeSpan.Zero, [sourceExcluded]);
 
         Assert.Contains("// Skipped files: none", result.Content);
         Assert.DoesNotContain("Generated.cs", result.Content);
@@ -642,16 +558,9 @@ public sealed class MergeBuilderTests
                 includeSourceExcludedFiles: true)
             .WithFiles([includedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
-        MergeOutput result = builder.Build(
-            session,
-            [section],
-            TimeSpan.Zero,
-            [sourceExcluded]);
+        MergeOutput result = builder.Build(session, [section], TimeSpan.Zero, [sourceExcluded]);
 
         Assert.DoesNotContain("// Skipped files:", result.Content);
         Assert.DoesNotContain("Generated.cs", result.Content);
@@ -671,16 +580,9 @@ public sealed class MergeBuilderTests
                 includeSourceExcludedFiles: true)
             .WithFiles([includedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
-        MergeOutput result = builder.Build(
-            session,
-            [section],
-            TimeSpan.Zero,
-            [sourceExcluded]);
+        MergeOutput result = builder.Build(session, [section], TimeSpan.Zero, [sourceExcluded]);
 
         Assert.Contains("// - Generated.cs", result.Content);
         Assert.DoesNotContain("source.exclude", result.Content);
@@ -700,21 +602,12 @@ public sealed class MergeBuilderTests
                 includeSourceExcludedFiles: true)
             .WithFiles([includedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
-        MergeOutput result = builder.Build(
-            session,
-            [section],
-            TimeSpan.Zero,
-            [sourceExcluded]);
+        MergeOutput result = builder.Build(session, [section], TimeSpan.Zero, [sourceExcluded]);
 
         Assert.Contains("// - Generated.cs", result.Content);
-        Assert.Contains(
-            "//   Reason: source.exclude — Excluded by a source-specific exclusion.",
-            result.Content);
+        Assert.Contains("//   Reason: source.exclude — Excluded by a source-specific exclusion.", result.Content);
     }
 
     [Fact]
@@ -733,16 +626,9 @@ public sealed class MergeBuilderTests
                 includeSourceExcludedFiles: true)
             .WithFiles([includedFile, regularSkipped]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
-        MergeOutput result = builder.Build(
-            session,
-            [section],
-            TimeSpan.Zero,
-            [sourceExcluded]);
+        MergeOutput result = builder.Build(session, [section], TimeSpan.Zero, [sourceExcluded]);
 
         int indexA = result.Content.IndexOf("// - A.cs", StringComparison.Ordinal);
         int indexB = result.Content.IndexOf("// - B.cs", StringComparison.Ordinal);
@@ -768,16 +654,9 @@ public sealed class MergeBuilderTests
                 includeSourceExcludedFiles: true)
             .WithFiles([includedFile, regularSkipped]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
-        MergeOutput result = builder.Build(
-            session,
-            [section],
-            TimeSpan.Zero,
-            [sourceExcluded]);
+        MergeOutput result = builder.Build(session, [section], TimeSpan.Zero, [sourceExcluded]);
 
         Assert.Equal(1, CountOccurrences(result.Content, "// - Shared.cs"));
         Assert.Contains("manual.exclude", result.Content);
@@ -790,29 +669,20 @@ public sealed class MergeBuilderTests
         MergeBuilder builder = new();
 
         InputFile regularSkipped = CreateFile("Shared.cs")
-            .Exclude(new SkipReason(
-                "manual.exclude",
-                "Excluded manually by user."));
+            .Exclude(new SkipReason("manual.exclude", "Excluded manually by user."));
         InputFile sourceExcluded = CreateSourceExcludedFile("Shared.cs");
 
         MergeSession session = CreateSession(
                 includeHeaderComment: true,
                 skippedFilesMetadataMode: SkippedFilesMetadataMode.Detailed,
                 includeSourceExcludedFiles: false,
-                skippedFileCategories: CreateSkippedFileCategorySelection(
-                    SkippedFileCategory.SourceExclusion))
+                skippedFileCategories: CreateSkippedFileCategorySelection(SkippedFileCategory.SourceExclusion))
             .WithFiles([regularSkipped]);
 
-        MergeOutput result = builder.Build(
-            session,
-            [],
-            TimeSpan.Zero,
-            [sourceExcluded]);
+        MergeOutput result = builder.Build(session, [], TimeSpan.Zero, [sourceExcluded]);
 
         Assert.Equal(1, CountOccurrences(result.Content, "// - Shared.cs"));
-        Assert.Contains(
-            "//   Reason: source.exclude — Excluded by a source-specific exclusion.",
-            result.Content);
+        Assert.Contains("//   Reason: source.exclude — Excluded by a source-specific exclusion.", result.Content);
         Assert.DoesNotContain("manual.exclude", result.Content);
         Assert.Equal(1, result.Statistics.FilesSkipped);
     }
@@ -824,15 +694,10 @@ public sealed class MergeBuilderTests
 
         InputFile includedFile = CreateFile("Included.cs");
 
-        MergeSession session = CreateSession(
-                includeHeaderComment: true,
-                includeBuildTimestampMetadata: false)
+        MergeSession session = CreateSession(includeHeaderComment: true, includeBuildTimestampMetadata: false)
             .WithFiles([includedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -846,15 +711,10 @@ public sealed class MergeBuilderTests
 
         InputFile includedFile = CreateFile("Included.cs");
 
-        MergeSession session = CreateSession(
-                includeHeaderComment: true,
-                includeSessionNameMetadata: false)
+        MergeSession session = CreateSession(includeHeaderComment: true, includeSessionNameMetadata: false)
             .WithFiles([includedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -868,15 +728,10 @@ public sealed class MergeBuilderTests
 
         InputFile includedFile = CreateFile("Included.cs");
 
-        MergeSession session = CreateSession(
-                includeHeaderComment: true,
-                includeOutputPathMetadata: false)
+        MergeSession session = CreateSession(includeHeaderComment: true, includeOutputPathMetadata: false)
             .WithFiles([includedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -892,15 +747,10 @@ public sealed class MergeBuilderTests
         InputFile skippedFile = CreateFile("Skipped.cs")
             .Exclude(new SkipReason("manual.exclude", "Excluded manually by user."));
 
-        MergeSession session = CreateSession(
-                includeHeaderComment: true,
-                includeFileSummaryMetadata: false)
+        MergeSession session = CreateSession(includeHeaderComment: true, includeFileSummaryMetadata: false)
             .WithFiles([includedFile, skippedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -923,10 +773,7 @@ public sealed class MergeBuilderTests
                 includeFileSummaryMetadata: false)
             .WithFiles([includedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -946,15 +793,10 @@ public sealed class MergeBuilderTests
 
         InputFile includedFile = CreateFile("Included.cs");
 
-        MergeSession session = CreateSession(
-                includeHeaderComment: true,
-                includeBuildTimestampMetadata: true)
+        MergeSession session = CreateSession(includeHeaderComment: true, includeBuildTimestampMetadata: true)
             .WithFiles([includedFile]);
 
-        MergeSection section = new(
-            sourceFile: includedFile,
-            content: "class Included {}",
-            order: 0);
+        MergeSection section = new(sourceFile: includedFile, content: "class Included {}", order: 0);
 
         MergeOutput result = builder.Build(session, [section], TimeSpan.Zero);
 
@@ -980,9 +822,7 @@ public sealed class MergeBuilderTests
             extension: ".json",
             kind: FileKind.Json,
             isIncluded: false,
-            skipReason: new SkipReason(
-                "discovery.file-type-disabled",
-                "File type is disabled by the current profile."),
+            skipReason: new SkipReason("discovery.file-type-disabled", "File type is disabled by the current profile."),
             isMergeCandidate: false);
         var unsupportedFile = new InputFile(
             fullPath: @"D:\Project\Unsupported.bin",
@@ -995,17 +835,11 @@ public sealed class MergeBuilderTests
                 "File type is not supported by the current profile."),
             isMergeCandidate: false);
         InputFile profileExcludedFile = CreateFile("ProfileExcluded.cs")
-            .Exclude(new SkipReason(
-                "filter.rule.exclude",
-                "Excluded by profile filter."));
+            .Exclude(new SkipReason("filter.rule.exclude", "Excluded by profile filter."));
         InputFile manualExcludedFile = CreateFile("ManualExcluded.cs")
-            .Exclude(new SkipReason(
-                "manual.exclude",
-                "Excluded manually by user."));
+            .Exclude(new SkipReason("manual.exclude", "Excluded manually by user."));
         InputFile processingFailedFile = CreateFile("Broken.cs")
-            .Exclude(new SkipReason(
-                "file.read.failed",
-                "Failed to read 'Broken.cs': Access denied."));
+            .Exclude(new SkipReason("file.read.failed", "Failed to read 'Broken.cs': Access denied."));
 
         MergeSession session = CreateSession(
                 includeHeaderComment: true,
@@ -1023,14 +857,8 @@ public sealed class MergeBuilderTests
 
         MergeSection[] sections =
         [
-            new MergeSection(
-                sourceFile: includedFile,
-                content: "class Included {}",
-                order: 0),
-            new MergeSection(
-                sourceFile: fallbackFile,
-                content: "fallback text",
-                order: 1)
+            new MergeSection(sourceFile: includedFile, content: "class Included {}", order: 0),
+            new MergeSection(sourceFile: fallbackFile, content: "fallback text", order: 1)
         ];
 
         MergeOutput result = builder.Build(session, sections, TimeSpan.Zero);
@@ -1068,15 +896,9 @@ public sealed class MergeBuilderTests
         Assert.Contains(
             "//   Reason: discovery.unsupported-file-type — File type is not supported by the current profile.",
             result.Content);
-        Assert.Contains(
-            "//   Reason: filter.rule.exclude — Excluded by profile filter.",
-            result.Content);
-        Assert.Contains(
-            "//   Reason: manual.exclude — Excluded manually by user.",
-            result.Content);
-        Assert.Contains(
-            "//   Reason: file.read.failed — Failed to read 'Broken.cs': Access denied.",
-            result.Content);
+        Assert.Contains("//   Reason: filter.rule.exclude — Excluded by profile filter.", result.Content);
+        Assert.Contains("//   Reason: manual.exclude — Excluded manually by user.", result.Content);
+        Assert.Contains("//   Reason: file.read.failed — Failed to read 'Broken.cs': Access denied.", result.Content);
 
         Assert.Equal(5, CountOccurrences(result.Content, "// - "));
         Assert.Equal(5, CountOccurrences(result.Content, "//   Reason: "));
@@ -1106,7 +928,6 @@ public sealed class MergeBuilderTests
                     SkippedFilesMetadataMode: skippedFilesMetadataMode,
                     IncludeSourceExcludedFiles: includeSourceExcludedFiles,
                     SkippedFileCategories: skippedFileCategories)),
-            csOptions: new CsMergeOptions(),
             fileTypes:
             [
                 new FileTypeDefinition(".cs", "C# source", FileKind.CSharp)
@@ -1131,9 +952,7 @@ public sealed class MergeBuilderTests
             extension: Path.GetExtension(relativePath),
             kind: FileKind.Unknown,
             isIncluded: false,
-            skipReason: new SkipReason(
-                "source.exclude",
-                "Excluded by a source-specific exclusion."),
+            skipReason: new SkipReason("source.exclude", "Excluded by a source-specific exclusion."),
             isMergeCandidate: false);
     }
 

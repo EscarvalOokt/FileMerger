@@ -2,11 +2,9 @@ using FileMerger.Wpf.Diagnostics;
 
 namespace FileMerger.Tests.Wpf.Fakes;
 
-public sealed class FakeCrashLogMaintenanceService :
-    ICrashLogMaintenanceService
+public sealed class FakeCrashLogMaintenanceService : ICrashLogMaintenanceService
 {
-    public string DirectoryPath { get; set; } =
-        @"C:\FileMerger\CrashLogs";
+    public string DirectoryPath { get; set; } = @"C:\FileMerger\CrashLogs";
 
     public List<CrashLogFileInfo> Files { get; } = [];
 
@@ -37,28 +35,24 @@ public sealed class FakeCrashLogMaintenanceService :
     public CrashLogFileListResult GetCrashLogFiles()
     {
         GetFilesCalls++;
-        return FileListResult ??
-               CrashLogFileListResult.Success([.. Files]);
+        return FileListResult ?? CrashLogFileListResult.Success([.. Files]);
     }
 
     public CrashLogFolderOpenResult OpenCrashLogDirectory()
     {
         OpenCalls++;
-        return OpenResult ??
-               CrashLogFolderOpenResult.Success(DirectoryPath);
+        return OpenResult ?? CrashLogFolderOpenResult.Success(DirectoryPath);
     }
 
     public CrashLogCleanupResult CleanupOldCrashLogs()
     {
         CleanupOldCalls++;
-        return CleanupOldResult ??
-               CrashLogCleanupResult.From([], []);
+        return CleanupOldResult ?? CrashLogCleanupResult.From([], []);
     }
 
     public CrashLogCleanupResult ClearAllCrashLogs()
     {
         ClearAllCalls++;
-        return ClearAllResult ??
-               CrashLogCleanupResult.From([], []);
+        return ClearAllResult ?? CrashLogCleanupResult.From([], []);
     }
 }

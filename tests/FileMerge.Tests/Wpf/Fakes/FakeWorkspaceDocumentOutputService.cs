@@ -28,8 +28,7 @@ public sealed class FakeWorkspaceDocumentOutputService : IWorkspaceDocumentOutpu
         LastSaveOutputDocument = document;
         SaveOutputCalls++;
 
-        return OnSaveOutputAsync?.Invoke(document, stateChanged, cancellationToken)
-               ?? Task.CompletedTask;
+        return OnSaveOutputAsync?.Invoke(document, stateChanged, cancellationToken) ?? Task.CompletedTask;
     }
 
     public void BrowseOutputPath(WorkspaceDocumentViewModel document)

@@ -3,6 +3,7 @@
                        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                       xmlns:viewModels="clr-namespace:FileMerger.Wpf.Features.Profile.ViewModels"
                        xmlns:views="clr-namespace:FileMerger.Wpf.Features.Profile.Views"
                        xmlns:windowing="clr-namespace:Escarval.Wpf.Windowing;assembly=Escarval.Wpf.Windowing"
                        xmlns:windows="clr-namespace:FileMerger.Wpf.Shell.Windows"
@@ -11,6 +12,7 @@
                        Height="860"
                        MinWidth="1160"
                        MinHeight="700"
+                       ResizeMode="CanResize"
                        Loaded="Window_Loaded"
                        Style="{StaticResource WindowingFixedDialogWindowStyle}"
                        WindowStartupLocation="CenterOwner"
@@ -124,7 +126,6 @@
             <Setter Property="Visibility" Value="Collapsed" />
             <Setter Property="Margin" Value="{DynamicResource Gap.TopLarge}" />
             <Setter Property="Padding" Value="10,8" />
-            <Setter Property="CornerRadius" Value="{DynamicResource Radius.Medium}" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsCreatingProfileDraft}"
                              Value="True">
@@ -342,8 +343,11 @@
                                               StrokeThickness="1.6" />
 
                                         <Button.ContextMenu>
+                                            <!-- PlacementTarget is the owning Button, whose DataContext is the profile manager. -->
+                                            <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                                             <ContextMenu
                                                 DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
+                                                d:DataContext="{d:DesignInstance Type=viewModels:ProfileManagerViewModel, IsDesignTimeCreatable=False}"
                                                 Style="{StaticResource DarkContextMenuStyle}">
                                                 <MenuItem Command="{Binding StartBlankProfileDraftCommand}"
                                                           Header="Blank Profile"
@@ -357,6 +361,8 @@
                                                         <Style BasedOn="{StaticResource DarkContextMenuItemStyle}"
                                                                TargetType="{x:Type MenuItem}">
                                                             <Setter Property="Header" Value="{Binding DisplayName}" />
+                                                            <!-- The parent menu keeps the manager context; each child keeps its template item. -->
+                                                            <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                                                             <Setter Property="Command"
                                                                     Value="{Binding DataContext.StartProfileTemplateDraftCommand, RelativeSource={RelativeSource AncestorType=MenuItem}}" />
                                                             <Setter Property="CommandParameter" Value="{Binding}" />
@@ -515,7 +521,7 @@
                                          SelectionChanged="ProfilesList_SelectionChanged"
                                          Style="{StaticResource ProfileLibraryListBoxStyle}">
                                     <ListBox.ItemTemplate>
-                                        <DataTemplate>
+                                        <DataTemplate DataType="{x:Type viewModels:ProfileLibraryListItemViewModel}">
                                             <Border Margin="0,0,0,6"
                                                     Padding="8"
                                                     BorderThickness="1"
@@ -577,6 +583,7 @@
                                                                 <Setter Property="ToolTip">
                                                                     <Setter.Value>
                                                                         <ToolTip MaxWidth="420"
+                                                                                d:DataContext="{d:DesignInstance Type=viewModels:ProfileLibraryListItemViewModel, IsDesignTimeCreatable=False}"
                                                                                 Placement="Mouse">
                                                                             <TextBlock Text="{Binding Description}"
                                                                                     TextWrapping="Wrap" />
@@ -662,11 +669,19 @@
                                     <Grid Grid.Row="0"
                                           Grid.Column="2"
                                           HorizontalAlignment="Right">
-                                        <StackPanel Orientation="Horizontal"
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <StackPanel Grid.Row="0"
+                                                    Orientation="Horizontal"
                                                     Style="{StaticResource NormalProfileActionsPanelStyle}">
                                             <Button MinWidth="88"
                                                     Margin="0,0,6,0"
                                                     Command="{Binding ApplyToCurrentSessionCommand}"
+                                                    ToolTip="{Binding Editor.DraftValidationMessage}"
+                                                    ToolTipService.ShowOnDisabled="True"
                                                     Content="Apply"
                                                     Style="{StaticResource PrimaryButtonStyle}" />
                                             <Button MinWidth="88"
@@ -682,8 +697,11 @@
                                                     Content="More"
                                                     Style="{StaticResource CompactSecondaryButtonStyle}">
                                                 <Button.ContextMenu>
+                                                    <!-- PlacementTarget is the owning Button, whose DataContext is the profile manager. -->
+                                                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                                                     <ContextMenu
                                                         DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
+                                                        d:DataContext="{d:DesignInstance Type=viewModels:ProfileManagerViewModel, IsDesignTimeCreatable=False}"
                                                         Style="{StaticResource DarkContextMenuStyle}">
                                                         <MenuItem Command="{Binding DuplicateCommand}"
                                                                   Header="Duplicate"
@@ -710,7 +728,8 @@
                                             </Button>
                                         </StackPanel>
 
-                                        <StackPanel Orientation="Horizontal"
+                                        <StackPanel Grid.Row="0"
+                                                    Orientation="Horizontal"
                                                     Style="{StaticResource CreationProfileActionsPanelStyle}">
                                             <Button MinWidth="96"
                                                     Margin="0,0,6,0"
@@ -722,6 +741,16 @@
                                                     Content="Cancel"
                                                     Style="{StaticResource CompactSecondaryButtonStyle}" />
                                         </StackPanel>
+
+                                        <TextBlock Grid.Row="1"
+                                                   MaxWidth="520"
+                                                   Margin="0,6,0,0"
+                                                   HorizontalAlignment="Right"
+                                                   Foreground="{StaticResource Brush.Error}"
+                                                   Style="{StaticResource DialogHintTextStyle}"
+                                                   Text="{Binding Editor.DraftValidationMessage}"
+                                                   TextAlignment="Right"
+                                                   Visibility="{Binding Editor.HasInvalidFilterRules, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                     </Grid>
 
                                     <Grid Grid.Row="2"
@@ -769,7 +798,7 @@
                                     <Border Style="{StaticResource ProfileActiveBadgeStyle}">
                                         <TextBlock FontSize="11"
                                                    FontWeight="SemiBold"
-                                                   Text="Active" />
+                                                   Text="{Binding UsedProfileLabel}" />
                                     </Border>
 
                                     <Border Style="{StaticResource ProfileDraftBadgeStyle}">

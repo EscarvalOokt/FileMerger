@@ -11,8 +11,7 @@ public sealed class BuiltInFileTypeCatalogTests
     {
         var catalog = new BuiltInFileTypeCatalog();
 
-        string[] expected = KnownFileTypes.All
-            .Select(x => x.Extension)
+        string[] expected = KnownFileTypes.All.Select(x => x.Extension)
             .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
@@ -29,8 +28,7 @@ public sealed class BuiltInFileTypeCatalogTests
     {
         var catalog = new BuiltInFileTypeCatalog();
 
-        string[] expected = KnownFileTypes.Default
-            .Select(x => x.Extension)
+        string[] expected = KnownFileTypes.Default.Select(x => x.Extension)
             .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 

@@ -5,6 +5,7 @@ using FileMerger.Domain.Enums;
 using FileMerger.Domain.Profiles;
 using FileMerger.Domain.ValueObjects;
 using FileMerger.Wpf.Features.Preview.State;
+using FileMerger.Wpf.Features.Profile.Services;
 using FileMerger.Wpf.Features.Workspace;
 using FileMerger.Wpf.Shared.Commands;
 using FileMerger.Wpf.Shared.ViewModels;
@@ -23,15 +24,9 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     private static readonly IReadOnlyList<FileTypeGroupDefinition> _fileTypeGroupDefinitions =
     [
-        new(
-            SourceCodeGroupKey,
-            "Source code",
-            "Programming language source files."),
+        new(SourceCodeGroupKey, "Source code", "Programming language source files."),
 
-        new(
-            WebAndStylesGroupKey,
-            "Web and styles",
-            "Web markup, stylesheets, and GraphQL files."),
+        new(WebAndStylesGroupKey, "Web and styles", "Web markup, stylesheets, and GraphQL files."),
 
         new(
             DataAndConfigurationGroupKey,
@@ -48,15 +43,9 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             "Unity project files",
             "Unity scenes, assets, metadata, shaders, input actions, and editor-related files."),
 
-        new(
-            DocumentsGroupKey,
-            "Documents and plain text",
-            "Plain text and Markdown documentation files."),
+        new(DocumentsGroupKey, "Documents and plain text", "Plain text and Markdown documentation files."),
 
-        new(
-            OtherGroupKey,
-            "Other / custom",
-            "File types that are not part of the built-in grouping rules.")
+        new(OtherGroupKey, "Other / custom", "File types that are not part of the built-in grouping rules.")
     ];
 
     private static readonly HashSet<string> _sourceCodeExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -149,55 +138,62 @@ public sealed class ProfileEditorViewModel : ViewModelBase
     };
 
     private readonly IFileTypeCatalog _fileTypeCatalog;
-    private readonly ObservableCollection<FileTypeOptionViewModel> _fileTypes = [];
     private readonly ObservableCollection<ProfileFileTypeGroupViewModel> _fileTypeGroups = [];
+    private readonly ObservableCollection<FileTypeOptionViewModel> _fileTypes = [];
     private readonly ObservableCollection<ProfileFilterRuleItemViewModel> _filterRules = [];
+    private readonly IProfileFilterRulesDialogService _filterRulesDialogService;
     private readonly ObservableCollection<ProfileFilterRuleItemViewModel> _visibleFilterRules = [];
-
-    private bool _hasVisibleFileTypeGroups;
-    private bool _hasFileTypeFilterEmptyState;
-    private bool _hasVisibleFilterRules;
-    private bool _hasFilterRuleFilterEmptyState;
+    private string? _fallbackInputEncodingName = "windows-1251";
     private string _fileTypeFilterSummary = "0 of 0 file types shown";
     private string _filterRuleFilterSummary = "0 of 0 rules shown";
+    private bool _hasFileTypeFilterEmptyState;
+    private bool _hasFilterRuleFilterEmptyState;
 
-    private bool _isResettingFileTypes;
-    private ProfileFilterRuleItemViewModel? _selectedFilterRule;
-    private ProfileEditorSection _selectedSection = ProfileEditorSection.General;
-    private string _workingProfileName = "Default";
-
-    private bool _includeHeaderComment;
-    private bool _includeFileSeparators = true;
-    private bool _includeRelativePathInSeparator = true;
-    private bool _trimTrailingEmptyLines = true;
-
-    private bool _removeUsingDirectives;
-
-    private LineEndingMode _lineEndingMode = LineEndingMode.Preserve;
-    private SortMode _sortMode = SortMode.ByRelativePathAscending;
-
-    private InputEncodingMode _inputEncodingMode = InputEncodingMode.Auto;
-    private string? _preferredInputEncodingName;
-    private string? _fallbackInputEncodingName = "windows-1251";
-
-    private bool _includeUnsupportedTextFiles;
-    private long _unsupportedTextMaxFileSizeBytes = UnsupportedTextFallbackOptions.DefaultMaxFileSizeBytes;
-    private int _unsupportedTextProbeSizeBytes = UnsupportedTextFallbackOptions.DefaultProbeSizeBytes;
-    private double _unsupportedTextMaxControlCharacterRatio = UnsupportedTextFallbackOptions.DefaultMaxControlCharacterRatio;
+    private bool _hasVisibleFileTypeGroups;
+    private bool _hasVisibleFilterRules;
 
     private bool _includeBuildTimestampMetadata = true;
-    private bool _includeSessionNameMetadata = true;
-    private bool _includeOutputPathMetadata = true;
+    private bool _includeFileSeparators = true;
     private bool _includeFileSummaryMetadata = true;
-    private bool _includeSourceExcludedFiles;
-    private SkippedFilesMetadataMode _skippedFilesMetadataMode;
-    private SkippedFileCategorySelection? _skippedFileCategories;
 
-    public ProfileEditorViewModel(IFileTypeCatalog fileTypeCatalog)
+    private bool _includeHeaderComment;
+    private bool _includeOutputPathMetadata = true;
+    private bool _includeRelativePathInSeparator = true;
+    private bool _includeSessionNameMetadata = true;
+    private bool _includeSourceExcludedFiles;
+
+    private bool _includeUnsupportedTextFiles;
+
+    private InputEncodingMode _inputEncodingMode = InputEncodingMode.Auto;
+
+    private bool _isResettingFileTypes;
+
+    private LineEndingMode _lineEndingMode = LineEndingMode.Preserve;
+    private string? _preferredInputEncodingName;
+
+    private ProfileFilterRuleItemViewModel? _selectedFilterRule;
+    private ProfileEditorSection _selectedSection = ProfileEditorSection.General;
+    private SkippedFileCategorySelection? _skippedFileCategories;
+    private SkippedFilesMetadataMode _skippedFilesMetadataMode;
+    private SortMode _sortMode = SortMode.ByRelativePathAscending;
+    private bool _trimTrailingEmptyLines = true;
+
+    private double _unsupportedTextMaxControlCharacterRatio =
+        UnsupportedTextFallbackOptions.DefaultMaxControlCharacterRatio;
+
+    private long _unsupportedTextMaxFileSizeBytes = UnsupportedTextFallbackOptions.DefaultMaxFileSizeBytes;
+    private int _unsupportedTextProbeSizeBytes = UnsupportedTextFallbackOptions.DefaultProbeSizeBytes;
+    private string _workingProfileName = "Default";
+
+    public ProfileEditorViewModel(
+        IFileTypeCatalog fileTypeCatalog,
+        IProfileFilterRulesDialogService filterRulesDialogService)
     {
         ArgumentNullException.ThrowIfNull(fileTypeCatalog);
+        ArgumentNullException.ThrowIfNull(filterRulesDialogService);
 
         _fileTypeCatalog = fileTypeCatalog;
+        _filterRulesDialogService = filterRulesDialogService;
 
         FileTypeFilters = new ProfileFileTypeFiltersViewModel();
         FilterRuleFilters = new ProfileFilterRuleFiltersViewModel();
@@ -218,9 +214,15 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         FilterRuleStatusFilterOptions =
         [
             new EnumOptionViewModel<ProfileFilterRuleStatusFilterMode>(ProfileFilterRuleStatusFilterMode.All, "All"),
-            new EnumOptionViewModel<ProfileFilterRuleStatusFilterMode>(ProfileFilterRuleStatusFilterMode.Enabled, "Enabled"),
-            new EnumOptionViewModel<ProfileFilterRuleStatusFilterMode>(ProfileFilterRuleStatusFilterMode.Disabled, "Disabled"),
-            new EnumOptionViewModel<ProfileFilterRuleStatusFilterMode>(ProfileFilterRuleStatusFilterMode.Invalid, "Invalid")
+            new EnumOptionViewModel<ProfileFilterRuleStatusFilterMode>(
+                ProfileFilterRuleStatusFilterMode.Enabled,
+                "Enabled"),
+            new EnumOptionViewModel<ProfileFilterRuleStatusFilterMode>(
+                ProfileFilterRuleStatusFilterMode.Disabled,
+                "Disabled"),
+            new EnumOptionViewModel<ProfileFilterRuleStatusFilterMode>(
+                ProfileFilterRuleStatusFilterMode.Invalid,
+                "Invalid")
         ];
 
         FilterModeOptions =
@@ -245,10 +247,13 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             new EnumOptionViewModel<RulePatternType>(RulePatternType.Regex, "Regex")
         ];
 
-        SelectSectionCommand = new RelayCommand<ProfileEditorSection>(SelectSection, CanSelectSection);
+        SelectSectionCommand = new RelayCommand<ProfileEditorSection>(SelectSection);
+        EditFilterRulesCommand = new RelayCommand(EditFilterRules);
 
         ClearFileTypeFiltersCommand = new RelayCommand(ClearFileTypeFilters, () => FileTypeFilters.HasActiveFilters);
-        ClearFilterRuleFiltersCommand = new RelayCommand(ClearFilterRuleFilters, () => FilterRuleFilters.HasActiveFilters);
+        ClearFilterRuleFiltersCommand = new RelayCommand(
+            ClearFilterRuleFilters,
+            () => FilterRuleFilters.HasActiveFilters);
 
         AddFilterRuleCommand = new RelayCommand(AddFilterRule);
         DuplicateFilterRuleCommand = new RelayCommand(DuplicateFilterRule, () => CanDuplicateFilterRule);
@@ -290,12 +295,6 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         set => SetProperty(ref _trimTrailingEmptyLines, value);
     }
 
-    public bool RemoveUsingDirectives
-    {
-        get => _removeUsingDirectives;
-        set => SetProperty(ref _removeUsingDirectives, value);
-    }
-
     public ObservableCollection<FileTypeOptionViewModel> FileTypes => _fileTypes;
 
     public ObservableCollection<ProfileFileTypeGroupViewModel> FileTypeGroups => _fileTypeGroups;
@@ -312,7 +311,10 @@ public sealed class ProfileEditorViewModel : ViewModelBase
     public IReadOnlyCollection<EnumOptionViewModel<ProfileFileTypeFilterMode>> FileTypeFilterModeOptions { get; }
 
     // ReSharper disable once UnusedAutoPropertyAccessor.Global
-    public IReadOnlyCollection<EnumOptionViewModel<ProfileFilterRuleStatusFilterMode>> FilterRuleStatusFilterOptions { get; }
+    public IReadOnlyCollection<EnumOptionViewModel<ProfileFilterRuleStatusFilterMode>> FilterRuleStatusFilterOptions
+    {
+        get;
+    }
 
     public bool HasVisibleFileTypeGroups
     {
@@ -385,7 +387,6 @@ public sealed class ProfileEditorViewModel : ViewModelBase
                 return;
 
             RaiseSectionSelectionProperties();
-            SelectSectionCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -402,12 +403,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     public bool IsFileTypesSectionSelected => SelectedSection == ProfileEditorSection.FileTypes;
 
-    public bool IsCSharpTransformationsSectionSelected =>
-        SelectedSection == ProfileEditorSection.CSharpTransformations;
-
     public bool IsFilterRulesSectionSelected => SelectedSection == ProfileEditorSection.FilterRules;
-
-    public bool ShowCSharpOptions => FileTypes.Any(x => x is { Kind: FileKind.CSharp, IsEnabled: true });
 
     public bool HasFilterRules => FilterRules.Count > 0;
 
@@ -417,13 +413,23 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     public bool CanUseProfile => !HasInvalidFilterRules;
 
+    public string? DraftValidationMessage
+    {
+        get
+        {
+            ProfileFilterRuleItemViewModel? rule = FilterRules.FirstOrDefault(x => x.HasValidationError);
+
+            return rule is null
+                ? null
+                : $"Filter Rules, rule {FilterRules.IndexOf(rule) + 1}: {rule.ValidationMessage}";
+        }
+    }
+
     public bool CanDuplicateFilterRule => SelectedFilterRule is not null;
 
     public bool CanRemoveFilterRule => SelectedFilterRule is not null && SelectedFilterRule.IsUserEditable;
 
-    public bool CanMoveFilterRuleUp =>
-        SelectedFilterRule is not null &&
-        FilterRules.IndexOf(SelectedFilterRule) > 0;
+    public bool CanMoveFilterRuleUp => SelectedFilterRule is not null && FilterRules.IndexOf(SelectedFilterRule) > 0;
 
     public bool CanMoveFilterRuleDown =>
         SelectedFilterRule is not null &&
@@ -636,6 +642,8 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     public RelayCommand<ProfileEditorSection> SelectSectionCommand { get; }
 
+    public RelayCommand EditFilterRulesCommand { get; }
+
     public RelayCommand ClearFileTypeFiltersCommand { get; }
 
     public RelayCommand ClearFilterRuleFiltersCommand { get; }
@@ -652,6 +660,9 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     public RelayCommand ClearFilterRulesCommand { get; }
 
+    private SkippedFileCategorySelection EffectiveSkippedFileCategories =>
+        _skippedFileCategories ?? SkippedFileCategorySelection.ForCurrentBehavior(IncludeSourceExcludedFiles);
+
     public void LoadDefaults()
     {
         MergeProfile defaultProfile = DefaultMergeProfiles.CreateDefault();
@@ -667,7 +678,6 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             IncludeFileSeparators,
             IncludeRelativePathInSeparator,
             TrimTrailingEmptyLines,
-            RemoveUsingDirectives,
             [
                 .. FileTypes.Select(x => new WorkspaceFileTypeDto(
                     x.Extension,
@@ -709,10 +719,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         IncludeRelativePathInSeparator = profile.IncludeRelativePathInSeparator;
         TrimTrailingEmptyLines = profile.TrimTrailingEmptyLines;
 
-        RemoveUsingDirectives = profile.RemoveUsingDirectives;
-
-        IReadOnlyCollection<FileTypeDefinition> fileTypes =
-            BuildAvailableFileTypes(profile.FileTypes);
+        IReadOnlyCollection<FileTypeDefinition> fileTypes = BuildAvailableFileTypes(profile.FileTypes);
 
         ResetFileTypes(fileTypes);
         ResetFilterRules(profile.FilterRules);
@@ -741,6 +748,9 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     public MergeProfile BuildProfile()
     {
+        if (!CanUseProfile)
+            throw new InvalidOperationException(DraftValidationMessage);
+
         return new MergeProfile(
             name: NormalizeProfileName(WorkingProfileName),
             generalOptions: new GeneralMergeOptions(
@@ -766,8 +776,6 @@ public sealed class ProfileEditorViewModel : ViewModelBase
                     SkippedFilesMetadataMode: SkippedFilesMetadataMode,
                     IncludeSourceExcludedFiles: IncludeSourceExcludedFiles,
                     SkippedFileCategories: _skippedFileCategories)),
-            csOptions: new CsMergeOptions(
-                RemoveUsingDirectives: RemoveUsingDirectives),
             fileTypes: BuildFileTypes(),
             filterRules: BuildFilterRules(),
             transformations: BuildTransformations());
@@ -780,20 +788,17 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             IncludeFileSeparators,
             IncludeRelativePathInSeparator,
             TrimTrailingEmptyLines,
-            RemoveUsingDirectives,
             LineEndingMode,
             SortMode,
             InputEncodingMode,
             PreferredInputEncodingName,
             FallbackInputEncodingName,
             [
-                .. FileTypes
-                    .Select(x => new PreviewFileTypeStateSnapshot(x.Extension, x.IsEnabled))
+                .. FileTypes.Select(x => new PreviewFileTypeStateSnapshot(x.Extension, x.IsEnabled))
                     .OrderBy(x => x.Extension, StringComparer.OrdinalIgnoreCase)
             ],
             [
-                .. FilterRules
-                    .Select(ToPreviewFileFilterRuleStateSnapshot)
+                .. FilterRules.Select(ToPreviewFileFilterRuleStateSnapshot)
                     .OrderBy(x => x.Mode)
                     .ThenBy(x => x.Target)
                     .ThenBy(x => x.PatternType)
@@ -814,10 +819,6 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             skippedFileCategories: EffectiveSkippedFileCategories);
     }
 
-    private SkippedFileCategorySelection EffectiveSkippedFileCategories =>
-        _skippedFileCategories ??
-        SkippedFileCategorySelection.ForCurrentBehavior(IncludeSourceExcludedFiles);
-
     private void NotifySkippedFileCategoryPropertiesChanged()
     {
         OnPropertyChanged(nameof(IncludeDisabledFileTypesInSkippedMetadata));
@@ -831,24 +832,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     private void SelectSection(ProfileEditorSection section)
     {
-        if (!CanSelectSection(section))
-            return;
-
         SelectedSection = section;
-    }
-
-    private bool CanSelectSection(ProfileEditorSection section)
-    {
-        return section != ProfileEditorSection.CSharpTransformations || ShowCSharpOptions;
-    }
-
-    private void RefreshCSharpSectionAvailability()
-    {
-        OnPropertyChanged(nameof(ShowCSharpOptions));
-        SelectSectionCommand.RaiseCanExecuteChanged();
-
-        if (!ShowCSharpOptions && SelectedSection == ProfileEditorSection.CSharpTransformations)
-            SelectedSection = ProfileEditorSection.FileTypes;
     }
 
     private void RaiseSectionSelectionProperties()
@@ -859,7 +843,6 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsInputEncodingSectionSelected));
         OnPropertyChanged(nameof(IsUnsupportedTextFallbackSectionSelected));
         OnPropertyChanged(nameof(IsFileTypesSectionSelected));
-        OnPropertyChanged(nameof(IsCSharpTransformationsSectionSelected));
         OnPropertyChanged(nameof(IsFilterRulesSectionSelected));
     }
 
@@ -867,9 +850,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
     {
         return
         [
-            .. FileTypes
-                .Select(ToFileTypeDefinition)
-                .OrderBy(x => x.Extension, StringComparer.OrdinalIgnoreCase)
+            .. FileTypes.Select(ToFileTypeDefinition).OrderBy(x => x.Extension, StringComparer.OrdinalIgnoreCase)
         ];
     }
 
@@ -877,7 +858,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
     {
         List<FileFilterRule> rules = [];
 
-        foreach (ProfileFilterRuleItemViewModel rule in FilterRules.Where(x => !x.HasValidationError))
+        foreach (ProfileFilterRuleItemViewModel rule in FilterRules)
             AddFilterRuleIfMissing(rules, ToFileFilterRule(rule));
 
         return rules;
@@ -887,12 +868,6 @@ public sealed class ProfileEditorViewModel : ViewModelBase
     {
         return
         [
-            new ContentTransformationRule(
-                kind: TransformationKind.RemoveUsingDirectives,
-                order: 0,
-                isEnabled: RemoveUsingDirectives,
-                appliesTo: [FileKind.CSharp]),
-
             new ContentTransformationRule(
                 kind: TransformationKind.TrimTrailingEmptyLines,
                 order: 1,
@@ -905,16 +880,22 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         ];
     }
 
+    private void EditFilterRules()
+    {
+        _filterRulesDialogService.Show(this);
+    }
+
     private void AddFilterRule()
     {
-        ProfileFilterRuleItemViewModel item = new(new WorkspaceFileFilterRuleDto(
-            Mode: FilterMode.Exclude,
-            Target: FilterTarget.DirectorySegment,
-            PatternType: RulePatternType.Exact,
-            Pattern: "Library",
-            IsEnabled: true,
-            Description: "Exclude directory",
-            IsUserEditable: true));
+        ProfileFilterRuleItemViewModel item = new(
+            new WorkspaceFileFilterRuleDto(
+                Mode: FilterMode.Exclude,
+                Target: FilterTarget.DirectorySegment,
+                PatternType: RulePatternType.Exact,
+                Pattern: "Library",
+                IsEnabled: true,
+                Description: "Exclude directory",
+                IsUserEditable: true));
 
         FilterRules.Add(item);
         SelectFilterRuleAfterMutation(item);
@@ -927,9 +908,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
         ProfileFilterRuleItemViewModel duplicate = SelectedFilterRule.Clone();
         int selectedIndex = FilterRules.IndexOf(SelectedFilterRule);
-        int insertIndex = selectedIndex < 0
-            ? FilterRules.Count
-            : selectedIndex + 1;
+        int insertIndex = selectedIndex < 0 ? FilterRules.Count : selectedIndex + 1;
 
         FilterRules.Insert(insertIndex, duplicate);
         SelectFilterRuleAfterMutation(duplicate);
@@ -1011,14 +990,9 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         if (profileFileTypes is not { Count: > 0 })
             return _fileTypeCatalog.GetDefault();
 
-        var profileFileTypeByExtension =
-            profileFileTypes
-                .Where(x => !string.IsNullOrWhiteSpace(x.Extension))
-                .GroupBy(x => x.Extension.Trim(), StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(
-                    x => x.Key,
-                    x => x.First(),
-                    StringComparer.OrdinalIgnoreCase);
+        var profileFileTypeByExtension = profileFileTypes.Where(x => !string.IsNullOrWhiteSpace(x.Extension))
+            .GroupBy(x => x.Extension.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(x => x.Key, x => x.First(), StringComparer.OrdinalIgnoreCase);
 
         List<FileTypeDefinition> mergedFileTypes = [];
         HashSet<string> catalogExtensions = new(StringComparer.OrdinalIgnoreCase);
@@ -1027,16 +1001,18 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         {
             catalogExtensions.Add(catalogFileType.Extension);
 
-            bool isEnabled =
-                profileFileTypeByExtension.TryGetValue(catalogFileType.Extension, out WorkspaceFileTypeDto? profileFileType) &&
-                profileFileType.IsEnabled;
+            bool isEnabled = profileFileTypeByExtension.TryGetValue(
+                                 catalogFileType.Extension,
+                                 out WorkspaceFileTypeDto? profileFileType) &&
+                             profileFileType.IsEnabled;
 
-            mergedFileTypes.Add(new FileTypeDefinition(
-                extension: catalogFileType.Extension,
-                displayName: catalogFileType.DisplayName,
-                kind: catalogFileType.Kind,
-                isEnabled: isEnabled,
-                supportsLanguageSpecificProcessing: catalogFileType.SupportsLanguageSpecificProcessing));
+            mergedFileTypes.Add(
+                new FileTypeDefinition(
+                    extension: catalogFileType.Extension,
+                    displayName: catalogFileType.DisplayName,
+                    kind: catalogFileType.Kind,
+                    isEnabled: isEnabled,
+                    supportsLanguageSpecificProcessing: catalogFileType.SupportsLanguageSpecificProcessing));
         }
 
         foreach (WorkspaceFileTypeDto profileFileType in profileFileTypes)
@@ -1066,8 +1042,9 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
             _fileTypes.Clear();
 
-            foreach (FileTypeDefinition fileType in fileTypes
-                         .OrderBy(x => x.Extension, StringComparer.OrdinalIgnoreCase))
+            foreach (FileTypeDefinition fileType in fileTypes.OrderBy(
+                         x => x.Extension,
+                         StringComparer.OrdinalIgnoreCase))
             {
                 FileTypeOptionViewModel item = new(
                     extension: fileType.Extension,
@@ -1085,20 +1062,14 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         }
 
         RebuildFileTypeGroups();
-        RefreshCSharpSectionAvailability();
     }
 
     private void RebuildFileTypeGroups()
     {
         ClearFileTypeGroups();
 
-        var fileTypesByGroup =
-            FileTypes
-                .GroupBy(GetFileTypeGroupKey)
-                .ToDictionary(
-                    x => x.Key,
-                    x => x.ToList(),
-                    StringComparer.OrdinalIgnoreCase);
+        var fileTypesByGroup = FileTypes.GroupBy(GetFileTypeGroupKey)
+            .ToDictionary(x => x.Key, x => x.ToList(), StringComparer.OrdinalIgnoreCase);
 
         foreach (FileTypeGroupDefinition definition in _fileTypeGroupDefinitions)
         {
@@ -1110,11 +1081,12 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
             bool isExpanded = groupFileTypes.Any(x => x.IsEnabled);
 
-            _fileTypeGroups.Add(new ProfileFileTypeGroupViewModel(
-                title: definition.Title,
-                description: definition.Description,
-                fileTypes: groupFileTypes,
-                isExpanded: isExpanded));
+            _fileTypeGroups.Add(
+                new ProfileFileTypeGroupViewModel(
+                    title: definition.Title,
+                    description: definition.Description,
+                    fileTypes: groupFileTypes,
+                    isExpanded: isExpanded));
         }
 
         RefreshVisibleFileTypes();
@@ -1217,10 +1189,29 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     private void RefreshVisibleFilterRules()
     {
-        _visibleFilterRules.Clear();
+        List<ProfileFilterRuleItemViewModel> matchingRules = [.. FilterRules.Where(FilterRuleFilters.Matches)];
 
-        foreach (ProfileFilterRuleItemViewModel rule in FilterRules.Where(FilterRuleFilters.Matches))
-            _visibleFilterRules.Add(rule);
+        bool hasSameVisibleRules = matchingRules.Count == _visibleFilterRules.Count;
+
+        if (hasSameVisibleRules)
+        {
+            for (int index = 0; index < matchingRules.Count; index++)
+            {
+                if (ReferenceEquals(matchingRules[index], _visibleFilterRules[index]))
+                    continue;
+
+                hasSameVisibleRules = false;
+                break;
+            }
+        }
+
+        if (!hasSameVisibleRules)
+        {
+            _visibleFilterRules.Clear();
+
+            foreach (ProfileFilterRuleItemViewModel rule in matchingRules)
+                _visibleFilterRules.Add(rule);
+        }
 
         HasVisibleFilterRules = VisibleFilterRules.Count > 0;
         HasFilterRuleFilterEmptyState = HasFilterRules && !HasVisibleFilterRules;
@@ -1229,7 +1220,6 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         if (SelectedFilterRule is not null && !VisibleFilterRules.Contains(SelectedFilterRule))
             SelectedFilterRule = VisibleFilterRules.FirstOrDefault();
 
-        OnPropertyChanged(nameof(VisibleFilterRules));
         ClearFilterRuleFiltersCommand.RaiseCanExecuteChanged();
     }
 
@@ -1285,7 +1275,6 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             profile.GeneralOptions.IncludeFileSeparators,
             profile.GeneralOptions.IncludeRelativePathInSeparator,
             profile.GeneralOptions.TrimTrailingEmptyLines,
-            profile.CsOptions.RemoveUsingDirectives,
             [
                 .. profile.FileTypes.Select(x => new WorkspaceFileTypeDto(
                     x.Extension,
@@ -1313,7 +1302,8 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             IncludeUnsupportedTextFiles: profile.GeneralOptions.UnsupportedTextFallbackOptions.IsEnabled,
             UnsupportedTextMaxFileSizeBytes: profile.GeneralOptions.UnsupportedTextFallbackOptions.MaxFileSizeBytes,
             UnsupportedTextProbeSizeBytes: profile.GeneralOptions.UnsupportedTextFallbackOptions.ProbeSizeBytes,
-            UnsupportedTextMaxControlCharacterRatio: profile.GeneralOptions.UnsupportedTextFallbackOptions.MaxControlCharacterRatio,
+            UnsupportedTextMaxControlCharacterRatio:
+            profile.GeneralOptions.UnsupportedTextFallbackOptions.MaxControlCharacterRatio,
             IncludeBuildTimestampMetadata: profile.GeneralOptions.OutputMetadataOptions.IncludeBuildTimestamp,
             IncludeSessionNameMetadata: profile.GeneralOptions.OutputMetadataOptions.IncludeSessionName,
             IncludeOutputPathMetadata: profile.GeneralOptions.OutputMetadataOptions.IncludeOutputPath,
@@ -1323,9 +1313,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             SkippedFileCategories: profile.GeneralOptions.OutputMetadataOptions.SkippedFileCategories);
     }
 
-    private static void AddFilterRuleIfMissing(
-        List<FileFilterRule> rules,
-        FileFilterRule rule)
+    private static void AddFilterRuleIfMissing(List<FileFilterRule> rules, FileFilterRule rule)
     {
         if (rules.Any(x => HasSameFilterRuleIdentity(x, rule)))
             return;
@@ -1344,16 +1332,12 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     private static string NormalizeProfileName(string? profileName)
     {
-        return string.IsNullOrWhiteSpace(profileName)
-            ? "Default"
-            : profileName.Trim();
+        return string.IsNullOrWhiteSpace(profileName) ? "Default" : profileName.Trim();
     }
 
     private static string? NormalizeDescription(string? value)
     {
-        return string.IsNullOrWhiteSpace(value)
-            ? null
-            : value.Trim();
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private void FileTypes_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -1373,7 +1357,6 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         if (!_isResettingFileTypes)
         {
             RebuildFileTypeGroups();
-            RefreshCSharpSectionAvailability();
         }
     }
 
@@ -1382,7 +1365,6 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         if (e.PropertyName == nameof(FileTypeOptionViewModel.IsEnabled))
         {
             RefreshVisibleFileTypes();
-            RefreshCSharpSectionAvailability();
         }
     }
 
@@ -1407,15 +1389,15 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     private void FilterRule_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(ProfileFilterRuleItemViewModel.HasValidationError) or
-            nameof(ProfileFilterRuleItemViewModel.ValidationMessage) or
-            nameof(ProfileFilterRuleItemViewModel.Pattern) or
-            nameof(ProfileFilterRuleItemViewModel.Mode) or
-            nameof(ProfileFilterRuleItemViewModel.Target) or
-            nameof(ProfileFilterRuleItemViewModel.PatternType) or
-            nameof(ProfileFilterRuleItemViewModel.IsEnabled) or
-            nameof(ProfileFilterRuleItemViewModel.Description) or
-            nameof(ProfileFilterRuleItemViewModel.IsUserEditable))
+        if (e.PropertyName is nameof(ProfileFilterRuleItemViewModel.HasValidationError)
+            or nameof(ProfileFilterRuleItemViewModel.ValidationMessage)
+            or nameof(ProfileFilterRuleItemViewModel.Pattern)
+            or nameof(ProfileFilterRuleItemViewModel.Mode)
+            or nameof(ProfileFilterRuleItemViewModel.Target)
+            or nameof(ProfileFilterRuleItemViewModel.PatternType)
+            or nameof(ProfileFilterRuleItemViewModel.IsEnabled)
+            or nameof(ProfileFilterRuleItemViewModel.Description)
+            or nameof(ProfileFilterRuleItemViewModel.IsUserEditable))
         {
             RefreshVisibleFilterRules();
             RaiseFilterRuleStateProperties();
@@ -1437,12 +1419,12 @@ public sealed class ProfileEditorViewModel : ViewModelBase
     private void RaiseFilterRuleStateProperties()
     {
         OnPropertyChanged(nameof(FilterRules));
-        OnPropertyChanged(nameof(VisibleFilterRules));
         OnPropertyChanged(nameof(HasFilterRules));
         OnPropertyChanged(nameof(HasVisibleFilterRules));
         OnPropertyChanged(nameof(HasFilterRuleFilterEmptyState));
         OnPropertyChanged(nameof(HasInvalidFilterRules));
         OnPropertyChanged(nameof(CanUseProfile));
+        OnPropertyChanged(nameof(DraftValidationMessage));
         OnPropertyChanged(nameof(CanClearFilterRules));
         OnPropertyChanged(nameof(CanDuplicateFilterRule));
         OnPropertyChanged(nameof(CanRemoveFilterRule));
@@ -1459,8 +1441,5 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         ClearFilterRulesCommand.RaiseCanExecuteChanged();
     }
 
-    private sealed record FileTypeGroupDefinition(
-        string Key,
-        string Title,
-        string Description);
+    private sealed record FileTypeGroupDefinition(string Key, string Title, string Description);
 }

@@ -14,16 +14,12 @@ public sealed class CrashLogPathPolicy(string? localApplicationDataRoot = null)
 
     public string GetCrashLogDirectory()
     {
-        return Path.Combine(
-            _localApplicationDataRoot,
-            ApplicationDirectoryName,
-            CrashLogsDirectoryName);
+        return Path.Combine(_localApplicationDataRoot, ApplicationDirectoryName, CrashLogsDirectoryName);
     }
 
     public string CreateCrashLogPath(DateTime occurredAtUtc)
     {
-        string timestamp = occurredAtUtc
-            .ToUniversalTime()
+        string timestamp = occurredAtUtc.ToUniversalTime()
             .ToString("yyyyMMdd-HHmmss-fff", CultureInfo.InvariantCulture);
 
         string suffix = Guid.NewGuid().ToString("N")[..8];

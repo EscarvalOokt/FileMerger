@@ -4,8 +4,7 @@ public sealed class DefaultSaveOutputDialogFilterBuilder : ISaveOutputDialogFilt
 {
     private readonly ISaveOutputFileTypeCatalog _saveOutputFileTypeCatalog;
 
-    public DefaultSaveOutputDialogFilterBuilder(
-        ISaveOutputFileTypeCatalog saveOutputFileTypeCatalog)
+    public DefaultSaveOutputDialogFilterBuilder(ISaveOutputFileTypeCatalog saveOutputFileTypeCatalog)
     {
         ArgumentNullException.ThrowIfNull(saveOutputFileTypeCatalog);
         _saveOutputFileTypeCatalog = saveOutputFileTypeCatalog;
@@ -13,16 +12,14 @@ public sealed class DefaultSaveOutputDialogFilterBuilder : ISaveOutputDialogFilt
 
     public string BuildDefaultSaveFileFilter()
     {
-        IReadOnlyCollection<SaveOutputFileTypeDefinition> fileTypes =
-            _saveOutputFileTypeCatalog.GetAll();
+        IReadOnlyCollection<SaveOutputFileTypeDefinition> fileTypes = _saveOutputFileTypeCatalog.GetAll();
 
         if (fileTypes.Count == 0)
             return "All files (*.*)|*.*";
 
         string typedFilters = string.Join(
             '|',
-            fileTypes
-                .GroupBy(x => x.Extension, StringComparer.OrdinalIgnoreCase)
+            fileTypes.GroupBy(x => x.Extension, StringComparer.OrdinalIgnoreCase)
                 .Select(x => x.First())
                 .Select(x => $"{x.DisplayName} files ({x.Pattern})|{x.Pattern}"));
 

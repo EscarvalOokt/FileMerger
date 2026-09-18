@@ -5,5 +5,7 @@
   <Project Path="src/FileMerger.Domain/FileMerger.Domain.csproj"/>
   <Project Path="src/FileMerger.Infrastructure/FileMerger.Infrastructure.csproj"
            Id="0770a285-6fbd-4275-b9cb-0c7784d25c92"/>
+  <Project Path="src/FileMerger.UpdateProtocol/FileMerger.UpdateProtocol.csproj"/>
+  <Project Path="src/FileMerger.Updater/FileMerger.Updater.csproj"/>
   <Project Path="src/FileMerger.Wpf/FileMerger.Wpf.csproj" Id="bc6e09a8-2ebe-4845-b4c2-fa75aa9e6d6d"/>
 </Solution>

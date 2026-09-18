@@ -18,11 +18,8 @@ public sealed record ApplicationPreferencesDto(
     public ApplicationPreferences ToModel()
     {
         return new ApplicationPreferences(
-            IsPreviewLineWrapEnabledByDefault ??
-            ApplicationPreferences.DefaultIsPreviewLineWrapEnabledByDefault,
-            PreviewDisplayCharacterLimit ??
-            ApplicationPreferences.DefaultPreviewDisplayCharacterLimit,
-            CrashLogRetentionLimit ??
-            ApplicationPreferences.DefaultCrashLogRetentionLimit);
+            IsPreviewLineWrapEnabledByDefault ?? ApplicationPreferences.DefaultIsPreviewLineWrapEnabledByDefault,
+            PreviewDisplayCharacterLimit ?? ApplicationPreferences.DefaultPreviewDisplayCharacterLimit,
+            CrashLogRetentionLimit ?? ApplicationPreferences.DefaultCrashLogRetentionLimit);
     }
 }

@@ -8,7 +8,6 @@ public sealed record WorkspaceProfileDto(
     bool IncludeFileSeparators,
     bool IncludeRelativePathInSeparator,
     bool TrimTrailingEmptyLines,
-    bool RemoveUsingDirectives,
     List<WorkspaceFileTypeDto> FileTypes,
     LineEndingMode LineEndingMode,
     SortMode SortMode,

@@ -21,6 +21,8 @@
     <ProjectReference Include="..\..\src\FileMerger.Application\FileMerger.Application.csproj"/>
     <ProjectReference Include="..\..\src\FileMerger.Domain\FileMerger.Domain.csproj"/>
     <ProjectReference Include="..\..\src\FileMerger.Infrastructure\FileMerger.Infrastructure.csproj"/>
+    <ProjectReference Include="..\..\src\FileMerger.UpdateProtocol\FileMerger.UpdateProtocol.csproj"/>
+    <ProjectReference Include="..\..\src\FileMerger.Updater\FileMerger.Updater.csproj"/>
     <ProjectReference Include="..\..\src\FileMerger.Wpf\FileMerger.Wpf.csproj"/>
   </ItemGroup>
 

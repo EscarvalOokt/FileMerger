@@ -29,8 +29,7 @@ public sealed class MergeSectionTests
     [Fact]
     public void Constructor_Should_Throw_When_SourceFile_Is_Null()
     {
-        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-            new MergeSection(null!, "content", 0));
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => new MergeSection(null!, "content", 0));
 
         Assert.Equal("sourceFile", ex.ParamName);
     }

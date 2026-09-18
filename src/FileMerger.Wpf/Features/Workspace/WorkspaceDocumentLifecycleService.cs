@@ -5,9 +5,9 @@ namespace FileMerger.Wpf.Features.Workspace;
 
 public sealed class WorkspaceDocumentLifecycleService : IWorkspaceDocumentLifecycleService
 {
+    private readonly IRecentWorkspacesService _recentWorkspacesService;
     private readonly IWorkspaceCoordinator _workspaceCoordinator;
     private readonly IWorkspaceDocumentDirtyStateService _workspaceDocumentDirtyStateService;
-    private readonly IRecentWorkspacesService _recentWorkspacesService;
 
     public WorkspaceDocumentLifecycleService(
         IWorkspaceCoordinator workspaceCoordinator,
