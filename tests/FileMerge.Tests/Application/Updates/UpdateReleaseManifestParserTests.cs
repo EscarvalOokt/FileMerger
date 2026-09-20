@@ -77,10 +77,7 @@ public sealed class UpdateReleaseManifestParserTests
     [Fact]
     public void Parse_Should_Reject_Package_Version_That_Differs_From_Release()
     {
-        string json = CreateValidManifest()
-            .Replace(
-                "\"version\": \"0.2.0-alpha.2\",\n        \"os\"",
-                "\"version\": \"0.2.0-alpha.3\",\n        \"os\"");
+        string json = CreateValidManifest(packageVersion: "0.2.0-alpha.3");
 
         Assert.Throws<InvalidDataException>(() => _parser.Parse(json));
     }
@@ -158,7 +155,7 @@ public sealed class UpdateReleaseManifestParserTests
         return json[start..end];
     }
 
-    private static string CreateValidManifest()
+    private static string CreateValidManifest(string packageVersion = "0.2.0-alpha.2")
     {
         return $$"""
                  {
@@ -171,7 +168,7 @@ public sealed class UpdateReleaseManifestParserTests
                      "packages": [
                        {
                          "id": "windows-any",
-                         "version": "0.2.0-alpha.2",
+                         "version": "{{packageVersion}}",
                          "os": "windows",
                          "architecture": "any",
                          "framework": "net10.0-windows",
