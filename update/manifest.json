@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "product": "FileMerger",
+  "release": {
+    "version": "0.2.0-alpha",
+    "publishedAtUtc": "2026-09-20T21:43:29Z",
+    "releaseNotesUrl": "https://github.com/EscarvalOokt/FileMerger/releases/tag/v0.2.0-alpha",
+    "packages": [
+      {
+        "id": "windows-any",
+        "version": "0.2.0-alpha",
+        "os": "windows",
+        "architecture": "any",
+        "framework": "net10.0-windows",
+        "deployment": "frameworkDependent",
+        "format": "zip",
+        "url": "https://github.com/EscarvalOokt/FileMerger/releases/download/v0.2.0-alpha/FileMerger-v0.2.0-alpha-win-any.zip",
+        "sizeBytes": 1192070,
+        "sha256": "f808f2559ea57495ae898de241820428e0ea99c3ace8686b9b413383ab776088",
+        "entryExecutable": "FileMerger.Wpf.exe"
+      }
+    ]
+  }
+}
